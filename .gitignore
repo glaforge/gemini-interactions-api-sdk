@@ -4,6 +4,7 @@
 
 # Maven
 .target/
+settings.xml
 
 # Compiled class file
 *.class
