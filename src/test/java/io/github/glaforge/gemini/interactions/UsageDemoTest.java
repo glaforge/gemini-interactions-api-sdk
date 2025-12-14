@@ -16,7 +16,13 @@
 
 package io.github.glaforge.gemini.interactions;
 
-import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.Interaction.*;
+import io.github.glaforge.gemini.interactions.model.Interaction.Role;
+import io.github.glaforge.gemini.interactions.model.Tool.Function;
+import io.github.glaforge.gemini.interactions.model.Config.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import java.util.List;
 import java.util.Map;
 
@@ -36,35 +42,35 @@ public class UsageDemoTest {
             assertNotNull(client);
 
             // 2. Simple Text Interaction
-            InteractionParams.ModelInteractionParams simpleRequest = InteractionParams.ModelInteractionParams.builder()
+            ModelInteractionParams simpleRequest = ModelInteractionParams.builder()
                 .model("gemini-2.5-flash")
                 .input("Hello, how are you?")
                 .build();
             assertNotNull(simpleRequest);
 
             // 3. Multi-turn Interaction
-            InteractionParams.ModelInteractionParams multiTurnRequest = InteractionParams.ModelInteractionParams.builder()
+            ModelInteractionParams multiTurnRequest = ModelInteractionParams.builder()
                 .model("gemini-2.5-flash")
-                .input(List.of(
-                    new Interaction.Turn(Interaction.Role.USER, "Hello!"),
-                    new Interaction.Turn(Interaction.Role.MODEL, "Hi there!"),
-                    new Interaction.Turn(Interaction.Role.USER, "What is the capital of France?")
-                ))
+                .input(
+                    new Turn(Role.USER, "Hello!"),
+                    new Turn(Role.MODEL, "Hi there!"),
+                    new Turn(Role.USER, "What is the capital of France?")
+                )
                 .build();
             assertNotNull(multiTurnRequest);
 
             // 4. Multimodal Interaction (Text + Image)
-            InteractionParams.ModelInteractionParams multimodalRequest = InteractionParams.ModelInteractionParams.builder()
+            ModelInteractionParams multimodalRequest = ModelInteractionParams.builder()
                 .model("gemini-2.5-flash")
-                .input(List.of(
-                    new Content.TextContent("What is in this picture?"),
-                    new Content.ImageContent("BASE64_DATA", "image/png")
-                ))
+                .input(
+                    new TextContent("What is in this picture?"),
+                    new ImageContent("BASE64_DATA", "image/png")
+                )
                 .build();
             assertNotNull(multimodalRequest);
 
             // 5. Function Calling
-            Tool.Function weatherTool = new Tool.Function(
+            Function weatherTool = new Function(
                 "get_weather",
                 "Get the current weather",
                 Map.of(
@@ -76,22 +82,22 @@ public class UsageDemoTest {
                 )
             );
 
-            InteractionParams.ModelInteractionParams toolRequest = InteractionParams.ModelInteractionParams.builder()
+            ModelInteractionParams toolRequest = ModelInteractionParams.builder()
                 .model("gemini-2.5-flash")
                 .input("Weather in London?")
-                .tools(List.of(weatherTool))
+                .tools(weatherTool)
                 .build();
             assertNotNull(toolRequest);
 
             // 6. Config
-            Config.GenerationConfig config = new Config.GenerationConfig(
+            GenerationConfig config = new GenerationConfig(
                 0.7, // temp
                 0.95, // topP
                 null, // seed
                 List.of("STOP"),
                 null, // tool_choice
-                Config.ThinkingLevel.LOW, // thinking_level
-                Config.ThinkingSummaries.AUTO, // thinking_summaries
+                ThinkingLevel.LOW, // thinking_level
+                ThinkingSummaries.AUTO, // thinking_summaries
                 1000,
                 null // speech
             );

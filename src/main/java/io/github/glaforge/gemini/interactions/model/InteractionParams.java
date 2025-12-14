@@ -102,6 +102,22 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder input(Object input) { this.input = input; return this; } // String or List
+
+            /**
+             * Sets the input content as a list of Content objects.
+             *
+             * @param content The input content.
+             * @return This builder.
+             */
+            public Builder input(Content... content) { this.input = List.of(content); return this; }
+
+            /**
+             * Sets the input content as a list of Turns (multi-turn history).
+             *
+             * @param turns The input turns.
+             * @return This builder.
+             */
+            public Builder input(Interaction.Turn... turns) { this.input = List.of(turns); return this; }
             /**
              * Sets the generation config.
              *
@@ -110,6 +126,20 @@ public class InteractionParams {
              */
             public Builder generationConfig(Config.GenerationConfig generationConfig) { this.generationConfig = generationConfig; return this; }
             /** Sets the tools. */
+            /**
+             * Sets the tools.
+             *
+             * @param tools The list of tools.
+             * @return This builder.
+             */
+            /**
+             * Sets the tools.
+             *
+             * @param tools The tools.
+             * @return This builder.
+             */
+            public Builder tools(Tool... tools) { this.tools = List.of(tools); return this; }
+
             /**
              * Sets the tools.
              *
@@ -145,6 +175,20 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder systemInstruction(String systemInstruction) { this.systemInstruction = systemInstruction; return this; }
+            /**
+             * Sets the response modalities.
+             *
+             * @param responseModalities The response modalities.
+             * @return This builder.
+             */
+            /**
+             * Sets the response modalities.
+             *
+             * @param responseModalities The response modalities.
+             * @return This builder.
+             */
+            public Builder responseModalities(Interaction.Modality... responseModalities) { this.responseModalities = List.of(responseModalities); return this; }
+
             /**
              * Sets the response modalities.
              *
@@ -253,6 +297,14 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder input(Object input) { this.input = input; return this; }
+
+            /**
+             * Sets the input content as a list of Content objects.
+             *
+             * @param content The input content.
+             * @return This builder.
+             */
+            public Builder input(Content... content) { this.input = List.of(content); return this; }
             /**
              * Sets the agent configuration.
              *
@@ -263,10 +315,19 @@ public class InteractionParams {
             /**
              * Sets the tools.
              *
+             * @param tools The tools.
+             * @return This builder.
+             */
+            public Builder tools(Tool... tools) { this.tools = List.of(tools); return this; }
+
+            /**
+             * Sets the tools.
+             *
              * @param tools The list of tools.
              * @return This builder.
              */
             public Builder tools(List<Tool> tools) { this.tools = tools; return this; }
+
             /**
              * Sets the stream flag.
              *
@@ -295,6 +356,14 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder systemInstruction(String systemInstruction) { this.systemInstruction = systemInstruction; return this; }
+            /**
+             * Sets the response modalities.
+             *
+             * @param responseModalities The response modalities.
+             * @return This builder.
+             */
+            public Builder responseModalities(Interaction.Modality... responseModalities) { this.responseModalities = List.of(responseModalities); return this; }
+
             /**
              * Sets the response modalities.
              *
