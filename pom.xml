@@ -64,7 +64,7 @@
 
     <scm>
         <connection>scm:git:git://github.com/glaforge/gemini-interactions-api-sdk.git</connection>
-        <developerConnection>scm:git:ssh://github.com:glaforge/gemini-interactions-api-sdk.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:glaforge/gemini-interactions-api-sdk.git</developerConnection>
         <url>https://github.com/glaforge/gemini-interactions-api-sdk/tree/main</url>
       <tag>gemini-interactions-api-sdk-0.1.0</tag>
   </scm>
