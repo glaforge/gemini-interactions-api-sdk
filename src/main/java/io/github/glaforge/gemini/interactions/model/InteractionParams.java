@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.ai.gemini.interactions.model;
+package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

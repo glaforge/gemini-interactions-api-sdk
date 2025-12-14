@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.ai.gemini.interactions;
+package io.github.glaforge.gemini.interactions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.google.ai.gemini.interactions.model.Interaction;
-import com.google.ai.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams;
 
 import java.io.IOException;
 import java.net.URI;

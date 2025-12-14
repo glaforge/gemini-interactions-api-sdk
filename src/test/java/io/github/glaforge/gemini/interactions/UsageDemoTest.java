@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.ai.gemini.interactions;
+package io.github.glaforge.gemini.interactions;
 
-import com.google.ai.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.*;
 import java.util.List;
 import java.util.Map;
 

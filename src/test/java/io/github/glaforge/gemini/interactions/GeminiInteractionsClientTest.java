@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.ai.gemini.interactions;
+package io.github.glaforge.gemini.interactions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.google.ai.gemini.interactions.model.Interaction;
-import com.google.ai.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -88,7 +88,7 @@ public class GeminiInteractionsClientTest {
         assertNotNull(interaction);
         assertEquals("interaction-123", interaction.id());
         assertEquals(Interaction.Status.COMPLETED, interaction.status());
-        assertEquals("Hello world", ((com.google.ai.gemini.interactions.model.Content.TextContent) interaction.outputs().get(0)).text());
+        assertEquals("Hello world", ((io.github.glaforge.gemini.interactions.model.Content.TextContent) interaction.outputs().get(0)).text());
 
         // Verify request
         RecordedRequest recordedRequest = mockWebServer.takeRequest();

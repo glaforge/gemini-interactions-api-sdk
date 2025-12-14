@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.ai.gemini.interactions;
+package io.github.glaforge.gemini.interactions;
 
-import com.google.ai.gemini.interactions.model.Content;
-import com.google.ai.gemini.interactions.model.Content.TextContent;
-import com.google.ai.gemini.interactions.model.Interaction;
-import com.google.ai.gemini.interactions.model.InteractionParams;
-import com.google.ai.gemini.interactions.model.Tool;
+import io.github.glaforge.gemini.interactions.model.Content;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Tool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
