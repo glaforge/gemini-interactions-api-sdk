@@ -52,15 +52,6 @@ public class InteractionParams {
         Object input, // String, Content, List<Content>, List<Turn>
         @JsonProperty("generation_config") Config.GenerationConfig generationConfig,
         List<Tool> tools,
-        // tool_choice removed as it is in generationConfig
-        // Note: top level tool_choice isn't in main Interaction object schema provided in prompt, but often exists.
-        // Spec check: CreateModelInteractionParams has tools, generation_config.
-        // generation_config HAS tool_choice.
-        // CreateModelInteractionParams does NOT have tool_choice directly?
-        // Let's check spec again.
-        // Spec Line 2360: CreateModelInteractionParams properties: model, stream, store, id, status... input, generation_config, tools, background...
-        // No direct tool_choice in CreateModelInteractionParams level. It's in generation_config.
-        // Valid fields: model, input, generation_config, tools, background, stream, store, system_instruction, response_modalities, response_format, response_mime_type, previous_interaction_id.
         Boolean stream,
         Boolean store,
         Boolean background,
@@ -96,12 +87,12 @@ public class InteractionParams {
              */
             public Builder model(String model) { this.model = model; return this; }
             /**
-             * Sets the input.
+             * Sets the input content as a string.
              *
-             * @param input The input content.
+             * @param text The input text.
              * @return This builder.
              */
-            public Builder input(Object input) { this.input = input; return this; } // String or List
+            public Builder input(String text) { this.input = text; return this; }
 
             /**
              * Sets the input content as a list of Content objects.
@@ -112,12 +103,29 @@ public class InteractionParams {
             public Builder input(Content... content) { this.input = List.of(content); return this; }
 
             /**
+             * Sets the input content as a list of Content objects.
+             *
+             * @param content The input content.
+             * @return This builder.
+             */
+            public Builder inputContents(List<Content> content) { this.input = content; return this; }
+
+            /**
              * Sets the input content as a list of Turns (multi-turn history).
              *
              * @param turns The input turns.
              * @return This builder.
              */
             public Builder input(Interaction.Turn... turns) { this.input = List.of(turns); return this; }
+
+            /**
+             * Sets the input content as a list of Turns (multi-turn history).
+             *
+             * @param turns The input turns.
+             * @return This builder.
+             */
+            public Builder inputTurns(List<Interaction.Turn> turns) { this.input = turns; return this; }
+
             /**
              * Sets the generation config.
              *
@@ -125,13 +133,6 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder generationConfig(Config.GenerationConfig generationConfig) { this.generationConfig = generationConfig; return this; }
-            /** Sets the tools. */
-            /**
-             * Sets the tools.
-             *
-             * @param tools The list of tools.
-             * @return This builder.
-             */
             /**
              * Sets the tools.
              *
@@ -175,12 +176,6 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder systemInstruction(String systemInstruction) { this.systemInstruction = systemInstruction; return this; }
-            /**
-             * Sets the response modalities.
-             *
-             * @param responseModalities The response modalities.
-             * @return This builder.
-             */
             /**
              * Sets the response modalities.
              *
@@ -251,9 +246,7 @@ public class InteractionParams {
         String agent,
         Object input,
         @JsonProperty("agent_config") Config.AgentConfig agentConfig,
-        @JsonProperty("generation_config") Config.GenerationConfig generationConfig, // Spec doesn't list generation_config for agent?
-        // Spec Line 2481: CreateAgentInteractionParams properties: agent, stream, store... input, agent_config, tools, background...
-        // It DOES have tools, background, etc.
+        @JsonProperty("generation_config") Config.GenerationConfig generationConfig,
         List<Tool> tools,
         Boolean stream,
         Boolean store,
@@ -291,12 +284,12 @@ public class InteractionParams {
              */
             public Builder agent(String agent) { this.agent = agent; return this; }
             /**
-             * Sets the input.
+             * Sets the input content as a string.
              *
-             * @param input The input content.
+             * @param text The input text.
              * @return This builder.
              */
-            public Builder input(Object input) { this.input = input; return this; }
+            public Builder input(String text) { this.input = text; return this; }
 
             /**
              * Sets the input content as a list of Content objects.
@@ -305,6 +298,31 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder input(Content... content) { this.input = List.of(content); return this; }
+
+            /**
+             * Sets the input content as a list of Content objects.
+             *
+             * @param content The input content.
+             * @return This builder.
+             */
+            public Builder inputContents(List<Content> content) { this.input = content; return this; }
+
+            /**
+             * Sets the input content as a list of Turns (multi-turn history).
+             *
+             * @param turns The input turns.
+             * @return This builder.
+             */
+            public Builder input(Interaction.Turn... turns) { this.input = List.of(turns); return this; }
+
+             /**
+             * Sets the input content as a list of Turns (multi-turn history).
+             *
+             * @param turns The input turns.
+             * @return This builder.
+             */
+            public Builder inputTurns(List<Interaction.Turn> turns) { this.input = turns; return this; }
+
             /**
              * Sets the agent configuration.
              *

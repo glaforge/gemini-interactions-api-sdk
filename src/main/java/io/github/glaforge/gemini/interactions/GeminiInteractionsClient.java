@@ -16,6 +16,7 @@
 
 package io.github.glaforge.gemini.interactions;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.github.glaforge.gemini.interactions.model.Interaction;
@@ -67,7 +68,8 @@ public class GeminiInteractionsClient {
         this.apiKey = builder.apiKey;
         this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper()
-            .registerModule(new Jdk8Module());
+            .registerModule(new Jdk8Module())
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
     public static Builder builder() {

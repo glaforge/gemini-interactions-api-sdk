@@ -3,7 +3,7 @@
 .idea/
 
 # Maven
-.target/
+/target/
 settings.xml
 
 # Compiled class file

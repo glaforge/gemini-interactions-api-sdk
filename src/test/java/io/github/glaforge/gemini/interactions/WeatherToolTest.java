@@ -120,7 +120,7 @@ public class WeatherToolTest {
                      .model("gemini-2.5-flash")
                      .previousInteractionId(interaction.id())
                      // We pass the function result as the input for the next turn
-                     .input(List.of(resultPart))
+                     .input(resultPart)
                      .build();
 
                  Interaction followUpInteraction = client.create(continuationParams);

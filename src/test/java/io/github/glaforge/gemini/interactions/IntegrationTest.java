@@ -22,8 +22,12 @@ import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
 import io.github.glaforge.gemini.interactions.model.Content.ThoughtContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Base64;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -38,7 +42,7 @@ public class IntegrationTest {
                 .apiKey(System.getenv("GEMINI_API_KEY"))
                 .build();
 
-        Interaction interaction = client.create(InteractionParams.ModelInteractionParams.builder()
+        Interaction interaction = client.create(ModelInteractionParams.builder()
                 .model("gemini-2.5-flash")
                 .input("Hi")
                 .build());
@@ -48,7 +52,7 @@ public class IntegrationTest {
         interaction.outputs().forEach((Content output) -> {
             switch (output) {
                 case TextContent text -> System.out.println(text.text());
-                case ImageContent image -> System.out.println(image.uri());
+                case ImageContent image -> System.out.println(image.data());
                 case ThoughtContent thought -> System.out.println("Thought: " + thought.signature());
                 default -> System.out.println("Unknown content type: " + output);
             }
@@ -109,11 +113,11 @@ public class IntegrationTest {
                 case TextContent text -> System.out.println(text.text());
                 case ImageContent image -> {
                     System.out.println("Image received. Saving to image.png...");
-                    byte[] imageBytes = java.util.Base64.getDecoder().decode(image.data());
-                    try (java.io.FileOutputStream fos = new java.io.FileOutputStream("image.png")) {
+                    byte[] imageBytes = Base64.getDecoder().decode(image.data());
+                    try (FileOutputStream fos = new FileOutputStream("target/image.png")) {
                         fos.write(imageBytes);
-                    } catch (java.io.IOException e) {
-                        throw new java.io.UncheckedIOException(e);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
                     }
                 }
                 case ThoughtContent thought -> System.out.println("Thought: " + thought.signature());

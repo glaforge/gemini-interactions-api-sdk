@@ -40,10 +40,8 @@ public class McpServerTest {
             .build();
 
         // 1. Define the MCP Server tool
-        String serverName = "moon-server";
-        // String serverUrl = "https://mn-mcp-server-1029513523185.europe-west1.run.app/mcp";
-        // String serverUrl = "https://moonphases-1029513523185.europe-west1.run.app/mcp";
-        String serverUrl = "https://context7.liam.sh/mcp";
+        String serverName = "moon_service";
+        String serverUrl = "https://mn-mcp-server-1029513523185.europe-west1.run.app/mcp";
 
         Tool mcpServer = new Tool.McpServer(serverName, serverUrl);
         List<Tool> tools = List.of(mcpServer);
@@ -51,33 +49,37 @@ public class McpServerTest {
         // 2. Create Interaction
         InteractionParams.ModelInteractionParams createParams = InteractionParams.ModelInteractionParams.builder()
             .model("gemini-2.5-flash")
-            .input("What is the phase of the moon?")
+            .input("What's the current phase of the moon?")
             .tools(tools)
             .build();
 
         System.out.println("Sending MCP server request...");
+        System.out.println("Interaction Params: " + createParams);
+
         Interaction interaction = client.create(createParams);
+
+        System.out.println("Interaction: " + interaction);
+
         System.out.println("Response status: " + interaction.status());
         assertNotNull(interaction.outputs(), "Interaction outputs should not be null");
 
         // 3. Verify Response
         System.out.println("Outputs count: " + interaction.outputs().size());
+        // aggregate the text responses into a StringBuilder
+        StringBuilder textResponses = new StringBuilder();
         for (Content content : interaction.outputs()) {
-            System.out.println("Output Item Type: " + content.getClass().getSimpleName());
             if (content instanceof TextContent text) {
-                System.out.println("  Text: " + text.text());
-                // Check for moon related keywords
-                if (text.text().length() > 0) {
-                     assertTrue(text.text().toLowerCase().contains("moon")
-                         || text.text().toLowerCase().contains("waxing")
-                         || text.text().toLowerCase().contains("waning")
-                         || text.text().toLowerCase().contains("new")
-                         || text.text().toLowerCase().contains("full"),
-                         "Response should contain moon phase info");
-                }
-            } else {
-                System.out.println("  Content: " + content);
+                textResponses.append(text.text());
             }
         }
+        String completeText = textResponses.toString();
+        System.out.println("Text responses: " + completeText);
+
+        assertTrue(completeText.length() > 0);
+        assertTrue(completeText.toLowerCase().contains("phase")
+                         || completeText.toLowerCase().contains("waxing")
+                         || completeText.toLowerCase().contains("waning")
+                         || completeText.toLowerCase().contains("new")
+                         || completeText.toLowerCase().contains("full"));
     }
 }
