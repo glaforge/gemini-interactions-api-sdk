@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 
@@ -26,6 +26,7 @@ Add the dependency to your `pom.xml`:
 ```java
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
 import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 
 GeminiInteractionsClient client = GeminiInteractionsClient.builder()
     .apiKey(System.getenv("GEMINI_API_KEY"))
@@ -45,9 +46,10 @@ System.out.println(response.outputs().get(0));
 
 ### Multi-turn Conversation
 ```java
-import io.github.glaforge.gemini.interactions.model.Interaction.*;
-import io.github.glaforge.gemini.interactions.model.Interaction.Role;
+import io.github.glaforge.gemini.interactions.model.Interaction.Turn;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Content.*;
+import static io.github.glaforge.gemini.interactions.model.Interaction.Role.*;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
     .model("gemini-2.5-flash")
@@ -80,6 +82,7 @@ Interaction response = client.create(request);
 ### Image Generation (Nano Banana Pro)
 ```java
 import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
@@ -102,7 +105,7 @@ interaction.outputs().forEach(content -> {
 ```java
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.Interaction.Status;
-import io.github.glaforge.gemini.interactions.model.Interaction.AgentInteractionParams;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
 
 AgentInteractionParams request = AgentInteractionParams.builder()
     .agent("deep-research-pro-preview-12-2025")
@@ -124,6 +127,7 @@ System.out.println(interaction.outputs());
 ```java
 import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Tool;
 import io.github.glaforge.gemini.interactions.model.Tool.Function;
 
