@@ -185,12 +185,12 @@ public class GeminiInteractionsClientTest {
             .setBody("{\"error\": \"Not Found\"}"));
 
         // Execute and Verify
-        IOException exception = assertThrows(IOException.class, () -> {
+        GeminiInteractionsException exception = assertThrows(GeminiInteractionsException.class, () -> {
             client.get("non-existent-id");
         });
 
-        assertTrue(exception.getMessage().contains("404"));
-        assertTrue(exception.getMessage().contains("Not Found"));
+        assertEquals(404, exception.getStatusCode());
+        assertEquals("{\"error\": \"Not Found\"}", exception.getBody());
     }
 
     @Test

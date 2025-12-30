@@ -172,9 +172,9 @@ public class GeminiInteractionsClient {
         return objectMapper.readValue(response.body(), Interaction.class);
     }
 
-    private void checkError(HttpResponse<String> response) throws IOException {
+    private void checkError(HttpResponse<String> response) {
          if (response.statusCode() >= 400) {
-            throw new IOException("API Request failed with status code: " + response.statusCode() + ", body: " + response.body());
+            throw new GeminiInteractionsException("API Request failed", response.statusCode(), response.body());
         }
     }
 
