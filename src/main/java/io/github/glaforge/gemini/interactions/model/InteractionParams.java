@@ -86,6 +86,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder model(String model) { this.model = model; return this; }
+            
             /**
              * Sets the input content as a string.
              *
@@ -133,6 +134,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder generationConfig(Config.GenerationConfig generationConfig) { this.generationConfig = generationConfig; return this; }
+
             /**
              * Sets the tools.
              *
@@ -148,6 +150,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder tools(List<Tool> tools) { this.tools = tools; return this; }
+
             /**
              * Sets the stream flag.
              *
@@ -155,6 +158,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder stream(Boolean stream) { this.stream = stream; return this; }
+
             /**
              * Sets the store flag.
              *
@@ -162,6 +166,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder store(Boolean store) { this.store = store; return this; }
+
             /**
              * Sets the background flag.
              *
@@ -169,6 +174,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder background(Boolean background) { this.background = background; return this; }
+
             /**
              * Sets the system instruction.
              *
@@ -176,6 +182,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder systemInstruction(String systemInstruction) { this.systemInstruction = systemInstruction; return this; }
+
             /**
              * Sets the response modalities.
              *
@@ -191,6 +198,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder responseModalities(List<Interaction.Modality> responseModalities) { this.responseModalities = responseModalities; return this; }
+
             /**
              * Sets the response format.
              *
@@ -198,6 +206,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder responseFormat(Object responseFormat) { this.responseFormat = responseFormat; return this; }
+
             /**
              * Sets the response MIME type.
              *
@@ -205,6 +214,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder responseMimeType(String responseMimeType) { this.responseMimeType = responseMimeType; return this; }
+
             /**
              * Sets the previous interaction ID.
              *
@@ -283,6 +293,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder agent(String agent) { this.agent = agent; return this; }
+
             /**
              * Sets the input content as a string.
              *
@@ -353,6 +364,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder stream(Boolean stream) { this.stream = stream; return this; }
+
             /**
              * Sets the store flag.
              *
@@ -360,6 +372,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder store(Boolean store) { this.store = store; return this; }
+
             /**
              * Sets the background flag.
              *
@@ -367,6 +380,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder background(Boolean background) { this.background = background; return this; }
+
             /**
              * Sets the system instruction.
              *
@@ -374,6 +388,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder systemInstruction(String systemInstruction) { this.systemInstruction = systemInstruction; return this; }
+
             /**
              * Sets the response modalities.
              *
@@ -389,6 +404,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder responseModalities(List<Interaction.Modality> responseModalities) { this.responseModalities = responseModalities; return this; }
+
             /**
              * Sets the response format.
              *
@@ -396,6 +412,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder responseFormat(Object responseFormat) { this.responseFormat = responseFormat; return this; }
+
             /**
              * Sets the response MIME type.
              *
@@ -403,6 +420,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder responseMimeType(String responseMimeType) { this.responseMimeType = responseMimeType; return this; }
+
             /**
              * Sets the previous interaction ID.
              *

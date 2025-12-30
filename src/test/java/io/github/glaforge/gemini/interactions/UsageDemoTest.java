@@ -37,7 +37,7 @@ public class UsageDemoTest {
         assertDoesNotThrow(() -> {
             // 1. Initialize Client
             GeminiInteractionsClient client = GeminiInteractionsClient.builder()
-                .apiKey("YOUR_API_KEY")
+                .apiKey(System.getenv("GEMINI_API_KEY"))
                 .build();
             assertNotNull(client);
 
@@ -102,6 +102,34 @@ public class UsageDemoTest {
                 null // speech
             );
             assertNotNull(config);
+
+            // 7. YAML Output
+            ModelInteractionParams yamlOutputRequest = ModelInteractionParams.builder()
+                .model("gemini-3-flash-preview")
+                .input("Create a YAML frontmapper for a static Hugo website about cats")
+                .responseMimeType("application/yaml")
+                .responseFormat(Map.of(
+                    "type", "object",
+                    "properties", Map.of(
+                        "title", Map.of("type", "string"),
+                        "date", Map.of("type", "string"),
+                        "draft", Map.of("type", "boolean"),
+                        "tags", Map.of("type", "array", "items", Map.of("type", "string")),
+                        "categories", Map.of("type", "array", "items", Map.of("type", "string")),
+                        "author", Map.of("type", "string"),
+                        "description", Map.of("type", "string")
+                    ),
+                    "required", List.of("title", "date", "draft", "tags", "categories", "author", "description"))
+                )
+                .build();
+            assertNotNull(yamlOutputRequest);
+            var interaction = client.create(yamlOutputRequest);
+            assertNotNull("Outputs of YAML request: " + interaction.outputs());
+            interaction.outputs().forEach(output -> {
+                if (output instanceof TextContent textContent) {
+                    System.out.println(textContent.text());
+                }
+            });
 
             System.out.println("All requests built successfully.");
         });

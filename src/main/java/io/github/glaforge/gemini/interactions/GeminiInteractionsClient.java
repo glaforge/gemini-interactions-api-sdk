@@ -40,12 +40,10 @@ import java.net.http.HttpResponse;
  *     .apiKey(System.getenv("GEMINI_API_KEY"))
  *     .build();
  *
- * InteractionParams.Request request = new InteractionParams.Request(
- *     new InteractionParams.ModelInteractionParams(
- *         "gemini-2.5-flash",
- *         List.of(new Content(List.of(new Content.Part(new Content.Text("Hello, world!")))))
- *     )
- * );
+ * InteractionParams.Request request = ModelInteractionParams.builder()
+ *     .model("gemini-2.5-flash")
+ *     .input("Hello, world!")
+ *     .build();
  *
  * Interaction interaction = client.create(request);
  * System.out.println(interaction.outputs().get(0).text());
