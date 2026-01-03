@@ -88,7 +88,9 @@ public class ResearchAgentTest {
 
         AgentInteractionParams researchParams = AgentInteractionParams.builder()
                 .agent("deep-research-pro-preview-12-2025")
-                .input("Research these tasks thoroughly with sources:\n\n" + selectedTasks)
+                .input(String.format(
+                    "Research these tasks thoroughly with sources:\n\n%s",
+                    selectedTasks))
                 .previousInteractionId(planId)
                 .background(true)
                 .store(true)
@@ -113,7 +115,9 @@ public class ResearchAgentTest {
 
         ModelInteractionParams synthesisParams = ModelInteractionParams.builder()
                 .model("gemini-3-pro-preview")
-                .input("Create executive report with Summary, Findings, Recommendations, Risks based on the research.")
+                .input(String.format(
+                    "Create executive report with Summary, Findings, Recommendations, Risks based on the research:\n\n%s",
+                    researchText))
                 .previousInteractionId(researchId)
                 .store(true)
                 .build();
@@ -131,7 +135,10 @@ public class ResearchAgentTest {
         System.out.println("\n--- Phase 4: Infographic ---");
         ModelInteractionParams infographicParams = ModelInteractionParams.builder()
                 .model("gemini-3-pro-image-preview")
-                .input("Create a whiteboard summary infographic for the following: \n\n" + synthesisText)
+                .input(String.format("""
+                        Create a whiteboard summary infographic for the following:
+
+                        %s""", synthesisText))
                 .responseModalities(List.of(Modality.IMAGE))
                 .build();
 
