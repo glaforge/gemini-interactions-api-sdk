@@ -123,9 +123,44 @@ public class UsageDemoTest {
                 )
                 .build();
             assertNotNull(yamlOutputRequest);
-            var interaction = client.create(yamlOutputRequest);
-            assertNotNull("Outputs of YAML request: " + interaction.outputs());
-            interaction.outputs().forEach(output -> {
+            var yamlInteraction = client.create(yamlOutputRequest);
+            assertNotNull("Outputs of YAML request: " + yamlInteraction.outputs());
+            yamlInteraction.outputs().forEach(output -> {
+                if (output instanceof TextContent textContent) {
+                    System.out.println(textContent.text());
+                }
+            });
+
+            // 8. XML Output
+            ModelInteractionParams xmlOutputRequest = ModelInteractionParams.builder()
+                .model("gemini-3-flash-preview")
+                .input("Create XML medata for an article about cats")
+                .responseMimeType("application/xml")
+                .responseFormat(Map.of(
+                    "type", "object",
+                    "properties", Map.of(
+                        "article", Map.of(
+                            "type", "object",
+                            "properties", Map.of(
+                                "title", Map.of("type", "string"),
+                                "date", Map.of("type", "string"),
+                                "draft", Map.of("type", "boolean"),
+                                "tags", Map.of("type", "array", "items", Map.of("type", "string")),
+                                "categories", Map.of("type", "array", "items", Map.of("type", "string")),
+                                "author", Map.of("type", "string"),
+                                "description", Map.of("type", "string")
+                            ),
+                            "required", List.of("title", "date", "draft", "tags", "categories", "author", "description")
+                        )
+                    ),
+                    "required", List.of("article")
+                )
+            )
+                .build();
+            assertNotNull(xmlOutputRequest);
+            var xmlInteraction = client.create(xmlOutputRequest);
+            assertNotNull("Outputs of XML request: " + xmlInteraction.outputs());
+            xmlInteraction.outputs().forEach(output -> {
                 if (output instanceof TextContent textContent) {
                     System.out.println(textContent.text());
                 }
