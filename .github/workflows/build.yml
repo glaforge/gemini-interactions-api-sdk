@@ -1,0 +1,60 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRO: 'temurin'
+
+jobs:
+  # gets the current version number from the POM
+  precheck:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.vars.outputs.VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Cancel previous run
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
+          cache: maven
+
+      - name: Version
+        id: vars
+        shell: bash
+        run: |
+          VERSION=$(./mvnw -ntp help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "VERSION=$(echo $VERSION)" >> $GITHUB_OUTPUT
+
+  build:
+    needs: [ precheck ]
+    # execute this job _only_ if version is SNAPSHOT
+    if: endsWith(${{ needs.precheck.outputs.VERSION }}, '-SNAPSHOT')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
+          cache: maven
+
+      - name: Build
+        run: ./mvnw -ntp -B verify
