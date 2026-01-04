@@ -63,6 +63,34 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 Interaction response = client.create(request);
 ```
 
+### Multi-turn Conversation with Persistence
+
+You can also continue a conversation by referencing the ID of a previous interaction. Ensure you set `store(true)` to persist the interaction context.
+
+```java
+// 1. First turn (must set store=true)
+ModelInteractionParams turn1 = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("Hello!")
+    .store(true)
+    .build();
+
+Interaction response1 = client.create(turn1);
+String id = response1.id();
+System.out.println(response1.outputs().get(0));
+
+// 2. Second turn (referencing previous ID)
+ModelInteractionParams turn2 = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("Tell me a joke")
+    .previousInteractionId(id)
+    .store(true) // Optional if you want to extend further
+    .build();
+
+Interaction response2 = client.create(turn2);
+System.out.println(response2.outputs().get(0));
+```
+
 ### Multimodal (Image)
 ```java
 import io.github.glaforge.gemini.interactions.model.Content.*;
@@ -179,6 +207,88 @@ if (lastOutput instanceof FunctionCallContent call) {
         System.out.println(finalResponse.outputs().getLast());
     }
 }
+```
+
+### JSON Output (Structured Output)
+You can enforce the model to output a specific JSON structure using the `responseFormat` parameter.
+
+#### Map-based Approach
+You can pass a `Map` representing the JSON Schema directly.
+
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import java.util.Map;
+import java.util.List;
+
+ModelInteractionParams params = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("List 5 popular cookie recipes")
+    .responseMimeType("application/json")
+    .responseFormat(Map.of(
+        "type", "array",
+        "items", Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "recipe_name", Map.of("type", "string")
+            )
+        )
+    ))
+    .build();
+```
+
+#### Schema Builder Approach
+You can use the fluent Schema builder API provided by the SDK.
+
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.schema.GSchema;
+import static io.github.glaforge.gemini.schema.GSchema.*;
+
+ModelInteractionParams params = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("List 5 popular cookie recipes")
+    .responseMimeType("application/json")
+    .responseFormat(
+        arr().items(
+            obj()
+                .prop("recipe_name", str())
+                .prop("ingredients", arr().items(str()))
+        )
+    )
+    .build();
+```
+
+#### From Java Class
+You can generate the schema directly from a Java class (Records or POJOs).
+
+```java
+public record Recipe(String name, List<String> ingredients) {}
+
+ModelInteractionParams params = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("List 5 popular cookie recipes")
+    .responseMimeType("application/json")
+    .responseFormat(GSchema.fromClass(Recipe.class))
+    .build();
+```
+
+#### From JSON Schema String
+You can also parse an existing JSON Schema string.
+
+```java
+String jsonSchema = """
+    {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+    """;
+
+ModelInteractionParams params = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("List 5 popular cookie recipes")
+    .responseMimeType("application/json")
+    .responseFormat(GSchema.fromJson(jsonSchema))
+    .build();
 ```
 
 ## License
