@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>0.4.2</version>
+    <version>0.4.3</version>
 </dependency>
 ```
 
