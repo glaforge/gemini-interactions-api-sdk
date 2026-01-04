@@ -18,6 +18,7 @@ package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.glaforge.gemini.schema.Schema;
 import java.util.List;
 
 /**
@@ -86,7 +87,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder model(String model) { this.model = model; return this; }
-            
+
             /**
              * Sets the input content as a string.
              *
@@ -205,7 +206,25 @@ public class InteractionParams {
              * @param responseFormat The response format.
              * @return This builder.
              */
-            public Builder responseFormat(Object responseFormat) { this.responseFormat = responseFormat; return this; }
+            public Builder responseFormat(Object responseFormat) {
+                if (responseFormat instanceof Schema schema) {
+                    this.responseFormat = schema.toMap();
+                } else {
+                    this.responseFormat = responseFormat;
+                }
+                return this;
+            }
+
+            /**
+             * Sets the response format using a Schema object.
+             *
+             * @param schema The schema to use as response format.
+             * @return This builder.
+             */
+            public Builder responseFormat(Schema schema) {
+                this.responseFormat = schema.toMap();
+                return this;
+            }
 
             /**
              * Sets the response MIME type.

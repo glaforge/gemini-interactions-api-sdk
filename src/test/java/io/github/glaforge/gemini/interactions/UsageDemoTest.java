@@ -29,6 +29,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static io.github.glaforge.gemini.schema.GSchema.*;
 
 public class UsageDemoTest {
 
@@ -108,18 +109,14 @@ public class UsageDemoTest {
                 .model("gemini-3-flash-preview")
                 .input("Create a YAML frontmapper for a static Hugo website about cats")
                 .responseMimeType("application/yaml")
-                .responseFormat(Map.of(
-                    "type", "object",
-                    "properties", Map.of(
-                        "title", Map.of("type", "string"),
-                        "date", Map.of("type", "string"),
-                        "draft", Map.of("type", "boolean"),
-                        "tags", Map.of("type", "array", "items", Map.of("type", "string")),
-                        "categories", Map.of("type", "array", "items", Map.of("type", "string")),
-                        "author", Map.of("type", "string"),
-                        "description", Map.of("type", "string")
-                    ),
-                    "required", List.of("title", "date", "draft", "tags", "categories", "author", "description"))
+                .responseFormat(obj()
+                    .str("title")
+                    .str("date")
+                    .bool("draft")
+                    .arr("tags", str())
+                    .arr("categories", str())
+                    .str("author")
+                    .str("description")
                 )
                 .build();
             assertNotNull(yamlOutputRequest);
