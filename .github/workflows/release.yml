@@ -21,8 +21,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build with Maven
-        run: mvn -B package -DskipTests
+      - name: Build and Stage Artifacts
+        run: mvn -B deploy -DaltDeploymentRepository=local::default::file:./target/staging-deploy -DskipTests
 
       - name: Release with JReleaser
         env:
