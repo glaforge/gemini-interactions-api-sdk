@@ -1,0 +1,26 @@
+project:
+  name: gemini-interactions-api-sdk
+  description: Google Gemini Interactions API SDK
+  website: https://github.com/glaforge/gemini-interactions-api-sdk
+  authors:
+    - Guillaume Laforge
+  license: APACHE-2.0
+  inceptionYear: 2025
+
+release:
+  github:
+    owner: glaforge
+    name: gemini-interactions-api-sdk
+    overwrite: true
+
+signing:
+  active: ALWAYS
+  armored: true
+
+deploy:
+  maven:
+    mavenCentral:
+      sonatype:
+        active: ALWAYS
+        url: https://central.sonatype.com/api/v1/publisher
+        stagingRepository: target/staging-deploy

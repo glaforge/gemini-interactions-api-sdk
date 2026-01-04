@@ -103,23 +103,7 @@
                 <artifactId>jreleaser-maven-plugin</artifactId>
                 <version>1.16.0</version>
                 <configuration>
-                    <jreleaser>
-                        <signing>
-                            <active>ALWAYS</active>
-                            <armored>true</armored>
-                        </signing>
-                        <deploy>
-                            <maven>
-                                <mavenCentral>
-                                    <sonatype>
-                                        <active>ALWAYS</active>
-                                        <url>https://central.sonatype.com/api/v1/publisher</url>
-                                        <stagingRepository>target/staging-deploy</stagingRepository>
-                                    </sonatype>
-                                </mavenCentral>
-                            </maven>
-                        </deploy>
-                    </jreleaser>
+                    <configFile>jreleaser.yml</configFile>
                 </configuration>
             </plugin>
         </plugins>
