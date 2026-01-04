@@ -20,28 +20,16 @@ The following **Secrets** must be configured in the GitHub Repository (`Settings
 
 To trigger a new release, follow these steps:
 
-1.  **Bump Version**: Update the version number in `pom.xml` and `README.md`.
-    *   `pom.xml`: `<version>0.x.y</version>`
-    *   `README.md`: Update the dependency example.
-
-2.  **Commit Changes**:
-    ```bash
-    git add pom.xml README.md
-    git commit -m "chore: release 0.x.y"
-    ```
-
-3.  **Tag and Push**:
-    Create a tag starting with `v` (e.g., `v0.x.y`) and push it to GitHub.
-    ```bash
-    git tag v0.x.y
-    git push origin main v0.x.y
-    ```
+1. Browse to https://github.com/glaforge/gemini-interactions-api-sdk
+2. Navigate to the **Actions** tab.
+3. Select the **Release** workflow from the sidebar.
+4. Click on the **Run workflow** button.
 
 ## Automation
 
 The process is handled by the GitHub Action workflow defined in `.github/workflows/release.yml`.
-When a tag starting with `v` is pushed:
-1.  The project is built (`mvn deploy` to a local staging directory).
+When the workflow is triggered:
+1.  The project is built (`mvnw deploy` to a local staging directory).
 2.  JReleaser signs the artifacts using the provided GPG secrets.
 3.  Artifacts are deployed to Maven Central.
 4.  A GitHub Release is created with a changelog.
