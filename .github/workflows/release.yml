@@ -28,7 +28,7 @@ jobs:
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "GitHub Action"
-          ./mvnw -ntp -B -Prelease release:prepare release:perform
+          ./mvnw -ntp -B -Prelease -Dproject.scm.developerConnection="scm:git:https://github.com/glaforge/gemini-interactions-api-sdk.git" release:prepare release:perform
         env:
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.JRELEASER_MAVENCENTRAL_USERNAME }}
           JRELEASER_MAVENCENTRAL_TOKEN: ${{ secrets.JRELEASER_MAVENCENTRAL_TOKEN }}
