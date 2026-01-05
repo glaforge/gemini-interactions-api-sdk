@@ -30,7 +30,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static io.github.glaforge.gemini.schema.GSchema.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+@EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class UsageDemoTest {
 
     @Test
