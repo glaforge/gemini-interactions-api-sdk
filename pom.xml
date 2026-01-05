@@ -174,8 +174,8 @@
                             <preparationGoals>clean verify</preparationGoals>
                             <preparationProfiles>deployment,publication</preparationProfiles>
                             <tagNameFormat>v@{project.version}</tagNameFormat>
-                            <goals>verify jreleaser:full-release</goals>
-                            <arguments>-ntp -B</arguments>
+                            <goals>deploy jreleaser:full-release</goals>
+                            <arguments>-ntp -B -DskipTests</arguments>
                             <scmCommentPrefix>chore:</scmCommentPrefix>
                             <scmReleaseCommitComment>@{prefix} Releasing version @{releaseLabel}</scmReleaseCommitComment>
                             <scmDevelopmentCommitComment>@{prefix} Bump for next development cycle</scmDevelopmentCommitComment>
