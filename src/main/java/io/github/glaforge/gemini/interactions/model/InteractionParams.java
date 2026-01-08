@@ -19,7 +19,11 @@ package io.github.glaforge.gemini.interactions.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.glaforge.gemini.schema.Schema;
+
+import static io.github.glaforge.gemini.schema.GSchema.fromJson;
+
 import java.util.List;
+import java.util.Map;
 
 /**
  * Request parameters for creating interactions.
@@ -425,12 +429,37 @@ public class InteractionParams {
             public Builder responseModalities(List<Interaction.Modality> responseModalities) { this.responseModalities = responseModalities; return this; }
 
             /**
-             * Sets the response format.
+             * Sets the response format from a map.
              *
-             * @param responseFormat The response format.
+             * @param responseFormat The response format map.
              * @return This builder.
              */
-            public Builder responseFormat(Object responseFormat) { this.responseFormat = responseFormat; return this; }
+            public Builder responseFormat(Map<String, Object> responseFormat) {
+                this.responseFormat = responseFormat;
+                return this;
+            }
+
+            /**
+             * Sets the response format from a schema.
+             *
+             * @param responseFormat The response format schema.
+             * @return This builder.
+             */
+            public Builder responseFormat(Schema responseFormat) {
+                this.responseFormat = responseFormat.toMap();
+                return this;
+            }
+
+            /**
+             * Sets the response format from a JSON string.
+             *
+             * @param responseFormat The response format JSON string.
+             * @return This builder.
+             */
+            public Builder responseFormat(String responseFormat) {
+                this.responseFormat = fromJson(responseFormat).toMap();
+                return this;
+            }
 
             /**
              * Sets the response MIME type.

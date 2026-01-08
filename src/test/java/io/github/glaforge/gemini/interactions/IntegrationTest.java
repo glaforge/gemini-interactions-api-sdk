@@ -27,7 +27,7 @@ import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInter
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Base64;
+
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -113,7 +113,7 @@ public class IntegrationTest {
                 case TextContent text -> System.out.println(text.text());
                 case ImageContent image -> {
                     System.out.println("Image received. Saving to image.png...");
-                    byte[] imageBytes = Base64.getDecoder().decode(image.data());
+                    byte[] imageBytes = image.data();
                     try (FileOutputStream fos = new FileOutputStream("target/image.png")) {
                         fos.write(imageBytes);
                     } catch (IOException e) {

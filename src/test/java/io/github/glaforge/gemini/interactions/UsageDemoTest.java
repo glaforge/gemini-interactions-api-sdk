@@ -67,7 +67,7 @@ public class UsageDemoTest {
                 .model("gemini-2.5-flash")
                 .input(
                     new TextContent("What is in this picture?"),
-                    new ImageContent("BASE64_DATA", "image/png")
+                    new ImageContent("BASE64_DATA".getBytes(), "image/png")
                 )
                 .build();
             assertNotNull(multimodalRequest);

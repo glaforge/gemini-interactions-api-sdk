@@ -155,7 +155,7 @@ public sealed interface Content permits
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ImageContent(
         String type,
-        String data,
+        byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType,
         Resolution resolution
@@ -166,7 +166,7 @@ public sealed interface Content permits
          * @param data     The base64 encoded image data.
          * @param mimeType The MIME type of the image.
          */
-        public ImageContent(String data, String mimeType) {
+        public ImageContent(byte[] data, String mimeType) {
             this("image", data, null, mimeType, null);
         }
     }
@@ -182,7 +182,7 @@ public sealed interface Content permits
     @JsonIgnoreProperties(ignoreUnknown = true)
     record AudioContent(
         String type,
-        String data,
+        byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType
     ) implements Content {}
@@ -198,7 +198,7 @@ public sealed interface Content permits
     @JsonIgnoreProperties(ignoreUnknown = true)
     record DocumentContent(
         String type,
-        String data,
+        byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType
     ) implements Content {}
@@ -215,7 +215,7 @@ public sealed interface Content permits
     @JsonIgnoreProperties(ignoreUnknown = true)
     record VideoContent(
         String type,
-        String data,
+        byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType,
         Resolution resolution

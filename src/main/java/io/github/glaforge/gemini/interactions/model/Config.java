@@ -141,7 +141,7 @@ public class Config {
     ) implements AgentConfig {
         /** Creates a new DeepResearchAgentConfig with default type and no summaries. */
         public DeepResearchAgentConfig() {
-            this("deep-research", null); // Example constructor
+            this("deep-research", null);
         }
         /**
          * Creates a new DeepResearchAgentConfig with default type.

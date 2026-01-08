@@ -19,6 +19,7 @@ package io.github.glaforge.gemini.interactions;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 
@@ -67,6 +68,7 @@ public class GeminiInteractionsClient {
         this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper()
             .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
@@ -81,7 +83,7 @@ public class GeminiInteractionsClient {
      * @return The created Interaction.
      * @throws IOException          If an I/O error occurs.
      * @throws InterruptedException If the operation is interrupted.
-     * @see <a href="https://ai.google.dev/api/interactions#method:-interactions.create">Create Interaction API Reference</a>
+     * @see <a href="https://ai.google.dev/api/interactions-api#CreateInteraction">Create Interaction API Reference</a>
      */
     public Interaction create(InteractionParams.Request request) throws IOException, InterruptedException {
         String requestBody = objectMapper.writeValueAsString(request);
@@ -108,7 +110,7 @@ public class GeminiInteractionsClient {
      * @return The Interaction.
      * @throws IOException          If an I/O error occurs.
      * @throws InterruptedException If the operation is interrupted.
-     * @see <a href="https://ai.google.dev/api/interactions#method:-interactions.get">Get Interaction API Reference</a>
+     * @see <a href="https://ai.google.dev/api/interactions-api#getInteractionById">Get Interaction API Reference</a>
      */
     public Interaction get(String id) throws IOException, InterruptedException {
         String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
@@ -132,7 +134,7 @@ public class GeminiInteractionsClient {
      * @param id The interaction ID.
      * @throws IOException          If an I/O error occurs.
      * @throws InterruptedException If the operation is interrupted.
-     * @see <a href="https://ai.google.dev/api/interactions#method:-interactions.delete">Delete Interaction API Reference</a>
+     * @see <a href="https://ai.google.dev/api/interactions-api#deleteInteraction">Delete Interaction API Reference</a>
      */
     public void delete(String id) throws IOException, InterruptedException {
         String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
@@ -155,6 +157,7 @@ public class GeminiInteractionsClient {
      * @return The updated Interaction (status should be cancelled).
      * @throws IOException          If an I/O error occurs.
      * @throws InterruptedException If the operation is interrupted.
+     * @see <a href="https://ai.google.dev/api/interactions-api#cancelInteractionById">Cancel Interaction API Reference</a>
      */
     public Interaction cancel(String id) throws IOException, InterruptedException {
         String url = String.format("%s/%s/interactions/%s/cancel", baseUrl, version, id);
