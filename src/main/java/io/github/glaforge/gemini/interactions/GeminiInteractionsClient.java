@@ -17,9 +17,10 @@
 package io.github.glaforge.gemini.interactions;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 
@@ -28,6 +29,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.stream.Stream;
 
 /**
  * Client for the Gemini Interactions API.
@@ -66,10 +68,9 @@ public class GeminiInteractionsClient {
         this.version = builder.version;
         this.apiKey = builder.apiKey;
         this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newHttpClient();
-        this.objectMapper = new ObjectMapper()
-            .registerModule(new Jdk8Module())
-            .registerModule(new JavaTimeModule())
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        this.objectMapper = JsonMapper.builder()
+            .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+            .build();
     }
 
     public static Builder builder() {
@@ -85,22 +86,69 @@ public class GeminiInteractionsClient {
      * @throws InterruptedException If the operation is interrupted.
      * @see <a href="https://ai.google.dev/api/interactions-api#CreateInteraction">Create Interaction API Reference</a>
      */
-    public Interaction create(InteractionParams.Request request) throws IOException, InterruptedException {
-        String requestBody = objectMapper.writeValueAsString(request);
-        String url = String.format("%s/%s/interactions", baseUrl, version);
+    public Interaction create(InteractionParams.Request request) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(request);
+            String url = String.format("%s/%s/interactions", baseUrl, version);
 
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Content-Type", "application/json")
-            .header("x-goog-api-key", apiKey)
-            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-            .build();
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
 
-        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-        checkError(response);
+            checkError(response);
 
-        return objectMapper.readValue(response.body(), Interaction.class);
+            return objectMapper.readValue(response.body(), Interaction.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Creates a streaming interaction.
+     *
+     * @param request The interaction request parameters (Model or Agent).
+     * @return A Stream of Events.
+     * @throws IOException          If an I/O error occurs.
+     * @throws InterruptedException If the operation is interrupted.
+     */
+    public Stream<Events> stream(InteractionParams.Request request) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(request);
+            String url = String.format("%s/%s/interactions?alt=sse", baseUrl, version);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<java.util.stream.Stream<String>> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
+
+            if (response.statusCode() >= 400) {
+                String errorBody = response.body().collect(java.util.stream.Collectors.joining("\n"));
+                throw new GeminiInteractionsException("API Request failed", response.statusCode(), errorBody);
+            }
+
+            return response.body()
+                .filter(line -> line.startsWith("data: "))
+                .map(line -> line.substring(6))
+                .filter(json -> !json.equals("[DONE]"))
+                .map(json -> {
+                    try {
+                        return objectMapper.readValue(json, Events.class);
+                    } catch (JacksonException e) {
+                        throw new GeminiInteractionsException("Failed to parse event", e);
+                    }
+                });
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
     }
 
     /**
@@ -112,20 +160,24 @@ public class GeminiInteractionsClient {
      * @throws InterruptedException If the operation is interrupted.
      * @see <a href="https://ai.google.dev/api/interactions-api#getInteractionById">Get Interaction API Reference</a>
      */
-    public Interaction get(String id) throws IOException, InterruptedException {
-        String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
+    public Interaction get(String id) {
+        try {
+            String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
 
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("x-goog-api-key", apiKey)
-            .GET()
-            .build();
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("x-goog-api-key", apiKey)
+                .GET()
+                .build();
 
-        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-        checkError(response);
+            checkError(response);
 
-        return objectMapper.readValue(response.body(), Interaction.class);
+            return objectMapper.readValue(response.body(), Interaction.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
     }
 
     /**
@@ -136,18 +188,22 @@ public class GeminiInteractionsClient {
      * @throws InterruptedException If the operation is interrupted.
      * @see <a href="https://ai.google.dev/api/interactions-api#deleteInteraction">Delete Interaction API Reference</a>
      */
-    public void delete(String id) throws IOException, InterruptedException {
-        String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
+    public void delete(String id) {
+        try {
+            String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
 
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("x-goog-api-key", apiKey)
-            .DELETE()
-            .build();
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("x-goog-api-key", apiKey)
+                .DELETE()
+                .build();
 
-        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-        checkError(response);
+            checkError(response);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
     }
 
     /**
@@ -159,20 +215,24 @@ public class GeminiInteractionsClient {
      * @throws InterruptedException If the operation is interrupted.
      * @see <a href="https://ai.google.dev/api/interactions-api#cancelInteractionById">Cancel Interaction API Reference</a>
      */
-    public Interaction cancel(String id) throws IOException, InterruptedException {
-        String url = String.format("%s/%s/interactions/%s/cancel", baseUrl, version, id);
+    public Interaction cancel(String id) {
+        try {
+            String url = String.format("%s/%s/interactions/%s/cancel", baseUrl, version, id);
 
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("x-goog-api-key", apiKey)
-            .POST(HttpRequest.BodyPublishers.noBody())
-            .build();
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("x-goog-api-key", apiKey)
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
 
-        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-        checkError(response);
+            checkError(response);
 
-        return objectMapper.readValue(response.body(), Interaction.class);
+            return objectMapper.readValue(response.body(), Interaction.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
     }
 
     private void checkError(HttpResponse<String> response) {

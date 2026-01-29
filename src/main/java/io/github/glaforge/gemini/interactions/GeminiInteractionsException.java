@@ -30,6 +30,18 @@ public class GeminiInteractionsException extends RuntimeException {
         this.body = body;
     }
 
+    public GeminiInteractionsException(String message, Throwable cause) {
+        super(message, cause);
+        this.statusCode = 0;
+        this.body = null;
+    }
+
+    public GeminiInteractionsException(Throwable cause) {
+        super(cause);
+        this.statusCode = 0;
+        this.body = null;
+    }
+
     /**
      * Returns the HTTP status code returned by the API.
      *

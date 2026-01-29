@@ -49,8 +49,40 @@ public sealed interface Events permits
     Events.ContentStop,
     Events.ErrorEvent {
 
+    enum EventType {
+        @JsonProperty("interaction.start")
+        INTERACTION_START("interaction.start"),
+        @JsonProperty("interaction.complete")
+        INTERACTION_COMPLETE("interaction.complete"),
+        @JsonProperty("interaction.status_update")
+        INTERACTION_STATUS_UPDATE("interaction.status_update"),
+        @JsonProperty("content.start")
+        CONTENT_START("content.start"),
+        @JsonProperty("content.delta")
+        CONTENT_DELTA("content.delta"),
+        @JsonProperty("content.stop")
+        CONTENT_STOP("content.stop"),
+        @JsonProperty("error")
+        ERROR("error");
+
+        private final String jsonValue;
+
+        EventType(String jsonValue) {
+            this.jsonValue = jsonValue;
+        }
+
+        public String getJsonValue() {
+            return jsonValue;
+        }
+
+        @Override
+        public String toString() {
+            return jsonValue;
+        }
+    }
+
     @JsonProperty("event_type")
-    String eventType();
+    EventType eventType();
 
     @JsonProperty("event_id")
     String eventId(); // Common to all events for resumption
@@ -64,7 +96,7 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record InteractionEvent(
-        @JsonProperty("event_type") String eventType, // "interaction.start" or "interaction.complete"
+        @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Interaction interaction
     ) implements Events {}
@@ -79,7 +111,7 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record InteractionStatusUpdate(
-        @JsonProperty("event_type") String eventType,
+        @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         @JsonProperty("interaction_id") String interactionId,
         String status
@@ -95,7 +127,7 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ContentStart(
-        @JsonProperty("event_type") String eventType,
+        @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
         Content content
@@ -110,7 +142,7 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ContentStop(
-        @JsonProperty("event_type") String eventType,
+        @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index
     ) implements Events {}
@@ -124,7 +156,7 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ErrorEvent(
-        @JsonProperty("event_type") String eventType,
+        @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Error error
     ) implements Events {}
@@ -151,7 +183,7 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ContentDelta(
-        @JsonProperty("event_type") String eventType,
+        @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
         Delta delta
@@ -160,6 +192,42 @@ public sealed interface Events permits
     /**
      * Represents a delta update for a content part.
      */
+    enum DeltaType {
+        @JsonProperty("text") TEXT("text"),
+        @JsonProperty("image") IMAGE("image"),
+        @JsonProperty("audio") AUDIO("audio"),
+        @JsonProperty("document") DOCUMENT("document"),
+        @JsonProperty("video") VIDEO("video"),
+        @JsonProperty("thought_summary") THOUGHT_SUMMARY("thought_summary"),
+        @JsonProperty("thought_signature") THOUGHT_SIGNATURE("thought_signature"),
+        @JsonProperty("function_call") FUNCTION_CALL("function_call"),
+        @JsonProperty("function_result") FUNCTION_RESULT("function_result"),
+        @JsonProperty("code_execution_call") CODE_EXECUTION_CALL("code_execution_call"),
+        @JsonProperty("code_execution_result") CODE_EXECUTION_RESULT("code_execution_result"),
+        @JsonProperty("url_context_call") URL_CONTEXT_CALL("url_context_call"),
+        @JsonProperty("url_context_result") URL_CONTEXT_RESULT("url_context_result"),
+        @JsonProperty("google_search_call") GOOGLE_SEARCH_CALL("google_search_call"),
+        @JsonProperty("google_search_result") GOOGLE_SEARCH_RESULT("google_search_result"),
+        @JsonProperty("mcp_server_tool_call") MCP_SERVER_TOOL_CALL("mcp_server_tool_call"),
+        @JsonProperty("mcp_server_tool_result") MCP_SERVER_TOOL_RESULT("mcp_server_tool_result"),
+        @JsonProperty("file_search_result") FILE_SEARCH_RESULT("file_search_result");
+
+        private final String jsonValue;
+
+        DeltaType(String jsonValue) {
+            this.jsonValue = jsonValue;
+        }
+
+        public String getJsonValue() {
+            return jsonValue;
+        }
+
+        @Override
+        public String toString() {
+            return jsonValue;
+        }
+    }
+
     @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
@@ -195,7 +263,7 @@ public sealed interface Events permits
         GoogleSearchCallDelta, GoogleSearchResultDelta,
         McpServerToolCallDelta, McpServerToolResultDelta,
         FileSearchResultDelta {
-        String type();
+        DeltaType type();
     }
 
     /**
@@ -206,7 +274,7 @@ public sealed interface Events permits
      * @param annotations List of annotations.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record TextDelta(String type, String text, List<Content.Annotation> annotations) implements Delta {}
+    record TextDelta(DeltaType type, String text, List<Content.Annotation> annotations) implements Delta {}
 
     /**
      * Delta for image content.
@@ -218,7 +286,7 @@ public sealed interface Events permits
      * @param resolution The resolution of the image.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record ImageDelta(String type, String data, String uri, @JsonProperty("mime_type") String mimeType, String resolution) implements Delta {}
+    record ImageDelta(DeltaType type, String data, String uri, @JsonProperty("mime_type") String mimeType, String resolution) implements Delta {}
 
     /**
      * Delta for audio content.
@@ -229,7 +297,7 @@ public sealed interface Events permits
      * @param mimeType The MIME type of the audio.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record AudioDelta(String type, String data, String uri, @JsonProperty("mime_type") String mimeType) implements Delta {}
+    record AudioDelta(DeltaType type, String data, String uri, @JsonProperty("mime_type") String mimeType) implements Delta {}
 
     /**
      * Delta for document content.
@@ -240,7 +308,7 @@ public sealed interface Events permits
      * @param mimeType The MIME type of the document.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record DocumentDelta(String type, String data, String uri, @JsonProperty("mime_type") String mimeType) implements Delta {}
+    record DocumentDelta(DeltaType type, String data, String uri, @JsonProperty("mime_type") String mimeType) implements Delta {}
 
     /**
      * Delta for video content.
@@ -252,7 +320,7 @@ public sealed interface Events permits
      * @param resolution The resolution of the video.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record VideoDelta(String type, String data, String uri, @JsonProperty("mime_type") String mimeType, String resolution) implements Delta {}
+    record VideoDelta(DeltaType type, String data, String uri, @JsonProperty("mime_type") String mimeType, String resolution) implements Delta {}
 
     /**
      * Delta for thought summary.
@@ -261,7 +329,7 @@ public sealed interface Events permits
      * @param content The thought summary content.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record ThoughtSummaryDelta(String type, Content content) implements Delta {} // content is nested Content (Text/Image)
+    record ThoughtSummaryDelta(DeltaType type, Content content) implements Delta {} // content is nested Content (Text/Image)
 
     /**
      * Delta for thought signature.
@@ -270,7 +338,7 @@ public sealed interface Events permits
      * @param signature The thought signature.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record ThoughtSignatureDelta(String type, String signature) implements Delta {}
+    record ThoughtSignatureDelta(DeltaType type, String signature) implements Delta {}
 
     /**
      * Delta for function call.
@@ -281,7 +349,7 @@ public sealed interface Events permits
      * @param arguments The function arguments.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record FunctionCallDelta(String type, String id, String name, Map<String, Object> arguments) implements Delta {}
+    record FunctionCallDelta(DeltaType type, String id, String name, Map<String, Object> arguments) implements Delta {}
 
     /**
      * Delta for function result.
@@ -293,7 +361,7 @@ public sealed interface Events permits
      * @param result  The function result.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record FunctionResultDelta(String type, @JsonProperty("call_id") String callId, String name, @JsonProperty("is_error") Boolean isError, Object result) implements Delta {}
+    record FunctionResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String name, @JsonProperty("is_error") Boolean isError, Object result) implements Delta {}
 
     /**
      * Delta for code execution call.
@@ -303,7 +371,7 @@ public sealed interface Events permits
      * @param arguments The code execution arguments.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record CodeExecutionCallDelta(String type, String id, Content.CodeExecutionCallArguments arguments) implements Delta {}
+    record CodeExecutionCallDelta(DeltaType type, String id, Content.CodeExecutionCallArguments arguments) implements Delta {}
 
     /**
      * Delta for code execution result.
@@ -315,7 +383,7 @@ public sealed interface Events permits
      * @param signature The signature.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record CodeExecutionResultDelta(String type, @JsonProperty("call_id") String callId, String result, @JsonProperty("is_error") Boolean isError, String signature) implements Delta {}
+    record CodeExecutionResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String result, @JsonProperty("is_error") Boolean isError, String signature) implements Delta {}
 
     /**
      * Delta for URL context call.
@@ -325,7 +393,7 @@ public sealed interface Events permits
      * @param arguments The URL context arguments.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record UrlContextCallDelta(String type, String id, Content.UrlContextCallArguments arguments) implements Delta {}
+    record UrlContextCallDelta(DeltaType type, String id, Content.UrlContextCallArguments arguments) implements Delta {}
 
     /**
      * Delta for URL context result.
@@ -337,7 +405,7 @@ public sealed interface Events permits
      * @param isError   Whether the result is an error.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record UrlContextResultDelta(String type, @JsonProperty("call_id") String callId, String signature, List<Content.UrlContextResult> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
+    record UrlContextResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String signature, List<Content.UrlContextResult> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
 
     /**
      * Delta for Google Search call.
@@ -347,7 +415,7 @@ public sealed interface Events permits
      * @param arguments The Google Search arguments.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record GoogleSearchCallDelta(String type, String id, Content.GoogleSearchCallArguments arguments) implements Delta {}
+    record GoogleSearchCallDelta(DeltaType type, String id, Content.GoogleSearchCallArguments arguments) implements Delta {}
 
     /**
      * Delta for Google Search result.
@@ -359,7 +427,7 @@ public sealed interface Events permits
      * @param isError   Whether the result is an error.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record GoogleSearchResultDelta(String type, @JsonProperty("call_id") String callId, String signature, List<Content.GoogleSearchResult> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
+    record GoogleSearchResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String signature, List<Content.GoogleSearchResult> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
 
     /**
      * Delta for MCP server tool call.
@@ -371,7 +439,7 @@ public sealed interface Events permits
      * @param arguments  The tool arguments.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record McpServerToolCallDelta(String type, String id, String name, @JsonProperty("server_name") String serverName, Map<String, Object> arguments) implements Delta {}
+    record McpServerToolCallDelta(DeltaType type, String id, String name, @JsonProperty("server_name") String serverName, Map<String, Object> arguments) implements Delta {}
 
     /**
      * Delta for MCP server tool result.
@@ -383,7 +451,7 @@ public sealed interface Events permits
      * @param result     The tool result.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record McpServerToolResultDelta(String type, @JsonProperty("call_id") String callId, String name, @JsonProperty("server_name") String serverName, Object result) implements Delta {}
+    record McpServerToolResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String name, @JsonProperty("server_name") String serverName, Object result) implements Delta {}
 
     /**
      * Delta for file search result.
@@ -392,5 +460,5 @@ public sealed interface Events permits
      * @param result The list of file search results.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record FileSearchResultDelta(String type, List<Content.FileSearchResult> result) implements Delta {}
+    record FileSearchResultDelta(DeltaType type, List<Content.FileSearchResult> result) implements Delta {}
 }

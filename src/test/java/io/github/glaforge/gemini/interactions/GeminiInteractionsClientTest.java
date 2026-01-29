@@ -16,8 +16,6 @@
 
 package io.github.glaforge.gemini.interactions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import okhttp3.mockwebserver.MockResponse;
@@ -35,7 +33,6 @@ public class GeminiInteractionsClientTest {
 
     private MockWebServer mockWebServer;
     private GeminiInteractionsClient client;
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -47,7 +44,6 @@ public class GeminiInteractionsClientTest {
             .baseUrl(mockWebServer.url("/").toString().replaceAll("/$", "")) // Remove trailing slash as client appends paths
             .build();
 
-        objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
     }
 
     @AfterEach

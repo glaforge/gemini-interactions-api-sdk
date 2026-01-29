@@ -16,8 +16,9 @@
 
 package io.github.glaforge.gemini.interactions;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
@@ -34,10 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentInteractionParamsTest {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonMapper.builder().build();
 
     @Test
-    void testInputString() throws JsonProcessingException {
+    void testInputString() throws JacksonException {
         AgentInteractionParams params = AgentInteractionParams.builder()
                 .agent("test-agent")
                 .input("Hello world")
@@ -50,7 +51,7 @@ class AgentInteractionParamsTest {
     }
 
     @Test
-    void testInputContentList() throws JsonProcessingException {
+    void testInputContentList() throws JacksonException {
         Content content = new Content.TextContent("Hello");
         AgentInteractionParams params = AgentInteractionParams.builder()
                 .agent("test-agent")
@@ -64,7 +65,7 @@ class AgentInteractionParamsTest {
     }
 
     @Test
-    void testInputTurnList() throws JsonProcessingException {
+    void testInputTurnList() throws JacksonException {
         Turn turn = new Turn(Role.USER, "Hello");
         AgentInteractionParams params = AgentInteractionParams.builder()
                 .agent("test-agent")
@@ -79,7 +80,7 @@ class AgentInteractionParamsTest {
     }
 
     @Test
-    void testInputContentVarargs() throws JsonProcessingException {
+    void testInputContentVarargs() throws JacksonException {
         AgentInteractionParams params = AgentInteractionParams.builder()
                 .agent("test-agent")
                 .input(new Content.TextContent("Hi"))
@@ -94,7 +95,7 @@ class AgentInteractionParamsTest {
     }
 
     @Test
-    void testInputTurnVarargs() throws JsonProcessingException {
+    void testInputTurnVarargs() throws JacksonException {
         AgentInteractionParams params = AgentInteractionParams.builder()
                 .agent("test-agent")
                 .input(new Turn(Role.USER, "Hi"))
@@ -109,7 +110,7 @@ class AgentInteractionParamsTest {
     }
 
     @Test
-    void testModelInteractionParamsInputString() throws JsonProcessingException {
+    void testModelInteractionParamsInputString() throws JacksonException {
         ModelInteractionParams params = ModelInteractionParams.builder()
                 .model("gemini-2.5-flash")
                 .input("Hello model")

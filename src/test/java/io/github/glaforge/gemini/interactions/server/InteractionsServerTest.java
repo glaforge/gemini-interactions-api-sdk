@@ -20,6 +20,7 @@ import com.sun.net.httpserver.HttpServer;
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Events;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.time.Instant;
+import java.util.stream.Stream;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -106,6 +108,24 @@ class InteractionsServerTest {
                     null
                 );
             }
+
+
+            @Override
+            public Stream<Events> stream(InteractionParams.Request request) {
+                return Stream.of(
+                    new Events.InteractionEvent(
+                        Events.EventType.INTERACTION_START,
+                        "evt-1",
+                        new Interaction("interaction-123", "gemini-pro", null, "interaction", Instant.parse("2025-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"), Interaction.Role.MODEL, Interaction.Status.IN_PROGRESS, Collections.emptyList(), null, null)
+                    ),
+                    new Events.ContentDelta(
+                        Events.EventType.CONTENT_DELTA,
+                        "evt-2",
+                        0,
+                        new Events.TextDelta(Events.DeltaType.TEXT, "Hello world", null)
+                    )
+                );
+            }
         });
         server.start();
 
@@ -145,5 +165,18 @@ class InteractionsServerTest {
         Interaction interaction = client.cancel("foo-bar");
         assertEquals("foo-bar", interaction.id());
         assertEquals(Interaction.Status.CANCELLED, interaction.status());
+    }
+
+    @Test
+    void testStreamInteraction() throws IOException, InterruptedException {
+        InteractionParams.Request request = InteractionParams.ModelInteractionParams.builder()
+            .model("gemini-pro")
+            .input("Hello")
+            .build();
+
+        Stream<Events> eventsStream = client.stream(request);
+        assertNotNull(eventsStream);
+        long count = eventsStream.count();
+        assertEquals(2, count);
     }
 }

@@ -16,18 +16,20 @@
 
 package io.github.glaforge.gemini.interactions.server;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Events;
+import java.util.stream.Stream;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,10 +38,9 @@ import java.util.regex.Pattern;
  */
 public abstract class InteractionsHandler implements HttpHandler {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-        .registerModule(new Jdk8Module())
-        .registerModule(new JavaTimeModule())
-        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    private static final ObjectMapper objectMapper = JsonMapper.builder()
+        .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+        .build();
 
     // /v1beta/interactions/{id}
     private static final Pattern INTERACTION_ID_PATTERN = Pattern.compile(".*/interactions/([^/]+)$");
@@ -53,7 +54,13 @@ public abstract class InteractionsHandler implements HttpHandler {
 
         try {
             if (path.endsWith("/interactions") && method.equalsIgnoreCase("POST")) {
-                handleCreate(exchange);
+                // Check for streaming
+                String query = exchange.getRequestURI().getQuery();
+                if (query != null && query.contains("alt=sse")) {
+                    handleStream(exchange);
+                } else {
+                    handleCreate(exchange);
+                }
             } else {
                 Matcher cancelMatcher = CANCEL_PATTERN.matcher(path);
                 if (cancelMatcher.matches() && method.equalsIgnoreCase("POST")) {
@@ -84,7 +91,7 @@ public abstract class InteractionsHandler implements HttpHandler {
 
     private void handleCreate(HttpExchange exchange) throws IOException {
         try {
-            com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(exchange.getRequestBody());
+            JsonNode node = objectMapper.readTree(exchange.getRequestBody());
             InteractionParams.Request request;
             if (node.has("agent")) {
                 request = objectMapper.treeToValue(node, InteractionParams.AgentInteractionParams.class);
@@ -97,6 +104,40 @@ public abstract class InteractionsHandler implements HttpHandler {
         } catch (Exception e) {
             e.printStackTrace();
             sendResponse(exchange, 400, "Invalid Request: " + e.getMessage());
+        }
+    }
+
+    private void handleStream(HttpExchange exchange) throws IOException {
+        try {
+            JsonNode node = objectMapper.readTree(exchange.getRequestBody());
+            InteractionParams.Request request;
+            if (node.has("agent")) {
+                request = objectMapper.treeToValue(node, InteractionParams.AgentInteractionParams.class);
+            } else {
+                request = objectMapper.treeToValue(node, InteractionParams.ModelInteractionParams.class);
+            }
+
+            Stream<Events> events = stream(request);
+
+            exchange.getResponseHeaders().set("Content-Type", "text/event-stream");
+            exchange.getResponseHeaders().set("Cache-Control", "no-cache");
+            exchange.sendResponseHeaders(200, 0);
+
+            try (OutputStream os = exchange.getResponseBody()) {
+                events.forEach(event -> {
+                    try {
+                        String json = objectMapper.writeValueAsString(event);
+                        os.write(("data: " + json + "\n\n").getBytes(StandardCharsets.UTF_8));
+                        os.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                os.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
+                os.flush();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -157,4 +198,6 @@ public abstract class InteractionsHandler implements HttpHandler {
     public abstract void delete(String id);
 
     public abstract Interaction cancel(String id);
+
+    public abstract Stream<Events> stream(InteractionParams.Request request);
 }

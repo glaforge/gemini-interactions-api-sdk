@@ -33,7 +33,9 @@ public class InteractionParams {
     /** Private constructor to prevent instantiation. */
     private InteractionParams() {}
 
-    public sealed interface Request permits ModelInteractionParams, AgentInteractionParams {}
+    public sealed interface Request permits ModelInteractionParams, AgentInteractionParams {
+        Boolean stream();
+    }
 
     /**
      * Parameters for creating a model interaction.

@@ -16,11 +16,11 @@
 
 package io.github.glaforge.gemini.schema;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -46,8 +46,9 @@ import java.util.Map;
  * }</pre>
  */
 public class GSchema {
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper MAPPER = JsonMapper.builder()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .build();
 
     // Factory methods
 
@@ -83,7 +84,7 @@ public class GSchema {
     public static String toJson(Schema schema) {
         try {
             return MAPPER.writeValueAsString(schema.toMap());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Failed to generate JSON schema", e);
         }
     }
@@ -98,7 +99,7 @@ public class GSchema {
         try {
             Map<String, Object> map = MAPPER.readValue(json, Map.class);
             return parseSchema(map);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Failed to parse JSON schema", e);
         }
     }
