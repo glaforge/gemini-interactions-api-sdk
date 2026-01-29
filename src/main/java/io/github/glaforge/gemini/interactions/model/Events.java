@@ -49,19 +49,29 @@ public sealed interface Events permits
     Events.ContentStop,
     Events.ErrorEvent {
 
+    /**
+     * Enumeration of all supported event types.
+     */
     enum EventType {
+        /** Interaction has started. */
         @JsonProperty("interaction.start")
         INTERACTION_START("interaction.start"),
+        /** Interaction has completed. */
         @JsonProperty("interaction.complete")
         INTERACTION_COMPLETE("interaction.complete"),
+        /** Interaction status has been updated. */
         @JsonProperty("interaction.status_update")
         INTERACTION_STATUS_UPDATE("interaction.status_update"),
+        /** Content generation has started. */
         @JsonProperty("content.start")
         CONTENT_START("content.start"),
+        /** Content delta has been received. */
         @JsonProperty("content.delta")
         CONTENT_DELTA("content.delta"),
+        /** Content generation has stopped. */
         @JsonProperty("content.stop")
         CONTENT_STOP("content.stop"),
+        /** An error occurred. */
         @JsonProperty("error")
         ERROR("error");
 
@@ -71,6 +81,10 @@ public sealed interface Events permits
             this.jsonValue = jsonValue;
         }
 
+        /**
+         * Returns the JSON string value of the event type.
+         * @return the JSON string value of the event type.
+         */
         public String getJsonValue() {
             return jsonValue;
         }
@@ -81,9 +95,17 @@ public sealed interface Events permits
         }
     }
 
+    /**
+     * Returns the type of the event.
+     * @return the type of the event.
+     */
     @JsonProperty("event_type")
     EventType eventType();
 
+    /**
+     * Returns the unique event identifier for resumption.
+     * @return the unique event identifier for resumption.
+     */
     @JsonProperty("event_id")
     String eventId(); // Common to all events for resumption
 
@@ -192,24 +214,45 @@ public sealed interface Events permits
     /**
      * Represents a delta update for a content part.
      */
+    /**
+     * Enumeration of all supported delta types.
+     */
     enum DeltaType {
+        /** Text content delta. */
         @JsonProperty("text") TEXT("text"),
+        /** Image content delta. */
         @JsonProperty("image") IMAGE("image"),
+        /** Audio content delta. */
         @JsonProperty("audio") AUDIO("audio"),
+        /** Document content delta. */
         @JsonProperty("document") DOCUMENT("document"),
+        /** Video content delta. */
         @JsonProperty("video") VIDEO("video"),
+        /** Thought summary delta. */
         @JsonProperty("thought_summary") THOUGHT_SUMMARY("thought_summary"),
+        /** Thought signature delta. */
         @JsonProperty("thought_signature") THOUGHT_SIGNATURE("thought_signature"),
+        /** Function call delta. */
         @JsonProperty("function_call") FUNCTION_CALL("function_call"),
+        /** Function result delta. */
         @JsonProperty("function_result") FUNCTION_RESULT("function_result"),
+        /** Code execution call delta. */
         @JsonProperty("code_execution_call") CODE_EXECUTION_CALL("code_execution_call"),
+        /** Code execution result delta. */
         @JsonProperty("code_execution_result") CODE_EXECUTION_RESULT("code_execution_result"),
+        /** URL context call delta. */
         @JsonProperty("url_context_call") URL_CONTEXT_CALL("url_context_call"),
+        /** URL context result delta. */
         @JsonProperty("url_context_result") URL_CONTEXT_RESULT("url_context_result"),
+        /** Google Search call delta. */
         @JsonProperty("google_search_call") GOOGLE_SEARCH_CALL("google_search_call"),
+        /** Google Search result delta. */
         @JsonProperty("google_search_result") GOOGLE_SEARCH_RESULT("google_search_result"),
+        /** MCP server tool call delta. */
         @JsonProperty("mcp_server_tool_call") MCP_SERVER_TOOL_CALL("mcp_server_tool_call"),
+        /** MCP server tool result delta. */
         @JsonProperty("mcp_server_tool_result") MCP_SERVER_TOOL_RESULT("mcp_server_tool_result"),
+        /** File search result delta. */
         @JsonProperty("file_search_result") FILE_SEARCH_RESULT("file_search_result");
 
         private final String jsonValue;
@@ -218,6 +261,10 @@ public sealed interface Events permits
             this.jsonValue = jsonValue;
         }
 
+        /**
+         * Returns the JSON string value of the delta type.
+         * @return the JSON string value of the delta type.
+         */
         public String getJsonValue() {
             return jsonValue;
         }
@@ -228,6 +275,9 @@ public sealed interface Events permits
         }
     }
 
+    /**
+     * Interface for all delta updates.
+     */
     @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
@@ -263,6 +313,10 @@ public sealed interface Events permits
         GoogleSearchCallDelta, GoogleSearchResultDelta,
         McpServerToolCallDelta, McpServerToolResultDelta,
         FileSearchResultDelta {
+        /**
+         * Returns the type of the delta.
+         * @return the type of the delta.
+         */
         DeltaType type();
     }
 

@@ -23,11 +23,19 @@ import java.util.Map;
  * Abstract base class for all Gemini JSON Schemas.
  */
 public abstract class Schema {
+    /** The JSON schema type. */
     protected String type;
+    /** The description of the parameter. */
     protected String description;
+    /** The title of the parameter. */
     protected String title;
+    /** Whether the parameter is nullable. */
     protected boolean nullable = false;
 
+    /**
+     * Initializes a new schema with the given type.
+     * @param type The JSON schema type.
+     */
     protected Schema(String type) {
         this.type = type;
     }

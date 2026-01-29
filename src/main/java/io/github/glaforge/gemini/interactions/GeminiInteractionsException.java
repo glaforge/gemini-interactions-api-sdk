@@ -21,21 +21,38 @@ package io.github.glaforge.gemini.interactions;
  */
 public class GeminiInteractionsException extends RuntimeException {
 
+    /** The HTTP status code. */
     private final int statusCode;
+    /** The response body. */
     private final String body;
 
+    /**
+     * Constructs a new exception with the specified message, status code, and body.
+     * @param message The error message.
+     * @param statusCode The HTTP status code.
+     * @param body The response body.
+     */
     public GeminiInteractionsException(String message, int statusCode, String body) {
         super(message);
         this.statusCode = statusCode;
         this.body = body;
     }
 
+    /**
+     * Constructs a new exception with the specified message and cause.
+     * @param message The error message.
+     * @param cause The cause of the exception.
+     */
     public GeminiInteractionsException(String message, Throwable cause) {
         super(message, cause);
         this.statusCode = 0;
         this.body = null;
     }
 
+    /**
+     * Constructs a new exception with the specified cause.
+     * @param cause The cause of the exception.
+     */
     public GeminiInteractionsException(Throwable cause) {
         super(cause);
         this.statusCode = 0;

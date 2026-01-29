@@ -46,32 +46,58 @@ import java.util.Map;
  * }</pre>
  */
 public class GSchema {
+    /** Private constructor to prevent instantiation. */
+    private GSchema() {}
     private static final ObjectMapper MAPPER = JsonMapper.builder()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .build();
 
     // Factory methods
 
+    /**
+     * Creates a new string schema.
+     * @return a new string schema.
+     */
     public static StringSchema str() {
         return new StringSchema();
     }
 
+    /**
+     * Creates a new number schema.
+     * @return a new number schema.
+     */
     public static NumberSchema num() {
         return new NumberSchema();
     }
 
+    /**
+     * Creates a new integer schema.
+     * @return a new integer schema.
+     */
     public static NumberSchema integer() {
         return new NumberSchema().integer();
     }
 
+    /**
+     * Creates a new boolean schema.
+     * @return a new boolean schema.
+     */
     public static BooleanSchema bool() {
         return new BooleanSchema();
     }
 
+    /**
+     * Creates a new object schema.
+     * @return a new object schema.
+     */
     public static ObjectSchema obj() {
         return new ObjectSchema();
     }
 
+    /**
+     * Creates a new array schema.
+     * @return a new array schema.
+     */
     public static ArraySchema arr() {
         return new ArraySchema();
     }

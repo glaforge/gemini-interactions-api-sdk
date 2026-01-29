@@ -73,6 +73,11 @@ public class GeminiInteractionsClient {
             .build();
     }
 
+    /**
+     * Creates a new builder for the GeminiInteractionsClient.
+     *
+     * @return A new builder.
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -82,8 +87,7 @@ public class GeminiInteractionsClient {
      *
      * @param request The interaction request parameters (Model or Agent).
      * @return The created Interaction.
-     * @throws IOException          If an I/O error occurs.
-     * @throws InterruptedException If the operation is interrupted.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
      * @see <a href="https://ai.google.dev/api/interactions-api#CreateInteraction">Create Interaction API Reference</a>
      */
     public Interaction create(InteractionParams.Request request) {
@@ -113,8 +117,7 @@ public class GeminiInteractionsClient {
      *
      * @param request The interaction request parameters (Model or Agent).
      * @return A Stream of Events.
-     * @throws IOException          If an I/O error occurs.
-     * @throws InterruptedException If the operation is interrupted.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public Stream<Events> stream(InteractionParams.Request request) {
         try {
@@ -156,8 +159,7 @@ public class GeminiInteractionsClient {
      *
      * @param id The interaction ID.
      * @return The Interaction.
-     * @throws IOException          If an I/O error occurs.
-     * @throws InterruptedException If the operation is interrupted.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
      * @see <a href="https://ai.google.dev/api/interactions-api#getInteractionById">Get Interaction API Reference</a>
      */
     public Interaction get(String id) {
@@ -184,8 +186,7 @@ public class GeminiInteractionsClient {
      * Deletes an interaction by ID.
      *
      * @param id The interaction ID.
-     * @throws IOException          If an I/O error occurs.
-     * @throws InterruptedException If the operation is interrupted.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
      * @see <a href="https://ai.google.dev/api/interactions-api#deleteInteraction">Delete Interaction API Reference</a>
      */
     public void delete(String id) {
@@ -211,8 +212,7 @@ public class GeminiInteractionsClient {
      *
      * @param id The interaction ID.
      * @return The updated Interaction (status should be cancelled).
-     * @throws IOException          If an I/O error occurs.
-     * @throws InterruptedException If the operation is interrupted.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
      * @see <a href="https://ai.google.dev/api/interactions-api#cancelInteractionById">Cancel Interaction API Reference</a>
      */
     public Interaction cancel(String id) {
@@ -241,6 +241,9 @@ public class GeminiInteractionsClient {
         }
     }
 
+    /**
+     * Builder for {@link GeminiInteractionsClient}.
+     */
     public static class Builder {
         /** Creates a new Builder. */
         public Builder() {}

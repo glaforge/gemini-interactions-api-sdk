@@ -34,9 +34,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * specific implementation of {@link HttpHandler} to handle Interactions API requests.
+ * Base class for handling Gemini Interactions API requests in an {@link HttpHandler}.
+ * <p>
+ * Subclasses must implement the abstract methods to provide the actual logic for
+ * creating, retrieving, deleting, and cancelling interactions, as well as streaming events.
  */
 public abstract class InteractionsHandler implements HttpHandler {
+    /** Default constructor for InteractionsHandler. */
+    protected InteractionsHandler() {}
 
     private static final ObjectMapper objectMapper = JsonMapper.builder()
         .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
@@ -191,13 +196,37 @@ public abstract class InteractionsHandler implements HttpHandler {
 
     // --- Abstract methods to be implemented by the user ---
 
+    /**
+     * Creates a new interaction.
+     * @param request The interaction request parameters.
+     * @return The created Interaction.
+     */
     public abstract Interaction create(InteractionParams.Request request);
 
+    /**
+     * Retrieves an interaction by ID.
+     * @param id The interaction ID.
+     * @return The Interaction, or null if not found.
+     */
     public abstract Interaction get(String id);
 
+    /**
+     * Deletes an interaction by ID.
+     * @param id The interaction ID.
+     */
     public abstract void delete(String id);
 
+    /**
+     * Cancels an interaction by ID.
+     * @param id The interaction ID.
+     * @return The updated Interaction.
+     */
     public abstract Interaction cancel(String id);
 
+    /**
+     * Returns a stream of events for an interaction request.
+     * @param request The interaction request parameters.
+     * @return A stream of Events.
+     */
     public abstract Stream<Events> stream(InteractionParams.Request request);
 }

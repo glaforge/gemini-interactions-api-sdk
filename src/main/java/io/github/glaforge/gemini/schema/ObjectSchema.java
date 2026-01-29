@@ -52,6 +52,7 @@ public class ObjectSchema extends Schema {
     private final List<String> required = new ArrayList<>();
     private Object additionalProperties;
 
+    /** Initializes a new object schema. */
     public ObjectSchema() {
         super("object");
     }

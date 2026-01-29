@@ -34,6 +34,7 @@ public class ArraySchema extends Schema {
     private Integer maxItems;
     private Schema[] prefixItems;
 
+    /** Initializes a new array schema. */
     public ArraySchema() {
         super("array");
     }

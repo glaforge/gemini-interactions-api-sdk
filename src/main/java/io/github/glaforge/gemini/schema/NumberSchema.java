@@ -39,6 +39,7 @@ public class NumberSchema extends Schema {
     private Double minimum;
     private Double maximum;
 
+    /** Initializes a new number schema. */
     public NumberSchema() {
         super("number");
     }

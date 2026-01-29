@@ -33,6 +33,7 @@ public class StringSchema extends Schema {
     private String[] enumValues;
     private String format;
 
+    /** Initializes a new string schema. */
     public StringSchema() {
         super("string");
     }
@@ -47,9 +48,13 @@ public class StringSchema extends Schema {
         return this;
     }
 
+    /** Predefined formats for string schemas. */
     public enum Format {
+        /** Date-time format. */
         DATE_TIME("date-time"),
+        /** Date format. */
         DATE("date"),
+        /** Time format. */
         TIME("time");
 
         private final String value;
@@ -58,6 +63,10 @@ public class StringSchema extends Schema {
             this.value = value;
         }
 
+        /**
+         * Returns the string representation of the format.
+         * @return the string representation of the format.
+         */
         public String getValue() {
             return value;
         }

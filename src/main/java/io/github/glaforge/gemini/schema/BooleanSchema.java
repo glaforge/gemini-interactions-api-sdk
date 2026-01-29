@@ -25,6 +25,7 @@ package io.github.glaforge.gemini.schema;
  * }</pre>
  */
 public class BooleanSchema extends Schema {
+    /** Initializes a new boolean schema. */
     public BooleanSchema() {
         super("boolean");
     }

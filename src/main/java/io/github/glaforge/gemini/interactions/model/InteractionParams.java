@@ -33,7 +33,14 @@ public class InteractionParams {
     /** Private constructor to prevent instantiation. */
     private InteractionParams() {}
 
+    /**
+     * Common interface for all interaction requests.
+     */
     public sealed interface Request permits ModelInteractionParams, AgentInteractionParams {
+        /**
+         * Returns whether the response should be streamed.
+         * @return whether the response should be streamed.
+         */
         Boolean stream();
     }
 
@@ -68,6 +75,10 @@ public class InteractionParams {
         @JsonProperty("response_mime_type") String responseMimeType,
         @JsonProperty("previous_interaction_id") String previousInteractionId
     ) implements Request {
+        /**
+         * Returns a new builder for model interaction parameters.
+         * @return a new builder for model interaction parameters.
+         */
         public static Builder builder() { return new Builder(); }
         /** Builder for CreateModelInteractionParams. */
         public static class Builder {
@@ -292,6 +303,10 @@ public class InteractionParams {
         @JsonProperty("response_mime_type") String responseMimeType,
         @JsonProperty("previous_interaction_id") String previousInteractionId
     ) implements Request {
+        /**
+         * Returns a new builder for agent interaction parameters.
+         * @return a new builder for agent interaction parameters.
+         */
         public static Builder builder() { return new Builder(); }
 
         /** Builder for CreateAgentInteractionParams. */
