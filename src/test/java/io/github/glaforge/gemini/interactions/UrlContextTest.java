@@ -124,18 +124,6 @@ public class UrlContextTest {
 
         } else if (lastOutput instanceof TextContent text) {
             System.out.println("Model Answer: " + text.text());
-            assertTrue(text.text().length() > 0, "Model should provide a summary");
-            String answer = text.text().toLowerCase();
-            // Expected keywords or context from the blog post title "Gemini is cooking bananas under Antigravity"
-            // Note: The post is hypothetical (future date 2025/11/21 in prompt, but maybe it exists or it's a test URL user provided).
-            // If the URL is not accessible, the model might say it can't access it.
-            // But we test the tool invocation.
-            // If the URl is valid/accessible, we expect "banana", "antigravity", "gemini".
-            // If it's a 404, the model should say so.
-            // The user provided the URL, so assuming it's valid for the test context or simulation.
-
-            // We'll assert we got some text back. Strict content assertion is risky for external URLs.
-            // But "summary" implies meaningful length.
             assertTrue(text.text().length() > 10, "Summary should be descriptive");
         } else {
             System.out.println("Output content: " + lastOutput);
