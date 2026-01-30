@@ -55,15 +55,30 @@ public class ResearchFrontend {
         Server.builder(() -> {
             ResearchState state = (ResearchState) Jt.sessionState().computeIfAbsent("state", k -> new ResearchState());
 
-            Jt.title("Research Agent").use();
+            Jt.title("🔎 Deep Research Agent").use();
 
             Jt.header("Subject").use();
             var formSubject = Jt.form().key("form_subject").use();
             state.subject = Jt.textArea("Subject")
                     .placeholder("Enter the subject you want to research...")
+                    .value(state.subject != null ? state.subject : "")
                     .use(formSubject);
 
-            if (Jt.formSubmitButton("Explore Topics").use(formSubject) || state.exploringTopics) {
+            var columns = Jt.columns(2).widths(List.of(0.9, 0.1)).use(formSubject);
+
+            if (Jt.formSubmitButton("Clear All").use(columns.col(1))) {
+                state.exploringTopics = false;
+                state.researching = false;
+                state.subject = "";
+                state.topics = new ArrayList<>();
+                state.selectedTopics = new ArrayList<>();
+                state.report = "";
+                state.summary = "";
+                state.imageBytes = null;
+                Jt.rerun();
+            }
+
+            if (Jt.formSubmitButton("Explore Topics").type("primary").use(columns.col(0)) || state.exploringTopics) {
 
                 Jt.header("Topics").use();
                 var formTopics = Jt.form().key("form_topics").use();
@@ -99,7 +114,7 @@ public class ResearchFrontend {
                     }
                 }
 
-                if (Jt.formSubmitButton("Launch Research").use(formTopics) || state.researching) {
+                if (Jt.formSubmitButton("Launch Research").type("primary").use(formTopics) || state.researching) {
                     state.researching = true;
 
                     Jt.header("Report").use();
@@ -156,7 +171,9 @@ public class ResearchFrontend {
                             ModelInteractionParams synthesisParams = ModelInteractionParams.builder()
                                     .model("gemini-3-pro-preview")
                                     .input(String.format("""
-                                            Create a concise summary of the following research:
+                                            Create a concise summary of the research below.
+                                            Go straight with the summary, don't introduce the summary
+                                            (don't write "Here's a summary..." or equivalent).
 
                                             %s
                                             """,
@@ -172,10 +189,11 @@ public class ResearchFrontend {
                                     .model("gemini-3-pro-image-preview")
                                     .input(String.format("""
                                             Create a hand-drawn and hand-written sketchnote style summary infographic,
-                                            with a white background, using fluo highlighters for the key points,
+                                            with a pure white background, use fluo highlighters for the key points,
                                             about the following information:
 
-                                            %s""", state.summary))
+                                            %s
+                                            """, state.summary))
                                     .responseModalities(List.of(Interaction.Modality.IMAGE))
                                     .build();
 
