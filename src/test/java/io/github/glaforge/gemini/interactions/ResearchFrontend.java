@@ -67,14 +67,7 @@ public class ResearchFrontend {
             var columns = Jt.columns(2).widths(List.of(0.9, 0.1)).use(formSubject);
 
             if (Jt.formSubmitButton("Clear All").use(columns.col(1))) {
-                state.exploringTopics = false;
-                state.researching = false;
-                state.subject = "";
-                state.topics = new ArrayList<>();
-                state.selectedTopics = new ArrayList<>();
-                state.report = "";
-                state.summary = "";
-                state.imageBytes = null;
+                Jt.sessionState().remove("state");
                 Jt.rerun();
             }
 
@@ -104,15 +97,10 @@ public class ResearchFrontend {
                 state.exploringTopics = true;
 
                 var topicsHolder = Jt.container().key("topics").use(topicsContainer);
-                for (String topic : state.topics) {
-                    if (Jt.checkbox(topic)
-                            .value(state.selectedTopics.contains(topic))
-                            .use(topicsHolder)) {
-                        state.selectedTopics.add(topic);
-                    } else {
-                        state.selectedTopics.remove(topic);
-                    }
-                }
+                state.selectedTopics = state.topics
+                        .stream()
+                        .filter(topic -> Jt.checkbox(topic).use(topicsHolder))
+                        .toList();
 
                 if (Jt.formSubmitButton("Launch Research").type("primary").use(formTopics) || state.researching) {
                     state.researching = true;
@@ -161,6 +149,7 @@ public class ResearchFrontend {
                                 }
                             } else if (delta.delta() instanceof TextDelta textPart) {
                                 reportBuilder.append(textPart.text());
+                                Jt.markdown(reportBuilder.toString()).use(reportPlaceholder);
                             }
                         } else if (event instanceof InteractionEvent interactionEvent &&
                                 Events.EventType.INTERACTION_COMPLETE == interactionEvent.eventType()) {
