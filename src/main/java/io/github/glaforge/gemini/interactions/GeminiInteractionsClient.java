@@ -29,6 +29,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -131,10 +132,10 @@ public class GeminiInteractionsClient {
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
-            HttpResponse<java.util.stream.Stream<String>> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
+            HttpResponse<Stream<String>> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
 
             if (response.statusCode() >= 400) {
-                String errorBody = response.body().collect(java.util.stream.Collectors.joining("\n"));
+                String errorBody = response.body().collect(Collectors.joining("\n"));
                 throw new GeminiInteractionsException("API Request failed", response.statusCode(), errorBody);
             }
 
