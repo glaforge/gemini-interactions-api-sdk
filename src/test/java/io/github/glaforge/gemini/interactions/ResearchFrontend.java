@@ -234,7 +234,7 @@ public class ResearchFrontend {
                 .orElse(null);
     }
 
-    private static String transformCitations(String report) {
+    static String transformCitations(String report) {
         if (report == null || report.isBlank()) {
             return report;
         }
