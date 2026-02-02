@@ -145,11 +145,15 @@ public class ResearchFrontend {
 
             StringBuilder reportBuilder = new StringBuilder();
 
+            long startTime = System.currentTimeMillis();
+
             client.stream(researchParams).forEach(event -> {
                 if (event instanceof ContentDelta delta) {
                     if (delta.delta() instanceof ThoughtSummaryDelta thought) {
                         if (thought.content() instanceof TextContent textContent) {
-                            Jt.markdown(textContent.text()).use(reportPlaceholder);
+                            long elapsed = System.currentTimeMillis() - startTime;
+                            String timeString = String.format("%dm%ds", elapsed / 60000, (elapsed % 60000) / 1000);
+                            Jt.markdown("⏱️ `" + timeString + "` " + textContent.text()).use(reportPlaceholder);
                         }
                     } else if (delta.delta() instanceof TextDelta textPart) {
                         reportBuilder.append(textPart.text());
