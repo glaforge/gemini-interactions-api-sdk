@@ -164,8 +164,24 @@ public class GeminiInteractionsClient {
      * @see <a href="https://ai.google.dev/api/interactions-api#getInteractionById">Get Interaction API Reference</a>
      */
     public Interaction get(String id) {
+        return get(id, false);
+    }
+
+    /**
+     * Retrieves an interaction by ID, optionally including the original input.
+     *
+     * @param id           The interaction ID.
+     * @param includeInput Whether to include the input in the response.
+     * @return The Interaction.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     * @see <a href="https://ai.google.dev/api/interactions-api#getInteractionById">Get Interaction API Reference</a>
+     */
+    public Interaction get(String id, boolean includeInput) {
         try {
             String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
+            if (includeInput) {
+                url += "?include_input=true";
+            }
 
             HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(URI.create(url))

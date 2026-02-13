@@ -74,7 +74,7 @@ public record Interaction(
      * @param outputTokensByModality  Output tokens broken down by modality.
      * @param totalToolUseTokens      Total tool use tokens.
      * @param toolUseTokensByModality Tool use tokens broken down by modality.
-     * @param totalReasoningTokens    Total reasoning tokens.
+     * @param totalThoughtTokens      Total thought (reasoning) tokens.
      * @param totalTokens             Total tokens.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -87,7 +87,7 @@ public record Interaction(
         @JsonProperty("output_tokens_by_modality") List<ModalityTokens> outputTokensByModality,
         @JsonProperty("total_tool_use_tokens") Integer totalToolUseTokens,
         @JsonProperty("tool_use_tokens_by_modality") List<ModalityTokens> toolUseTokensByModality,
-        @JsonProperty("total_reasoning_tokens") Integer totalReasoningTokens,
+        @JsonProperty("total_thought_tokens") Integer totalThoughtTokens,
         @JsonProperty("total_tokens") Integer totalTokens
     ) {}
 

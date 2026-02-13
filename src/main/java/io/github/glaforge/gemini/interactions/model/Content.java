@@ -50,6 +50,7 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Content.GoogleSearchResultContent.class, name = "google_search_result"),
     @JsonSubTypes.Type(value = Content.McpServerToolCallContent.class, name = "mcp_server_tool_call"),
     @JsonSubTypes.Type(value = Content.McpServerToolResultContent.class, name = "mcp_server_tool_result"),
+    @JsonSubTypes.Type(value = Content.FileSearchCallContent.class, name = "file_search_call"),
     @JsonSubTypes.Type(value = Content.FileSearchResultContent.class, name = "file_search_result")
 })
 public sealed interface Content permits
@@ -69,6 +70,7 @@ public sealed interface Content permits
     Content.GoogleSearchResultContent,
     Content.McpServerToolCallContent,
     Content.McpServerToolResultContent,
+    Content.FileSearchCallContent,
     Content.FileSearchResultContent {
 
     /**
@@ -274,8 +276,18 @@ public sealed interface Content permits
         @JsonProperty("call_id") String callId,
         String name,
         @JsonProperty("is_error") Boolean isError,
-        Object result // oneOf object, object(items), string
+        Object result // string, object, or ToolResult with List<Content> items
     ) implements Content {}
+
+    /**
+     * Structure for multimodal tool results.
+     *
+     * @param items List of content items (TextContent, ImageContent, etc.)
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ToolResult(
+        List<Content> items
+    ) {}
 
     // --- Code Execution ---
 
@@ -472,10 +484,22 @@ public sealed interface Content permits
         @JsonProperty("call_id") String callId,
         String name,
         @JsonProperty("server_name") String serverName,
-        Object result // oneOf object, object(items), string
+        Object result // string, object, or ToolResult with List<Content> items
     ) implements Content {}
 
     // --- File Search ---
+
+    /**
+     * Content representing a file search call.
+     *
+     * @param type The type of content (must be "file_search_call").
+     * @param id   The unique identifier for the file search call.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record FileSearchCallContent(
+        String type,
+        String id
+    ) implements Content {}
 
     /**
      * Content representing the result of a file search.

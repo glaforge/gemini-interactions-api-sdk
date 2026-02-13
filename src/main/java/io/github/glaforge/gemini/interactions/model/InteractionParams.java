@@ -96,6 +96,7 @@ public class InteractionParams {
             private Object responseFormat;
             private String responseMimeType;
             private String previousInteractionId;
+            private Config.ImageConfig imageConfig;
 
             /**
              * Sets the model.
@@ -260,12 +261,39 @@ public class InteractionParams {
             public Builder previousInteractionId(String previousInteractionId) { this.previousInteractionId = previousInteractionId; return this; }
 
             /**
+             * Sets the image config.
+             *
+             * @param imageConfig The image configuration.
+             * @return This builder.
+             */
+            public Builder imageConfig(Config.ImageConfig imageConfig) { this.imageConfig = imageConfig; return this; }
+
+            /**
              * Builds the CreateModelInteractionParams.
              *
              * @return The CreateModelInteractionParams parameters.
              */
             public ModelInteractionParams build() {
-                return new ModelInteractionParams(model, input, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId);
+                Config.GenerationConfig finalConfig = generationConfig;
+                if (imageConfig != null) {
+                    if (finalConfig == null) {
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, null, imageConfig);
+                    } else {
+                        finalConfig = new Config.GenerationConfig(
+                            finalConfig.temperature(),
+                            finalConfig.topP(),
+                            finalConfig.seed(),
+                            finalConfig.stopSequences(),
+                            finalConfig.toolChoice(),
+                            finalConfig.thinkingLevel(),
+                            finalConfig.thinkingSummaries(),
+                            finalConfig.maxOutputTokens(),
+                            finalConfig.speechConfig(),
+                            imageConfig
+                        );
+                    }
+                }
+                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId);
             }
         }
     }
@@ -316,6 +344,7 @@ public class InteractionParams {
             private String agent;
             private Object input;
             private Config.AgentConfig agentConfig;
+            private Config.GenerationConfig generationConfig;
             private List<Tool> tools;
             private Boolean stream;
             private Boolean store;
@@ -325,6 +354,7 @@ public class InteractionParams {
             private Object responseFormat;
             private String responseMimeType;
             private String previousInteractionId;
+            private Config.ImageConfig imageConfig;
 
             /**
              * Sets the agent.
@@ -381,6 +411,14 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder agentConfig(Config.AgentConfig agentConfig) { this.agentConfig = agentConfig; return this; }
+
+            /**
+             * Sets the generation config.
+             *
+             * @param generationConfig The generation configuration.
+             * @return This builder.
+             */
+            public Builder generationConfig(Config.GenerationConfig generationConfig) { this.generationConfig = generationConfig; return this; }
             /**
              * Sets the tools.
              *
@@ -495,12 +533,39 @@ public class InteractionParams {
             public Builder previousInteractionId(String previousInteractionId) { this.previousInteractionId = previousInteractionId; return this; }
 
             /**
+             * Sets the image config.
+             *
+             * @param imageConfig The image configuration.
+             * @return This builder.
+             */
+            public Builder imageConfig(Config.ImageConfig imageConfig) { this.imageConfig = imageConfig; return this; }
+
+            /**
              * Builds the CreateAgentInteractionParams.
              *
              * @return The CreateAgentInteractionParams parameters.
              */
             public AgentInteractionParams build() {
-                return new AgentInteractionParams(agent, input, agentConfig, null, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId);
+                Config.GenerationConfig finalConfig = generationConfig;
+                if (imageConfig != null) {
+                    if (finalConfig == null) {
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, null, imageConfig);
+                    } else {
+                        finalConfig = new Config.GenerationConfig(
+                            finalConfig.temperature(),
+                            finalConfig.topP(),
+                            finalConfig.seed(),
+                            finalConfig.stopSequences(),
+                            finalConfig.toolChoice(),
+                            finalConfig.thinkingLevel(),
+                            finalConfig.thinkingSummaries(),
+                            finalConfig.maxOutputTokens(),
+                            finalConfig.speechConfig(),
+                            imageConfig
+                        );
+                    }
+                }
+                return new AgentInteractionParams(agent, input, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId);
             }
         }
     }

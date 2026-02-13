@@ -42,6 +42,7 @@ public class Config {
      * @param thinkingSummaries Configuration for thinking summaries.
      * @param maxOutputTokens  The maximum number of tokens to include in a candidate.
      * @param speechConfig     Configuration for speech generation.
+     * @param imageConfig      Configuration for image generation.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GenerationConfig(
@@ -53,7 +54,8 @@ public class Config {
         @JsonProperty("thinking_level") ThinkingLevel thinkingLevel,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("max_output_tokens") Integer maxOutputTokens,
-        @JsonProperty("speech_config") List<SpeechConfig> speechConfig
+        @JsonProperty("speech_config") List<SpeechConfig> speechConfig,
+        @JsonProperty("image_config") ImageConfig imageConfig
     ) {}
 
     /**
@@ -89,6 +91,43 @@ public class Config {
         String language,
         String speaker
     ) {}
+
+    /**
+     * Configuration for image generation.
+     *
+     * @param aspectRatio The aspect ratio of the generated image.
+     * @param imageSize   The size of the generated image.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ImageConfig(
+        @JsonProperty("aspect_ratio") AspectRatio aspectRatio,
+        @JsonProperty("image_size") ImageSize imageSize
+    ) {}
+
+    /**
+     * Aspect ratio for generated images.
+     */
+    public enum AspectRatio {
+        @JsonProperty("1:1") RATIO_1_1,
+        @JsonProperty("2:3") RATIO_2_3,
+        @JsonProperty("3:2") RATIO_3_2,
+        @JsonProperty("3:4") RATIO_3_4,
+        @JsonProperty("4:3") RATIO_4_3,
+        @JsonProperty("4:5") RATIO_4_5,
+        @JsonProperty("5:4") RATIO_5_4,
+        @JsonProperty("9:16") RATIO_9_16,
+        @JsonProperty("16:9") RATIO_16_9,
+        @JsonProperty("21:9") RATIO_21_9
+    }
+
+    /**
+     * Size for generated images.
+     */
+    public enum ImageSize {
+        @JsonProperty("1K") SIZE_1K,
+        @JsonProperty("2K") SIZE_2K,
+        @JsonProperty("4K") SIZE_4K
+    }
 
     /**
      * Sealed interface for agent configurations.

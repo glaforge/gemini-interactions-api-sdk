@@ -113,7 +113,8 @@ public class ResearchFrontend {
 
             var tabs = Jt.tabs(List.of("Full Report", "Summary", "Infographic")).use();
 
-            var reportPlaceholder = Jt.empty().key("fullReport").use(tabs.tab(0));
+            var reportContainer = Jt.container().key("reportContainer").use(tabs.tab(0));
+            var reportPlaceholder = Jt.empty().key("fullReport").use(reportContainer);
             var summaryPlaceholder = Jt.empty().key("summary").use(tabs.tab(1));
             var infographicPlaceholder = Jt.empty().key("infographic").use(tabs.tab(2));
 
@@ -163,6 +164,9 @@ public class ResearchFrontend {
                     System.out.printf("%nEVENT: %s\n", event);
                 }
             });
+
+            var rawReportExpander = Jt.expander("Raw Markdown Report").use(reportContainer);
+            Jt.text(transformCitations(reportBuilder.toString())).use(rawReportExpander);
 
             // compute/fetch summary
             ModelInteractionParams summaryParams = ModelInteractionParams.builder()

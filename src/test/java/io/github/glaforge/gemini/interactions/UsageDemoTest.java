@@ -102,7 +102,8 @@ public class UsageDemoTest {
                 ThinkingLevel.LOW, // thinking_level
                 ThinkingSummaries.AUTO, // thinking_summaries
                 1000,
-                null // speech
+                null, // speech
+                null // image
             );
             assertNotNull(config);
 
