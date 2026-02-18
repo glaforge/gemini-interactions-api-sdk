@@ -187,7 +187,17 @@ public sealed interface Content permits
         byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType
-    ) implements Content {}
+    ) implements Content {
+        /**
+         * Creates a new AudioContent with default type "audio".
+         *
+         * @param data     The base64 encoded audio data.
+         * @param mimeType The MIME type of the audio.
+         */
+        public AudioContent(byte[] data, String mimeType) {
+            this("audio", data, null, mimeType);
+        }
+    }
 
     /**
      * Content containing a document.

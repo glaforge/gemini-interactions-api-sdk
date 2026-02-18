@@ -96,6 +96,7 @@ public class InteractionParams {
             private Object responseFormat;
             private String responseMimeType;
             private String previousInteractionId;
+            private List<Config.SpeechConfig> speechConfigs;
             private Config.ImageConfig imageConfig;
 
             /**
@@ -269,15 +270,31 @@ public class InteractionParams {
             public Builder imageConfig(Config.ImageConfig imageConfig) { this.imageConfig = imageConfig; return this; }
 
             /**
+             * Sets the speech config.
+             *
+             * @param speechConfig The speech configuration.
+             * @return This builder.
+             */
+            public Builder speechConfig(Config.SpeechConfig speechConfig) { this.speechConfigs = List.of(speechConfig); return this; }
+
+            /**
+             * Sets the speech configs.
+             *
+             * @param speechConfigs The speech configurations.
+             * @return This builder.
+             */
+            public Builder speechConfigs(List<Config.SpeechConfig> speechConfigs) { this.speechConfigs = speechConfigs; return this; }
+
+            /**
              * Builds the CreateModelInteractionParams.
              *
              * @return The CreateModelInteractionParams parameters.
              */
             public ModelInteractionParams build() {
                 Config.GenerationConfig finalConfig = generationConfig;
-                if (imageConfig != null) {
+                if (imageConfig != null || speechConfigs != null) {
                     if (finalConfig == null) {
-                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, null, imageConfig);
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, imageConfig);
                     } else {
                         finalConfig = new Config.GenerationConfig(
                             finalConfig.temperature(),
@@ -288,8 +305,8 @@ public class InteractionParams {
                             finalConfig.thinkingLevel(),
                             finalConfig.thinkingSummaries(),
                             finalConfig.maxOutputTokens(),
-                            finalConfig.speechConfig(),
-                            imageConfig
+                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig(),
+                            imageConfig != null ? imageConfig : finalConfig.imageConfig()
                         );
                     }
                 }
@@ -354,6 +371,7 @@ public class InteractionParams {
             private Object responseFormat;
             private String responseMimeType;
             private String previousInteractionId;
+            private List<Config.SpeechConfig> speechConfigs;
             private Config.ImageConfig imageConfig;
 
             /**
@@ -541,15 +559,31 @@ public class InteractionParams {
             public Builder imageConfig(Config.ImageConfig imageConfig) { this.imageConfig = imageConfig; return this; }
 
             /**
+             * Sets the speech config.
+             *
+             * @param speechConfig The speech configuration.
+             * @return This builder.
+             */
+            public Builder speechConfig(Config.SpeechConfig speechConfig) { this.speechConfigs = List.of(speechConfig); return this; }
+
+            /**
+             * Sets the speech configs.
+             *
+             * @param speechConfigs The speech configurations.
+             * @return This builder.
+             */
+            public Builder speechConfigs(List<Config.SpeechConfig> speechConfigs) { this.speechConfigs = speechConfigs; return this; }
+
+            /**
              * Builds the CreateAgentInteractionParams.
              *
              * @return The CreateAgentInteractionParams parameters.
              */
             public AgentInteractionParams build() {
                 Config.GenerationConfig finalConfig = generationConfig;
-                if (imageConfig != null) {
+                if (imageConfig != null || speechConfigs != null) {
                     if (finalConfig == null) {
-                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, null, imageConfig);
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, imageConfig);
                     } else {
                         finalConfig = new Config.GenerationConfig(
                             finalConfig.temperature(),
@@ -560,8 +594,8 @@ public class InteractionParams {
                             finalConfig.thinkingLevel(),
                             finalConfig.thinkingSummaries(),
                             finalConfig.maxOutputTokens(),
-                            finalConfig.speechConfig(),
-                            imageConfig
+                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig(),
+                            imageConfig != null ? imageConfig : finalConfig.imageConfig()
                         );
                     }
                 }

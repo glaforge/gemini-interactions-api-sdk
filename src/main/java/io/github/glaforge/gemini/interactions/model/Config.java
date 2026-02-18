@@ -90,7 +90,17 @@ public class Config {
         String voice,
         String language,
         String speaker
-    ) {}
+    ) {
+        /**
+         * Creates a new SpeechConfig with voice and language.
+         *
+         * @param voice    The voice to use.
+         * @param language The language of the speech.
+         */
+        public SpeechConfig(String voice, String language) {
+            this(voice, language, null);
+        }
+    }
 
     /**
      * Configuration for image generation.
