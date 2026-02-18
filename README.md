@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>0.4.4</version>
+    <version>0.7.1</version>
 </dependency>
 ```
 
@@ -99,8 +99,24 @@ ModelInteractionParams request = ModelInteractionParams.builder()
     .model("gemini-2.5-flash")
     .input(
         new TextContent("Describe this image"),
-        // Create an image from Base64 string
-        new ImageContent("BASE64_STRING...", "image/png")
+        // Create an image from Base64 bytes
+        new ImageContent(imageBytes, "image/png")
+    )
+    .build();
+
+Interaction response = client.create(request);
+```
+
+### Multimodal (Audio)
+```java
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input(
+        new TextContent("Transcribe this audio"),
+        new AudioContent(audioBytes, "audio/mp3")
     )
     .build();
 
@@ -125,6 +141,30 @@ interaction.outputs().forEach(content -> {
     if (content instanceof ImageContent image) {
         byte[] imageBytes = Base64.getDecoder().decode(image.data());
         // Save imageBytes to a file
+    }
+});
+```
+
+### Audio Output
+```java
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
+import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash-preview-tts")
+    .input("Hey, we can generate audio too!")
+    .responseModalities(Modality.AUDIO, Modality.TEXT)
+    .speechConfig(new SpeechConfig("Puck", "en-US"))
+    .build();
+
+Interaction interaction = client.create(request);
+
+interaction.outputs().forEach(content -> {
+    if (content instanceof AudioContent audio) {
+        byte[] audioBytes = audio.data();
+        // Save audioBytes to a raw PCM file (16-bit little-endian, 24kHz, mono)
     }
 });
 ```
