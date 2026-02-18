@@ -23,11 +23,12 @@ import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInter
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import javax.sound.sampled.*;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
@@ -66,9 +67,19 @@ public class SpeechGenerationTest {
                 System.out.println("Received audio data of length: " + audio.data().length);
 
                 try {
-                    Path targetPath = Paths.get("target", "generated-audio.raw");
+                    Path targetPath = Paths.get("target", "generated-audio.wav");
                     Files.createDirectories(targetPath.getParent());
-                    Files.write(targetPath, audio.data());
+
+                    // Audio format: 24kHz, 16-bit, Mono, Signed, Little Endian
+                    AudioFormat format = new AudioFormat(24000, 16, 1, true, false);
+                    byte[] audioData = audio.data();
+                    try (AudioInputStream audioInputStream = new AudioInputStream(
+                        new ByteArrayInputStream(audioData),
+                        format,
+                        audioData.length / format.getFrameSize())) {
+                        AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, targetPath.toFile());
+                    }
+
                     System.out.println("Saved audio to: " + targetPath.toAbsolutePath());
                 } catch (IOException e) {
                     fail("Failed to save audio file: " + e.getMessage());
