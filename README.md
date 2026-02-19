@@ -44,6 +44,26 @@ Interaction response = client.create(request);
 System.out.println(response.outputs().get(0));
 ```
 
+### Streaming Response
+```java
+import io.github.glaforge.gemini.interactions.model.Events.ContentDelta;
+import io.github.glaforge.gemini.interactions.model.Events.TextDelta;
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("Why is the sky blue?")
+    .stream(true)
+    .build();
+
+client.stream(request).forEach(event -> {
+    if (event instanceof ContentDelta delta) {
+        if (delta.delta() instanceof TextDelta textPart) {
+            System.out.print(textPart.text());
+        }
+    }
+});
+```
+
 ### Multi-turn Conversation
 ```java
 import io.github.glaforge.gemini.interactions.model.Interaction.Turn;
