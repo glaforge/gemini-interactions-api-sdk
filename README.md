@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>0.7.1</version>
+    <version>0.8.0</version>
 </dependency>
 ```
 
@@ -267,6 +267,28 @@ if (lastOutput instanceof FunctionCallContent call) {
         System.out.println(finalResponse.outputs().getLast());
     }
 }
+```
+
+### Built-in Tools (Google Maps)
+```java
+import io.github.glaforge.gemini.interactions.model.Content;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Tool;
+
+// 1. Define the Google Maps tool
+Tool googleMaps = new Tool.GoogleMaps();
+
+// 2. Initial Request with the Tool
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("Can you recommend some good restaurants near the Eiffel tower in Paris?")
+    .tools(googleMaps)
+    .build();
+
+Interaction interaction = client.create(request);
+
+// 3. Handle Result
+System.out.println(interaction.outputs().getLast());
 ```
 
 ### JSON Output (Structured Output)
