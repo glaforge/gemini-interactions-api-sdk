@@ -51,7 +51,9 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Content.McpServerToolCallContent.class, name = "mcp_server_tool_call"),
     @JsonSubTypes.Type(value = Content.McpServerToolResultContent.class, name = "mcp_server_tool_result"),
     @JsonSubTypes.Type(value = Content.FileSearchCallContent.class, name = "file_search_call"),
-    @JsonSubTypes.Type(value = Content.FileSearchResultContent.class, name = "file_search_result")
+    @JsonSubTypes.Type(value = Content.FileSearchResultContent.class, name = "file_search_result"),
+    @JsonSubTypes.Type(value = Content.GoogleMapsCallContent.class, name = "google_maps_call"),
+    @JsonSubTypes.Type(value = Content.GoogleMapsResultContent.class, name = "google_maps_result")
 })
 public sealed interface Content permits
     Content.TextContent,
@@ -71,7 +73,9 @@ public sealed interface Content permits
     Content.McpServerToolCallContent,
     Content.McpServerToolResultContent,
     Content.FileSearchCallContent,
-    Content.FileSearchResultContent {
+    Content.FileSearchResultContent,
+    Content.GoogleMapsCallContent,
+    Content.GoogleMapsResultContent {
 
     /**
      * Returns the type of content.
@@ -133,16 +137,74 @@ public sealed interface Content permits
 
     /**
      * Annotation for text content.
-     *
-     * @param startIndex Start index of the annotation.
-     * @param endIndex   End index of the annotation.
-     * @param source     Source of the annotation.
+     */
+    @JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type",
+        visible = true
+    )
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = Content.UrlCitation.class, name = "url_citation"),
+        @JsonSubTypes.Type(value = Content.FileCitation.class, name = "file_citation"),
+        @JsonSubTypes.Type(value = Content.PlaceCitation.class, name = "place_citation")
+    })
+    sealed interface Annotation permits UrlCitation, FileCitation, PlaceCitation {
+        /**
+         * Returns the type of annotation.
+         *
+         * @return The annotation type.
+         */
+        String type();
+    }
+
+    /**
+     * URL citation annotation.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Annotation(
+    record UrlCitation(
+        String type,
         @JsonProperty("start_index") Integer startIndex,
         @JsonProperty("end_index") Integer endIndex,
+        String url,
+        String title
+    ) implements Annotation {}
+
+    /**
+     * File citation annotation.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record FileCitation(
+        String type,
+        @JsonProperty("start_index") Integer startIndex,
+        @JsonProperty("end_index") Integer endIndex,
+        @JsonProperty("document_uri") String documentUri,
+        @JsonProperty("file_name") String fileName,
         String source
+    ) implements Annotation {}
+
+    /**
+     * Place citation annotation.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record PlaceCitation(
+        String type,
+        @JsonProperty("start_index") Integer startIndex,
+        @JsonProperty("end_index") Integer endIndex,
+        @JsonProperty("place_id") String placeId,
+        String name,
+        String url,
+        @JsonProperty("review_snippets") List<ReviewSnippet> reviewSnippets
+    ) implements Annotation {}
+
+    /**
+     * Review snippet for place citation or Google Maps results.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ReviewSnippet(
+        String title,
+        String url,
+        @JsonProperty("review_id") String reviewId
     ) {}
 
     /**
@@ -268,7 +330,8 @@ public sealed interface Content permits
         String type,
         String id,
         String name,
-        Map<String, Object> arguments
+        Map<String, Object> arguments,
+        String signature
     ) implements Content {}
 
     /**
@@ -312,7 +375,8 @@ public sealed interface Content permits
     record CodeExecutionCallContent(
         String type,
         String id,
-        CodeExecutionCallArguments arguments
+        CodeExecutionCallArguments arguments,
+        String signature
     ) implements Content {}
 
     /**
@@ -358,7 +422,8 @@ public sealed interface Content permits
     record UrlContextCallContent(
         String type,
         String id,
-        UrlContextCallArguments arguments
+        UrlContextCallArguments arguments,
+        String signature
     ) implements Content {}
 
     /**
@@ -535,5 +600,72 @@ public sealed interface Content permits
         String title,
         String text,
         @JsonProperty("file_search_store") String fileSearchStore
+    ) {}
+
+    // --- Google Maps ---
+
+    /**
+     * Content representing a Google Maps call.
+     *
+     * @param type      The type of content (must be "google_maps_call").
+     * @param id        The unique identifier for the Google Maps call.
+     * @param arguments The arguments for the Google Maps.
+     * @param signature The signature of the call.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record GoogleMapsCallContent(
+        String type,
+        String id,
+        GoogleMapsCallArguments arguments,
+        String signature
+    ) implements Content {}
+
+    /**
+     * Arguments for a Google Maps call.
+     *
+     * @param queries The queries to be executed.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record GoogleMapsCallArguments(
+        List<String> queries
+    ) {}
+
+    /**
+     * Content representing the result of a Google Maps call.
+     *
+     * @param type      The type of content (must be "google_maps_result").
+     * @param callId    The ID of the Google Maps call.
+     * @param signature The signature of the result.
+     * @param result    The list of Google Maps results.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record GoogleMapsResultContent(
+        String type,
+        @JsonProperty("call_id") String callId,
+        String signature,
+        List<GoogleMapsResult> result
+    ) implements Content {}
+
+    /**
+     * Result of a single Google Maps call.
+     *
+     * @param places               The places that were found.
+     * @param widgetContextToken   Resource name of the Google Maps widget context token.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record GoogleMapsResult(
+        List<Places> places,
+        @JsonProperty("widget_context_token") String widgetContextToken
+    ) {}
+
+    /**
+     * Place details.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Places(
+        @JsonProperty("place_id") String placeId,
+        String name,
+        String url,
+        @JsonProperty("review_snippets") List<ReviewSnippet> reviewSnippets
     ) {}
 }

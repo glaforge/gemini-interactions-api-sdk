@@ -39,7 +39,8 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Tool.UrlContext.class, name = "url_context"),
     @JsonSubTypes.Type(value = Tool.ComputerUse.class, name = "computer_use"),
     @JsonSubTypes.Type(value = Tool.McpServer.class, name = "mcp_server"),
-    @JsonSubTypes.Type(value = Tool.FileSearch.class, name = "file_search")
+    @JsonSubTypes.Type(value = Tool.FileSearch.class, name = "file_search"),
+    @JsonSubTypes.Type(value = Tool.GoogleMaps.class, name = "google_maps")
 })
 public sealed interface Tool permits
     Tool.Function,
@@ -48,7 +49,8 @@ public sealed interface Tool permits
     Tool.UrlContext,
     Tool.ComputerUse,
     Tool.McpServer,
-    Tool.FileSearch {
+    Tool.FileSearch,
+    Tool.GoogleMaps {
 
     /**
      * Returns the type of the tool.
@@ -200,6 +202,23 @@ public sealed interface Tool permits
         @JsonProperty("top_k") Integer topK,
         @JsonProperty("metadata_filter") String metadataFilter
     ) implements Tool {}
+
+    /**
+     * Tool definition for Google Maps.
+     *
+     * @param type The type of tool (must be "google_maps").
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record GoogleMaps(
+        String type
+    ) implements Tool {
+        /**
+         * Creates a new GoogleMaps tool.
+         */
+        public GoogleMaps() {
+            this("google_maps");
+        }
+    }
 
     // --- Tool Configuration ---
 
