@@ -189,6 +189,37 @@ interaction.outputs().forEach(content -> {
 });
 ```
 
+### Lyria Music Generation
+```java
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("models/lyria-3-clip-preview")
+    .input("An epic song with opera voices about a quest. Deep synths and a speeding up tempo.")
+    .responseModalities(Modality.AUDIO, Modality.TEXT)
+    .build();
+
+Interaction interaction = client.create(request);
+
+interaction.outputs().forEach(content -> {
+    if (content instanceof TextContent text) {
+        System.out.println("Lyrics / Structure Generated:\\n" + text.text());
+    }
+    if (content instanceof AudioContent audio) {
+        // Lyria directly returns an encoded MP3 byte stream!
+        try {
+            Files.write(Paths.get("quest-song.mp3"), audio.data());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+});
+```
+
 ### Deep Research
 ```java
 import io.github.glaforge.gemini.interactions.model.Interaction;
