@@ -1,6 +1,6 @@
 # Gemini Interactions SDK for Java
 
-A modern Java SDK for the Google Gemini Interactions API.
+A modern Java SDK for the [Google Gemini Interactions API](https://ai.google.dev/gemini-api/docs/interactions).
 
 ## Features
 - **Modern Java**: Built with Java 17+, utilizing Records, Sealed Interfaces, and pattern matching.
