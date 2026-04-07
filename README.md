@@ -300,6 +300,42 @@ if (lastOutput instanceof FunctionCallContent call) {
 }
 ```
 
+### Gemma Open Models
+
+You can use the open Gemma models through the interactions API just like the standard Gemini models.
+
+#### Simple Interaction (Gemma 4 26B)
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("models/gemma-4-26b-a4b-it")
+    .input("What is the capital of France? Answer in one word.")
+    .build();
+
+Interaction interaction = client.create(request);
+System.out.println(interaction.outputs().getLast());
+```
+
+#### Grounded Search (Gemma 4 31B)
+Gemma 4 models fully support the Google Search grounding tool.
+
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.Tool;
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("models/gemma-4-31b-it")
+    .input("Who is the actress who invented the MemPalace agent memory project?")
+    .tools(new Tool.GoogleSearch())
+    .build();
+
+Interaction interaction = client.create(request);
+System.out.println(interaction.outputs().getLast());
+```
+
 ### Built-in Tools (Google Maps)
 ```java
 import io.github.glaforge.gemini.interactions.model.Content;
