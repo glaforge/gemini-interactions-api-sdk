@@ -253,7 +253,9 @@ public sealed interface Events permits
         /** MCP server tool result delta. */
         @JsonProperty("mcp_server_tool_result") MCP_SERVER_TOOL_RESULT("mcp_server_tool_result"),
         /** File search result delta. */
-        @JsonProperty("file_search_result") FILE_SEARCH_RESULT("file_search_result");
+        @JsonProperty("file_search_result") FILE_SEARCH_RESULT("file_search_result"),
+        /** Text annotation delta. */
+        @JsonProperty("text_annotation") TEXT_ANNOTATION("text_annotation");
 
         private final String jsonValue;
 
@@ -302,7 +304,8 @@ public sealed interface Events permits
         @JsonSubTypes.Type(value = GoogleSearchResultDelta.class, name = "google_search_result"),
         @JsonSubTypes.Type(value = McpServerToolCallDelta.class, name = "mcp_server_tool_call"),
         @JsonSubTypes.Type(value = McpServerToolResultDelta.class, name = "mcp_server_tool_result"),
-        @JsonSubTypes.Type(value = FileSearchResultDelta.class, name = "file_search_result")
+        @JsonSubTypes.Type(value = FileSearchResultDelta.class, name = "file_search_result"),
+        @JsonSubTypes.Type(value = TextAnnotationDelta.class, name = "text_annotation")
     })
     sealed interface Delta permits
         TextDelta, ImageDelta, AudioDelta, DocumentDelta, VideoDelta,
@@ -312,7 +315,7 @@ public sealed interface Events permits
         UrlContextCallDelta, UrlContextResultDelta,
         GoogleSearchCallDelta, GoogleSearchResultDelta,
         McpServerToolCallDelta, McpServerToolResultDelta,
-        FileSearchResultDelta {
+        FileSearchResultDelta, TextAnnotationDelta {
         /**
          * Returns the type of the delta.
          * @return the type of the delta.
@@ -329,6 +332,15 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record TextDelta(DeltaType type, String text, List<Content.Annotation> annotations) implements Delta {}
+
+    /**
+     * Delta for text annotation.
+     *
+     * @param type        The type of delta ("text_annotation").
+     * @param annotations List of annotations.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record TextAnnotationDelta(DeltaType type, List<Content.Annotation> annotations) implements Delta {}
 
     /**
      * Delta for image content.
