@@ -599,7 +599,8 @@ public sealed interface Content permits
     record FileSearchResult(
         String title,
         String text,
-        @JsonProperty("file_search_store") String fileSearchStore
+        @JsonProperty("file_search_store") String fileSearchStore,
+        @JsonProperty("custom_metadata") List<Map<String, Object>> customMetadata
     ) {}
 
     // --- Google Maps ---
