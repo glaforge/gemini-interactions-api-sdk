@@ -40,7 +40,8 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Tool.ComputerUse.class, name = "computer_use"),
     @JsonSubTypes.Type(value = Tool.McpServer.class, name = "mcp_server"),
     @JsonSubTypes.Type(value = Tool.FileSearch.class, name = "file_search"),
-    @JsonSubTypes.Type(value = Tool.GoogleMaps.class, name = "google_maps")
+    @JsonSubTypes.Type(value = Tool.GoogleMaps.class, name = "google_maps"),
+    @JsonSubTypes.Type(value = Tool.Retrieval.class, name = "retrieval")
 })
 public sealed interface Tool permits
     Tool.Function,
@@ -50,7 +51,8 @@ public sealed interface Tool permits
     Tool.ComputerUse,
     Tool.McpServer,
     Tool.FileSearch,
-    Tool.GoogleMaps {
+    Tool.GoogleMaps,
+    Tool.Retrieval {
 
     /**
      * Returns the type of the tool.
@@ -90,17 +92,19 @@ public sealed interface Tool permits
     /**
      * Tool definition for Google Search.
      *
-     * @param type The type of tool (must be "google_search").
+     * @param type        The type of tool (must be "google_search").
+     * @param searchTypes The types of search grounding to enable (e.g. "enterprise_web_search").
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleSearch(
-        String type
+        String type,
+        @JsonProperty("search_types") List<String> searchTypes
     ) implements Tool {
         /**
          * Creates a new GoogleSearch tool.
          */
         public GoogleSearch() {
-            this("google_search");
+            this("google_search", null);
         }
     }
 
@@ -217,6 +221,39 @@ public sealed interface Tool permits
          */
         public GoogleMaps() {
             this("google_maps");
+        }
+    }
+
+    /**
+     * Configuration for Vertex AI Search.
+     * 
+     * @param engine     The Vertex AI Search engine list.
+     * @param datastores The Vertex AI Search datastores.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record VertexAISearchConfig(
+        String engine,
+        List<String> datastores
+    ) {}
+
+    /**
+     * Tool definition for Retrieval (Vertex AI Search).
+     *
+     * @param type                 The type of tool (must be "retrieval").
+     * @param retrievalTypes       The types of file retrieval to enable.
+     * @param vertexAiSearchConfig Configuration for Vertex AI Search.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Retrieval(
+        String type,
+        @JsonProperty("retrieval_types") List<String> retrievalTypes,
+        @JsonProperty("vertex_ai_search_config") VertexAISearchConfig vertexAiSearchConfig
+    ) implements Tool {
+        /**
+         * Creates a new Retrieval tool with default type "retrieval".
+         */
+        public Retrieval(List<String> retrievalTypes, VertexAISearchConfig vertexAiSearchConfig) {
+            this("retrieval", retrievalTypes, vertexAiSearchConfig);
         }
     }
 

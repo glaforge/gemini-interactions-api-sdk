@@ -34,6 +34,18 @@ public class InteractionParams {
     private InteractionParams() {}
 
     /**
+     * Service tier for the interaction.
+     */
+    public enum ServiceTier {
+        /** Flex service tier. */
+        @JsonProperty("flex") FLEX,
+        /** Standard service tier. */
+        @JsonProperty("standard") STANDARD,
+        /** Priority service tier. */
+        @JsonProperty("priority") PRIORITY
+    }
+
+    /**
      * Common interface for all interaction requests.
      */
     public sealed interface Request permits ModelInteractionParams, AgentInteractionParams {
@@ -59,6 +71,7 @@ public class InteractionParams {
      * @param responseFormat        Requested response format (JSON Schema).
      * @param responseMimeType      Requested response MIME type.
      * @param previousInteractionId ID of the previous interaction to continue.
+     * @param serviceTier           The service tier for the interaction.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ModelInteractionParams(
@@ -73,7 +86,8 @@ public class InteractionParams {
         @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
         @JsonProperty("response_format") Object responseFormat, // JSON Schema object
         @JsonProperty("response_mime_type") String responseMimeType,
-        @JsonProperty("previous_interaction_id") String previousInteractionId
+        @JsonProperty("previous_interaction_id") String previousInteractionId,
+        @JsonProperty("service_tier") ServiceTier serviceTier
     ) implements Request {
         /**
          * Returns a new builder for model interaction parameters.
@@ -96,6 +110,7 @@ public class InteractionParams {
             private Object responseFormat;
             private String responseMimeType;
             private String previousInteractionId;
+            private ServiceTier serviceTier;
             private List<Config.SpeechConfig> speechConfigs;
             private Config.ImageConfig imageConfig;
 
@@ -262,6 +277,14 @@ public class InteractionParams {
             public Builder previousInteractionId(String previousInteractionId) { this.previousInteractionId = previousInteractionId; return this; }
 
             /**
+             * Sets the service tier.
+             *
+             * @param serviceTier The service tier.
+             * @return This builder.
+             */
+            public Builder serviceTier(ServiceTier serviceTier) { this.serviceTier = serviceTier; return this; }
+
+            /**
              * Sets the image config.
              *
              * @param imageConfig The image configuration.
@@ -310,7 +333,7 @@ public class InteractionParams {
                         );
                     }
                 }
-                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId);
+                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId, serviceTier);
             }
         }
     }
@@ -331,6 +354,7 @@ public class InteractionParams {
      * @param responseFormat        Requested response format.
      * @param responseMimeType      Requested response MIME type.
      * @param previousInteractionId ID of the previous interaction.
+     * @param serviceTier           The service tier for the interaction.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AgentInteractionParams(
@@ -346,7 +370,8 @@ public class InteractionParams {
         @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
         @JsonProperty("response_format") Object responseFormat,
         @JsonProperty("response_mime_type") String responseMimeType,
-        @JsonProperty("previous_interaction_id") String previousInteractionId
+        @JsonProperty("previous_interaction_id") String previousInteractionId,
+        @JsonProperty("service_tier") ServiceTier serviceTier
     ) implements Request {
         /**
          * Returns a new builder for agent interaction parameters.
@@ -371,6 +396,7 @@ public class InteractionParams {
             private Object responseFormat;
             private String responseMimeType;
             private String previousInteractionId;
+            private ServiceTier serviceTier;
             private List<Config.SpeechConfig> speechConfigs;
             private Config.ImageConfig imageConfig;
 
@@ -551,6 +577,14 @@ public class InteractionParams {
             public Builder previousInteractionId(String previousInteractionId) { this.previousInteractionId = previousInteractionId; return this; }
 
             /**
+             * Sets the service tier.
+             *
+             * @param serviceTier The service tier.
+             * @return This builder.
+             */
+            public Builder serviceTier(ServiceTier serviceTier) { this.serviceTier = serviceTier; return this; }
+
+            /**
              * Sets the image config.
              *
              * @param imageConfig The image configuration.
@@ -599,7 +633,7 @@ public class InteractionParams {
                         );
                     }
                 }
-                return new AgentInteractionParams(agent, input, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId);
+                return new AgentInteractionParams(agent, input, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId, serviceTier);
             }
         }
     }

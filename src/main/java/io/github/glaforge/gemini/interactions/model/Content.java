@@ -241,23 +241,27 @@ public sealed interface Content permits
      * @param type     The type of content (must be "audio").
      * @param data     Base64 encoded audio data.
      * @param uri      URI of the audio.
-     * @param mimeType MIME type of the audio.
+     * @param mimeType MIME type of the audio (e.g. "audio/wav", "audio/mpeg", "audio/m4a", "audio/l16").
+     * @param rate     Sample rate of the audio in Hertz.
+     * @param channels Number of audio channels.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record AudioContent(
         String type,
         byte[] data,
         String uri,
-        @JsonProperty("mime_type") String mimeType
+        @JsonProperty("mime_type") String mimeType,
+        Integer rate,
+        Integer channels
     ) implements Content {
         /**
-         * Creates a new AudioContent with default type "audio".
+         * Creates a new AudioContent with default type "audio" and no rate or channels set.
          *
          * @param data     The base64 encoded audio data.
          * @param mimeType The MIME type of the audio.
          */
         public AudioContent(byte[] data, String mimeType) {
-            this("audio", data, null, mimeType);
+            this("audio", data, null, mimeType, null, null);
         }
     }
 
