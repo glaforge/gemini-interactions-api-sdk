@@ -126,7 +126,7 @@ public class ResearchFrontend {
             /// compute/fetch report section
             var topicsList = selectedTopics.stream().map(t -> "- " + t).collect(Collectors.joining("\n"));
             AgentInteractionParams researchParams = AgentInteractionParams.builder()
-                    .agent("deep-research-pro-preview-12-2025")
+                    .agent("deep-research-preview-04-2026")
                     .input(String.format("""
                             Write a concise research report on the following subject:
                             <subject>

@@ -254,6 +254,12 @@ public sealed interface Events permits
         @JsonProperty("mcp_server_tool_result") MCP_SERVER_TOOL_RESULT("mcp_server_tool_result"),
         /** File search result delta. */
         @JsonProperty("file_search_result") FILE_SEARCH_RESULT("file_search_result"),
+        /** File search call delta. */
+        @JsonProperty("file_search_call") FILE_SEARCH_CALL("file_search_call"),
+        /** Google Maps call delta. */
+        @JsonProperty("google_maps_call") GOOGLE_MAPS_CALL("google_maps_call"),
+        /** Google Maps result delta. */
+        @JsonProperty("google_maps_result") GOOGLE_MAPS_RESULT("google_maps_result"),
         /** Text annotation delta. */
         @JsonProperty("text_annotation") TEXT_ANNOTATION("text_annotation");
 
@@ -304,7 +310,10 @@ public sealed interface Events permits
         @JsonSubTypes.Type(value = GoogleSearchResultDelta.class, name = "google_search_result"),
         @JsonSubTypes.Type(value = McpServerToolCallDelta.class, name = "mcp_server_tool_call"),
         @JsonSubTypes.Type(value = McpServerToolResultDelta.class, name = "mcp_server_tool_result"),
+        @JsonSubTypes.Type(value = FileSearchCallDelta.class, name = "file_search_call"),
         @JsonSubTypes.Type(value = FileSearchResultDelta.class, name = "file_search_result"),
+        @JsonSubTypes.Type(value = GoogleMapsCallDelta.class, name = "google_maps_call"),
+        @JsonSubTypes.Type(value = GoogleMapsResultDelta.class, name = "google_maps_result"),
         @JsonSubTypes.Type(value = TextAnnotationDelta.class, name = "text_annotation")
     })
     sealed interface Delta permits
@@ -315,7 +324,9 @@ public sealed interface Events permits
         UrlContextCallDelta, UrlContextResultDelta,
         GoogleSearchCallDelta, GoogleSearchResultDelta,
         McpServerToolCallDelta, McpServerToolResultDelta,
-        FileSearchResultDelta, TextAnnotationDelta {
+        FileSearchCallDelta, FileSearchResultDelta,
+        GoogleMapsCallDelta, GoogleMapsResultDelta,
+        TextAnnotationDelta {
         /**
          * Returns the type of the delta.
          * @return the type of the delta.
@@ -520,6 +531,16 @@ public sealed interface Events permits
     record McpServerToolResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String name, @JsonProperty("server_name") String serverName, Object result) implements Delta {}
 
     /**
+     * Delta for file search call.
+     *
+     * @param type The type of delta ("file_search_call").
+     * @param id   The call ID.
+     * @param signature A signature hash for backend validation.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record FileSearchCallDelta(DeltaType type, String id, String signature) implements Delta {}
+
+    /**
      * Delta for file search result.
      *
      * @param type   The type of delta ("file_search_result").
@@ -527,4 +548,25 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FileSearchResultDelta(DeltaType type, List<Content.FileSearchResult> result) implements Delta {}
+
+    /**
+     * Delta for Google Maps call.
+     *
+     * @param type      The type of delta ("google_maps_call").
+     * @param id        The call ID.
+     * @param arguments The Google Maps arguments.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record GoogleMapsCallDelta(DeltaType type, String id, Map<String, Object> arguments) implements Delta {}
+
+    /**
+     * Delta for Google Maps result.
+     *
+     * @param type   The type of delta ("google_maps_result").
+     * @param callId The call ID.
+     * @param result The list of Google Maps results.
+     * @param isError Whether the result is an error.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record GoogleMapsResultDelta(DeltaType type, @JsonProperty("call_id") String callId, List<Map<String, Object>> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
 }

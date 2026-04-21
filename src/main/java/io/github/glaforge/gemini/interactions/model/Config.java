@@ -127,7 +127,11 @@ public class Config {
         @JsonProperty("5:4") RATIO_5_4,
         @JsonProperty("9:16") RATIO_9_16,
         @JsonProperty("16:9") RATIO_16_9,
-        @JsonProperty("21:9") RATIO_21_9
+        @JsonProperty("21:9") RATIO_21_9,
+        @JsonProperty("1:8") RATIO_1_8,
+        @JsonProperty("8:1") RATIO_8_1,
+        @JsonProperty("1:4") RATIO_1_4,
+        @JsonProperty("4:1") RATIO_4_1
     }
 
     /**
@@ -136,7 +140,8 @@ public class Config {
     public enum ImageSize {
         @JsonProperty("1K") SIZE_1K,
         @JsonProperty("2K") SIZE_2K,
-        @JsonProperty("4K") SIZE_4K
+        @JsonProperty("4K") SIZE_4K,
+        @JsonProperty("512") SIZE_512
     }
 
     /**
@@ -178,19 +183,31 @@ public class Config {
     }
 
     /**
+     * Configuration for visualization in Deep Research agent.
+     */
+    public enum Visualization {
+        @JsonProperty("off") OFF,
+        @JsonProperty("auto") AUTO
+    }
+
+    /**
      * Configuration for deep research agents.
      *
-     * @param type              The type of agent (must be "deep-research").
-     * @param thinkingSummaries Configuration for thinking summaries.
+     * @param type                  The type of agent (must be "deep-research").
+     * @param thinkingSummaries     Configuration for thinking summaries.
+     * @param visualization         Configuration for visualization.
+     * @param collaborativePlanning Whether human-in-the-loop planning is enabled.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record DeepResearchAgentConfig(
         String type,
-        @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries
+        @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
+        @JsonProperty("visualization") Visualization visualization,
+        @JsonProperty("collaborative_planning") Boolean collaborativePlanning
     ) implements AgentConfig {
         /** Creates a new DeepResearchAgentConfig with default type and no summaries. */
         public DeepResearchAgentConfig() {
-            this("deep-research", null);
+            this("deep-research", null, null, null);
         }
         /**
          * Creates a new DeepResearchAgentConfig with default type.
@@ -198,7 +215,7 @@ public class Config {
          * @param thinkingSummaries The thinking summaries configuration.
          */
         public DeepResearchAgentConfig(ThinkingSummaries thinkingSummaries) {
-            this("deep-research", thinkingSummaries);
+            this("deep-research", thinkingSummaries, null, null);
         }
     }
 }
