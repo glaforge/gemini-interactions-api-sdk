@@ -16,10 +16,13 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -290,6 +293,7 @@ public sealed interface Events permits
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type",
+        defaultImpl = UnknownDelta.class,
         visible = true
     )
     @JsonSubTypes({
@@ -326,7 +330,7 @@ public sealed interface Events permits
         McpServerToolCallDelta, McpServerToolResultDelta,
         FileSearchCallDelta, FileSearchResultDelta,
         GoogleMapsCallDelta, GoogleMapsResultDelta,
-        TextAnnotationDelta {
+        TextAnnotationDelta, UnknownDelta {
         /**
          * Returns the type of the delta.
          * @return the type of the delta.
@@ -569,4 +573,22 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleMapsResultDelta(DeltaType type, @JsonProperty("call_id") String callId, List<Map<String, Object>> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
+
+    /**
+     * Delta for unknown or missing types.
+     *
+     * @param type The type of delta (may be null if missing).
+     * @param raw  The raw JSON properties.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record UnknownDelta(
+        DeltaType type,
+        @JsonAnySetter Map<String, Object> raw
+    ) implements Delta {
+        public UnknownDelta {
+            if (raw == null) {
+                raw = new HashMap<>();
+            }
+        }
+    }
 }

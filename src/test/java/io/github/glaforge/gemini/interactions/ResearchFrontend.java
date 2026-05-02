@@ -18,6 +18,7 @@ import io.github.glaforge.gemini.interactions.model.Config.ThinkingSummaries;
 import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Events.ContentDelta;
+import io.github.glaforge.gemini.interactions.model.Events.ImageDelta;
 import io.github.glaforge.gemini.interactions.model.Events.TextDelta;
 import io.github.glaforge.gemini.interactions.model.Events.ThoughtSummaryDelta;
 import io.github.glaforge.gemini.interactions.model.Interaction;
@@ -159,9 +160,11 @@ public class ResearchFrontend {
                     } else if (delta.delta() instanceof TextDelta textPart) {
                         reportBuilder.append(textPart.text());
                         Jt.markdown(transformCitations(reportBuilder.toString())).use(reportPlaceholder);
+                    } else if (delta.delta() instanceof ImageDelta imagePart) {
+                        Jt.imageFromBase64(imagePart.data());
                     }
                 } else {
-                    System.out.printf("%nEVENT: %s\n", event);
+                    //System.out.printf("%nEVENT: %s\n", event);
                 }
             });
 
