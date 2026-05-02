@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import tools.jackson.databind.DeserializationFeature;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,6 +46,7 @@ public abstract class InteractionsHandler implements HttpHandler {
 
     private static final ObjectMapper objectMapper = JsonMapper.builder()
         .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         .build();
 
     // /v1beta/interactions/{id}
@@ -148,7 +150,12 @@ public abstract class InteractionsHandler implements HttpHandler {
 
     private void handleGet(HttpExchange exchange, String id) throws IOException {
         try {
-            Interaction interaction = get(id);
+            boolean includeInput = false;
+            String query = exchange.getRequestURI().getQuery();
+            if (query != null && query.contains("include_input=true")) {
+                includeInput = true;
+            }
+            Interaction interaction = get(id, includeInput);
             if (interaction != null) {
                 sendResponse(exchange, 200, interaction);
             } else {
@@ -209,6 +216,16 @@ public abstract class InteractionsHandler implements HttpHandler {
      * @return The Interaction, or null if not found.
      */
     public abstract Interaction get(String id);
+
+    /**
+     * Retrieves an interaction by ID, optionally including the original input.
+     * @param id The interaction ID.
+     * @param includeInput Whether to include the input in the response.
+     * @return The Interaction, or null if not found.
+     */
+    public Interaction get(String id, boolean includeInput) {
+        return get(id);
+    }
 
     /**
      * Deletes an interaction by ID.
