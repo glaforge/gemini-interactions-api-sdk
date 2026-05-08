@@ -16,27 +16,18 @@
 
 package io.github.glaforge.gemini.interactions;
 
-import io.github.glaforge.gemini.interactions.model.Interaction;
-import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
+import io.github.glaforge.gemini.interactions.model.Config.DeepResearchAgentConfig;
+import io.github.glaforge.gemini.interactions.model.Config.ThinkingSummaries;
+import io.github.glaforge.gemini.interactions.model.Config.Visualization;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
-import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
-import io.github.glaforge.gemini.interactions.model.Tool.GoogleSearch;
-import io.github.glaforge.gemini.interactions.model.Content;
-import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
-import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+import io.github.glaforge.gemini.interactions.model.Events;
+import io.github.glaforge.gemini.interactions.model.Interaction;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,165 +49,141 @@ public class ResearchAgentTest {
 
     @Test
     public void testResearchPlannerExecutor() throws IOException, InterruptedException {
-        // --- Setup ---
-        // Step 0: Define the research goal
         String researchGoal = """
-            Research the current state of Quantum Computing in 2025,
-            specifically looking for major breakthroughs in error correction.
+            Best pecan pie recipes.
             """;
-        System.out.println("🔬 Research Goal: " + researchGoal);
+        System.out.println("Research Goal: " + researchGoal);
 
-        // --- Phase 1: Plan ---
-        // Gemini 3 Flash Preview creates research tasks
-        System.out.println("\n--- Phase 1: Planning ---");
-
-        ModelInteractionParams planParams = ModelInteractionParams.builder()
-                .model("gemini-3-flash-preview")
-                .input(String.format("""
-                    Create a numbered research plan for: %s
-                    Format: 1. [Task] - [Details]
-                    Include 3 specific tasks.
-                    """, researchGoal))
-                .tools(new GoogleSearch())
-                .store(true)
-                .build();
-
-        Interaction planInteraction = client.create(planParams);
-        String planText = getText(planInteraction);
-        String planId = planInteraction.id();
-
-        assertNotNull(planId, "Plan Interaction ID should not be null");
-        assertFalse(planText.isEmpty(), "Plan text should not be empty");
-
-        System.out.println("📋 Plan Generated (ID: " + planId + "):");
-        System.out.println(planText);
-
-        List<String> tasks = parseTasks(planText);
-        assertFalse(tasks.isEmpty(), "Should have parsed at least one task");
-
-        // --- Phase 2: Research ---
-        // Select tasks and run Deep Research Agent
-        // In this test, we select all tasks.
-        System.out.println("\n--- Phase 2: Researching ---");
-
-        String selectedTasks = String.join("\n\n", tasks);
-        System.out.println("Selected Tasks:\n" + selectedTasks);
+        System.out.println("\nResearching...");
 
         AgentInteractionParams researchParams = AgentInteractionParams.builder()
-                .agent("deep-research-pro-preview-12-2025")
-                .input(String.format(
-                    "Research these tasks thoroughly with sources:\n\n%s",
-                    selectedTasks))
-                .previousInteractionId(planId)
+                .agent("deep-research-max-preview-04-2026")
+                // .agent("deep-research-pro-preview-12-2025")
+                .agentConfig(new DeepResearchAgentConfig("deep-research", ThinkingSummaries.AUTO, Visualization.AUTO, false))
+                .input(researchGoal)
                 .background(true)
                 .store(true)
+                .stream(true)
                 .build();
 
-        Interaction researchInteraction = client.create(researchParams);
-        String researchId = researchInteraction.id();
-        System.out.println("🚀 Started Deep Research (ID: " + researchId + ") - Status: " + researchInteraction.status());
+        System.out.println("Starting streaming research...");
 
-        // Wait for completion (Background task) up to 10 mins as deep research can be slow
-        researchInteraction = waitForCompletion(client, researchId, 600);
+        StringBuilder researchTextBuilder = new StringBuilder();
+        String[] capturedResearchId = new String[1];
 
-        String researchText = getText(researchInteraction);
-        System.out.println("📄 Research Results (Status: " + researchInteraction.status() + "):");
-        System.out.println(researchText); // Printing potentially large output
+        try (var eventStream = client.stream(researchParams)) {
+            eventStream.forEach(event -> {
+                if (event instanceof Events.ContentDelta deltaEvent) {
+                    var delta = deltaEvent.delta();
+                    if (delta instanceof Events.TextDelta textDelta) {
+                        System.out.print(textDelta.text());
+                        System.out.flush();
+                        researchTextBuilder.append(textDelta.text());
+                    } else if (delta instanceof Events.ThoughtSummaryDelta thoughtDelta) {
+                        System.out.print("\n[Thinking...] " + thoughtDelta.content() + "\n");
+                    } else if (delta instanceof Events.ThoughtSignatureDelta signatureDelta) {
+                        System.out.print("\n[Thought Signature: " + signatureDelta.signature() + "]\n");
+                    } else if (delta instanceof Events.GoogleSearchCallDelta searchCall) {
+                        System.out.print("\n[Google Search Call: " + searchCall.arguments() + "]\n");
+                    } else if (delta instanceof Events.GoogleSearchResultDelta searchResult) {
+                        System.out.print("\n[Google Search Result: " + (searchResult.result() != null ? searchResult.result().size() : 0) + " results]\n");
+                    } else if (delta instanceof Events.UrlContextCallDelta urlCall) {
+                        System.out.print("\n[URL Context Call: " + urlCall.arguments() + "]\n");
+                    } else if (delta instanceof Events.UrlContextResultDelta urlResult) {
+                        System.out.print("\n[URL Context Result: " + (urlResult.result() != null ? urlResult.result().size() : 0) + " results]\n");
+                    } else if (delta instanceof Events.CodeExecutionCallDelta codeCall) {
+                        System.out.print("\n[Code Execution Call: " + codeCall.arguments() + "]\n");
+                    } else if (delta instanceof Events.CodeExecutionResultDelta codeResult) {
+                        System.out.print("\n[Code Execution Result: " + codeResult.result() + "]\n");
+                    } else if (delta instanceof Events.FunctionCallDelta functionCall) {
+                        System.out.print("\n[Function Call: " + functionCall.name() + " with args " + functionCall.arguments() + "]\n");
+                    } else if (delta instanceof Events.FunctionResultDelta functionResult) {
+                        System.out.print("\n[Function Result: " + functionResult.name() + " -> " + functionResult.result() + "]\n");
+                    } else if (delta instanceof Events.FileSearchCallDelta fileCall) {
+                        System.out.print("\n[File Search Call: " + fileCall.signature() + "]\n");
+                    } else if (delta instanceof Events.FileSearchResultDelta fileResult) {
+                        System.out.print("\n[File Search Result: " + (fileResult.result() != null ? fileResult.result().size() : 0) + " results]\n");
+                    } else if (delta instanceof Events.McpServerToolCallDelta mcpCall) {
+                        System.out.print("\n[MCP Tool Call: " + mcpCall.serverName() + "/" + mcpCall.name() + "]\n");
+                    } else if (delta instanceof Events.McpServerToolResultDelta mcpResult) {
+                        System.out.print("\n[MCP Tool Result: " + mcpResult.serverName() + "/" + mcpResult.name() + "]\n");
+                    } else if (delta instanceof Events.GoogleMapsCallDelta mapsCall) {
+                        System.out.print("\n[Google Maps Call: " + mapsCall.arguments() + "]\n");
+                    } else if (delta instanceof Events.GoogleMapsResultDelta mapsResult) {
+                        System.out.print("\n[Google Maps Result: " + (mapsResult.result() != null ? mapsResult.result().size() : 0) + " results]\n");
+                    } else if (delta instanceof Events.ImageDelta imageDelta) {
+                        System.out.print("\n[Image Delta: " + imageDelta.mimeType() + "]\n");
+                    } else if (delta instanceof Events.AudioDelta audioDelta) {
+                        System.out.print("\n[Audio Delta: " + audioDelta.mimeType() + "]\n");
+                    } else if (delta instanceof Events.VideoDelta videoDelta) {
+                        System.out.print("\n[Video Delta: " + videoDelta.mimeType() + "]\n");
+                    } else if (delta instanceof Events.DocumentDelta documentDelta) {
+                        System.out.print("\n[Document Delta: " + documentDelta.mimeType() + "]\n");
+                    } else if (delta instanceof Events.TextAnnotationDelta textAnnotation) {
+                        System.out.print("\n[Text Annotation: " + (textAnnotation.annotations() != null ? textAnnotation.annotations().size() : 0) + " annotations]\n");
+                    } else if (delta instanceof Events.UnknownDelta unknownDelta) {
+                        System.out.print("\n[Unknown Delta: " + unknownDelta.raw() + "]\n");
+                    } else {
+                        System.out.print("\n[Other Delta: " + delta.getClass().getSimpleName() + "]\n");
+                    }
+                } else if (event instanceof Events.InteractionEvent interactionEvent) {
+                    if (interactionEvent.eventType() == Events.EventType.INTERACTION_START) {
+                        System.out.println("\n[Interaction Start: " + interactionEvent.interaction().id() + "]");
+                    } else if (interactionEvent.eventType() == Events.EventType.INTERACTION_COMPLETE) {
+                        capturedResearchId[0] = interactionEvent.interaction().id();
+                        System.out.println("\n[Interaction Complete: " + capturedResearchId[0] + "]");
+                        if (interactionEvent.interaction().outputs() != null) {
+                            for (var content : interactionEvent.interaction().outputs()) {
+                                if (content instanceof io.github.glaforge.gemini.interactions.model.Content.TextContent textContent) {
+                                    System.out.println(textContent.text());
+                                    researchTextBuilder.append(textContent.text());
+                                }
+                            }
+                        }
+                    }
+                } else if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
+                    System.out.println("\n[Interaction Status Update: " + statusUpdate.interactionId() + " -> " + statusUpdate.status() + "]");
+                } else if (event instanceof Events.ContentStart contentStart) {
+                    System.out.println("\n[Content Start: index " + contentStart.index() + "]");
+                } else if (event instanceof Events.ContentStop contentStop) {
+                    System.out.println("\n[Content Stop: index " + contentStop.index() + "]");
+                } else if (event instanceof Events.ErrorEvent errorEvent) {
+                    System.err.println("\n[Error Event: " + errorEvent.error().code() + " - " + errorEvent.error().message() + "]");
+                } else {
+                    System.out.println("\n[Other Event: " + event.getClass().getSimpleName() + "]");
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("\nStream error: " + e.toString());
+            e.printStackTrace();
+        }
 
-        assertEquals(Interaction.Status.COMPLETED, researchInteraction.status(), "Research interaction should complete successfully");
-        assertNotNull(researchText, "Research text should not be null");
-
-        // --- Phase 3: Synthesis ---
-        System.out.println("\n--- Phase 3: Synthesis ---");
-
-        ModelInteractionParams synthesisParams = ModelInteractionParams.builder()
-                .model("gemini-3-pro-preview")
-                .input(String.format(
-                    "Create executive report with Summary, Findings, Recommendations, Risks based on the research:\n\n%s",
-                    researchText))
-                .previousInteractionId(researchId)
-                .store(true)
-                .build();
-
-        Interaction synthesisInteraction = client.create(synthesisParams);
-        String synthesisText = getText(synthesisInteraction);
-
-        System.out.println("📊 Executive Report:");
-        System.out.println(synthesisText);
-
-        assertNotNull(synthesisText, "Synthesis text should not be null");
-        assertFalse(synthesisText.isEmpty(), "Synthesis text should not be empty");
-
-        // --- Phase 4: Infographic ---
-        System.out.println("\n--- Phase 4: Infographic ---");
-        ModelInteractionParams infographicParams = ModelInteractionParams.builder()
-                .model("gemini-3-pro-image-preview")
-                .input(String.format("""
-                        Create a whiteboard summary infographic for the following:
-
-                        %s""", synthesisText))
-                .responseModalities(List.of(Modality.IMAGE))
-                .build();
-
-        Interaction infographicInteraction = client.create(infographicParams);
-
-        System.out.println("📊 Infographic generated");
-        saveInfographic(infographicInteraction);
-    }
-
-    // Helper to extract text from interaction outputs
-    private String getText(Interaction interaction) {
-        if (interaction.outputs() == null) return "";
-        return interaction.outputs().stream()
-                .filter(c -> c instanceof TextContent)
-                .map(c -> ((TextContent) c).text())
-                .collect(Collectors.joining("\n"));
-    }
-
-    // Helper to extract infographic from interaction outputs
-    private void saveInfographic(Interaction interaction) {
-        if (interaction.outputs() == null) return;
-
-        List<Content> outputs = interaction.outputs();
-        for (int i = 0; i < outputs.size(); i++) {
-            Content output = outputs.get(i);
-            if (output instanceof ImageContent image) {
-                System.out.println("Image received. Saving to png...");
-                byte[] imageBytes = image.data();
-                try (FileOutputStream fos = new FileOutputStream("target/image" + i + ".png")) {
-                    fos.write(imageBytes);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+        if (researchTextBuilder.isEmpty() && capturedResearchId[0] != null) {
+            System.out.println("\n[Stream completed but no report received. Polling interaction for final result...]");
+            Interaction finalInteraction = client.get(capturedResearchId[0]);
+            while (finalInteraction.status() != Interaction.Status.COMPLETED && finalInteraction.status() != Interaction.Status.FAILED) {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                finalInteraction = client.get(capturedResearchId[0]);
+            }
+            if (finalInteraction.outputs() != null) {
+                for (var content : finalInteraction.outputs()) {
+                    if (content instanceof io.github.glaforge.gemini.interactions.model.Content.TextContent textContent) {
+                        researchTextBuilder.append(textContent.text());
+                    }
                 }
             }
         }
-    }
 
-    // Helper to parse tasks (simplified version of the Python regex)
-    private List<String> parseTasks(String text) {
-        Pattern pattern = Pattern.compile("^(\\d+)[\\.\\)\\-]\\s*(.+?)(?=\\n\\d+[\\.\\)\\-]|\\n\\n|$)", Pattern.MULTILINE | Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(text);
+        String researchText = researchTextBuilder.toString();
+        System.out.println("\nResearch Result:\n\n" + researchText);
 
-        return matcher.results()
-                .map(m -> m.group(1) + ". " + m.group(2).trim().replace('\n', ' '))
-                .collect(Collectors.toList());
-    }
+        assertTrue(completed, "Research interaction stream should complete successfully");
+        assertNotNull(researchText, "Research text should not be null");
+        assertFalse(researchText.isEmpty(), "Research text should not be empty");
 
-    // Helper to wait for background completion
-    private Interaction waitForCompletion(GeminiInteractionsClient client, String id, int timeoutSeconds) throws IOException, InterruptedException {
-        long startTime = System.currentTimeMillis();
-        long timeoutMs = timeoutSeconds * 1000L;
-
-        Interaction interaction = client.get(id);
-        while (System.currentTimeMillis() - startTime < timeoutMs) {
-            System.out.print(".");
-            if (interaction.status() != Interaction.Status.IN_PROGRESS) {
-                System.out.println("\nFinished with status: " + interaction.status());
-                return interaction;
-            }
-            Thread.sleep(5000); // Poll every 5 seconds
-            interaction = client.get(id);
-        }
-        return interaction;
     }
 }

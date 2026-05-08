@@ -217,5 +217,55 @@ public class Config {
         public DeepResearchAgentConfig(ThinkingSummaries thinkingSummaries) {
             this("deep-research", thinkingSummaries, null, null);
         }
+
+        /**
+         * Returns a new builder for deep research agent config.
+         * @return a new builder for deep research agent config.
+         */
+        public static Builder builder() { return new Builder(); }
+
+        /** Builder for DeepResearchAgentConfig. */
+        public static class Builder {
+            private String type = "deep-research";
+            private ThinkingSummaries thinkingSummaries;
+            private Visualization visualization;
+            private Boolean collaborativePlanning;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the thinking summaries configuration.
+             *
+             * @param thinkingSummaries The thinking summaries configuration.
+             * @return This builder.
+             */
+            public Builder thinkingSummaries(ThinkingSummaries thinkingSummaries) { this.thinkingSummaries = thinkingSummaries; return this; }
+
+            /**
+             * Sets the visualization configuration.
+             *
+             * @param visualization The visualization configuration.
+             * @return This builder.
+             */
+            public Builder visualization(Visualization visualization) { this.visualization = visualization; return this; }
+
+            /**
+             * Sets the collaborative planning flag.
+             *
+             * @param collaborativePlanning Whether human-in-the-loop planning is enabled.
+             * @return This builder.
+             */
+            public Builder collaborativePlanning(Boolean collaborativePlanning) { this.collaborativePlanning = collaborativePlanning; return this; }
+
+            /**
+             * Builds the DeepResearchAgentConfig.
+             *
+             * @return The DeepResearchAgentConfig.
+             */
+            public DeepResearchAgentConfig build() {
+                return new DeepResearchAgentConfig(type, thinkingSummaries, visualization, collaborativePlanning);
+            }
+        }
     }
 }

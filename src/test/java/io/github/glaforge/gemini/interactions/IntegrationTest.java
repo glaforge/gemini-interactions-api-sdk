@@ -67,8 +67,8 @@ public class IntegrationTest {
                 .build();
 
         Interaction interaction = client.create(InteractionParams.AgentInteractionParams.builder()
-                .agent("deep-research-pro-preview-12-2025")
-                .input("Research the history of the Google TPUs with a focus on 2025 and 2026")
+                .agent("deep-research-max-preview-04-2026")
+                .input("AI agent design patterns (harness, orchestration, context engineering, etc.)")
                 .background(true)
                 .build());
 

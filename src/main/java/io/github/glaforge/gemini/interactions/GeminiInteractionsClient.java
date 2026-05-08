@@ -142,7 +142,7 @@ public class GeminiInteractionsClient {
             return response.body()
                 .filter(line -> line.startsWith("data: "))
                 .map(line -> line.substring(6))
-                .filter(json -> !json.equals("[DONE]"))
+                .takeWhile(json -> !json.equals("[DONE]"))
                 .map(json -> {
                     try {
                         return objectMapper.readValue(json, Events.class);
