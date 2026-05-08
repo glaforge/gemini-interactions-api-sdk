@@ -117,10 +117,20 @@ public class Config {
         @JsonSubTypes.Type(value = VideoResponseFormat.class, name = "video")
     })
     public sealed interface ResponseFormat permits TextResponseFormat, ImageResponseFormat, AudioResponseFormat, VideoResponseFormat {
+        /**
+         * Returns the type.
+         * @return the type.
+         */
         String type();
     }
 
-    /** Configuration for text output format. */
+    /**
+     * Configuration for text output format.
+     *
+     * @param type     The type of format.
+     * @param mimeType The MIME type.
+     * @param schema   The JSON schema.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record TextResponseFormat(
         String type,
@@ -128,7 +138,15 @@ public class Config {
         Map<String, Object> schema
     ) implements ResponseFormat {}
 
-    /** Configuration for image output format. */
+    /**
+     * Configuration for image output format.
+     *
+     * @param type        The type of format.
+     * @param mimeType    The MIME type.
+     * @param delivery    The delivery method.
+     * @param aspectRatio The aspect ratio.
+     * @param imageSize   The image size.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ImageResponseFormat(
         String type,
@@ -138,7 +156,15 @@ public class Config {
         @JsonProperty("image_size") ImageSize imageSize
     ) implements ResponseFormat {}
 
-    /** Configuration for audio output format. */
+    /**
+     * Configuration for audio output format.
+     *
+     * @param type       The type of format.
+     * @param mimeType   The MIME type.
+     * @param delivery   The delivery method.
+     * @param sampleRate The sample rate.
+     * @param bitRate    The bit rate.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record AudioResponseFormat(
         String type,
@@ -148,7 +174,11 @@ public class Config {
         @JsonProperty("bit_rate") Integer bitRate
     ) implements ResponseFormat {}
 
-    /** Configuration for video output format. */
+    /**
+     * Configuration for video output format.
+     *
+     * @param type The type of format.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record VideoResponseFormat(
         String type
@@ -158,19 +188,33 @@ public class Config {
      * Aspect ratio for generated images.
      */
     public enum AspectRatio {
+        /** 1:1. */
         @JsonProperty("1:1") RATIO_1_1,
+        /** 2:3. */
         @JsonProperty("2:3") RATIO_2_3,
+        /** 3:2. */
         @JsonProperty("3:2") RATIO_3_2,
+        /** 3:4. */
         @JsonProperty("3:4") RATIO_3_4,
+        /** 4:3. */
         @JsonProperty("4:3") RATIO_4_3,
+        /** 4:5. */
         @JsonProperty("4:5") RATIO_4_5,
+        /** 5:4. */
         @JsonProperty("5:4") RATIO_5_4,
+        /** 9:16. */
         @JsonProperty("9:16") RATIO_9_16,
+        /** 16:9. */
         @JsonProperty("16:9") RATIO_16_9,
+        /** 21:9. */
         @JsonProperty("21:9") RATIO_21_9,
+        /** 1:8. */
         @JsonProperty("1:8") RATIO_1_8,
+        /** 8:1. */
         @JsonProperty("8:1") RATIO_8_1,
+        /** 1:4. */
         @JsonProperty("1:4") RATIO_1_4,
+        /** 4:1. */
         @JsonProperty("4:1") RATIO_4_1
     }
 
@@ -178,9 +222,13 @@ public class Config {
      * Size for generated images.
      */
     public enum ImageSize {
+        /** 1K. */
         @JsonProperty("1K") SIZE_1K,
+        /** 2K. */
         @JsonProperty("2K") SIZE_2K,
+        /** 4K. */
         @JsonProperty("4K") SIZE_4K,
+        /** 512. */
         @JsonProperty("512") SIZE_512
     }
 
@@ -226,7 +274,9 @@ public class Config {
      * Configuration for visualization in Deep Research agent.
      */
     public enum Visualization {
+        /** Off. */
         @JsonProperty("off") OFF,
+        /** Auto. */
         @JsonProperty("auto") AUTO
     }
 

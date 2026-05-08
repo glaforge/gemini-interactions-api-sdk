@@ -600,6 +600,9 @@ public sealed interface Events permits
         DeltaType type,
         @JsonAnySetter Map<String, Object> raw
     ) implements Delta {
+        /**
+         * Creates an UnknownDelta.
+         */
         public UnknownDelta {
             if (raw == null) {
                 raw = new HashMap<>();

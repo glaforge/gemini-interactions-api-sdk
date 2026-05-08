@@ -130,6 +130,12 @@ public sealed interface Content permits
 
     /**
      * URL citation annotation.
+     *
+     * @param type       The type.
+     * @param startIndex The start index.
+     * @param endIndex   The end index.
+     * @param url        The URL.
+     * @param title      The title.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record UrlCitation(
@@ -142,6 +148,13 @@ public sealed interface Content permits
 
     /**
      * File citation annotation.
+     *
+     * @param type        The type.
+     * @param startIndex  The start index.
+     * @param endIndex    The end index.
+     * @param documentUri The document URI.
+     * @param fileName    The file name.
+     * @param source      The source.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FileCitation(
@@ -155,6 +168,14 @@ public sealed interface Content permits
 
     /**
      * Place citation annotation.
+     *
+     * @param type           The type.
+     * @param startIndex     The start index.
+     * @param endIndex       The end index.
+     * @param placeId        The place ID.
+     * @param name           The name.
+     * @param url            The URL.
+     * @param reviewSnippets Review snippets.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record PlaceCitation(
@@ -169,6 +190,10 @@ public sealed interface Content permits
 
     /**
      * Review snippet for place citation or Google Maps results.
+     *
+     * @param title    The title.
+     * @param url      The URL.
+     * @param reviewId The review ID.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ReviewSnippet(

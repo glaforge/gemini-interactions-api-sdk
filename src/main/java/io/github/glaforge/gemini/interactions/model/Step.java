@@ -70,16 +70,32 @@ public sealed interface Step permits
     Step.GoogleMapsCallStep,
     Step.GoogleMapsResultStep {
 
+    /**
+     * Gets the type.
+     * @return the type.
+     */
     String type();
 
     // --- Input / Output Steps ---
 
+    /**
+     * UserInputStep.
+     *
+     * @param type type parameter.
+     * @param content content parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record UserInputStep(
         String type,
         List<Content> content
     ) implements Step {}
 
+    /**
+     * ModelOutputStep.
+     *
+     * @param type type parameter.
+     * @param content content parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ModelOutputStep(
         String type,
@@ -88,6 +104,13 @@ public sealed interface Step permits
 
     // --- Thinking ---
 
+    /**
+     * ThoughtStep.
+     *
+     * @param type type parameter.
+     * @param signature signature parameter.
+     * @param summary summary parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ThoughtStep(
         String type,
@@ -97,6 +120,15 @@ public sealed interface Step permits
 
     // --- Function Calling ---
 
+    /**
+     * FunctionCallStep.
+     *
+     * @param type type parameter.
+     * @param id id parameter.
+     * @param name name parameter.
+     * @param arguments arguments parameter.
+     * @param signature signature parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FunctionCallStep(
         String type,
@@ -106,6 +138,15 @@ public sealed interface Step permits
         String signature
     ) implements Step {}
 
+    /**
+     * FunctionResultStep.
+     *
+     * @param type type parameter.
+     * @param callId callId parameter.
+     * @param name name parameter.
+     * @param isError isError parameter.
+     * @param result result parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FunctionResultStep(
         String type,
@@ -117,6 +158,14 @@ public sealed interface Step permits
 
     // --- Code Execution ---
 
+    /**
+     * CodeExecutionCallStep.
+     *
+     * @param type type parameter.
+     * @param id id parameter.
+     * @param arguments arguments parameter.
+     * @param signature signature parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record CodeExecutionCallStep(
         String type,
@@ -125,12 +174,27 @@ public sealed interface Step permits
         String signature
     ) implements Step {}
 
+    /**
+     * CodeExecutionCallArguments.
+     *
+     * @param language language parameter.
+     * @param code code parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record CodeExecutionCallArguments(
         String language, // e.g. "python"
         String code
     ) {}
 
+    /**
+     * CodeExecutionResultStep.
+     *
+     * @param type type parameter.
+     * @param callId callId parameter.
+     * @param result result parameter.
+     * @param isError isError parameter.
+     * @param signature signature parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record CodeExecutionResultStep(
         String type,
@@ -142,6 +206,14 @@ public sealed interface Step permits
 
     // --- URL Context ---
 
+    /**
+     * UrlContextCallStep.
+     *
+     * @param type type parameter.
+     * @param id id parameter.
+     * @param arguments arguments parameter.
+     * @param signature signature parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record UrlContextCallStep(
         String type,
@@ -150,11 +222,25 @@ public sealed interface Step permits
         String signature
     ) implements Step {}
 
+    /**
+     * UrlContextCallArguments.
+     *
+     * @param urls urls parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record UrlContextCallArguments(
         List<String> urls
     ) {}
 
+    /**
+     * UrlContextResultStep.
+     *
+     * @param type type parameter.
+     * @param callId callId parameter.
+     * @param signature signature parameter.
+     * @param result result parameter.
+     * @param isError isError parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record UrlContextResultStep(
         String type,
@@ -164,6 +250,12 @@ public sealed interface Step permits
         @JsonProperty("is_error") Boolean isError
     ) implements Step {}
 
+    /**
+     * UrlContextResult.
+     *
+     * @param url url parameter.
+     * @param status status parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record UrlContextResult(
         String url,
@@ -172,6 +264,13 @@ public sealed interface Step permits
 
     // --- Google Search ---
 
+    /**
+     * GoogleSearchCallStep.
+     *
+     * @param type type parameter.
+     * @param id id parameter.
+     * @param arguments arguments parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleSearchCallStep(
         String type,
@@ -179,11 +278,25 @@ public sealed interface Step permits
         GoogleSearchCallArguments arguments
     ) implements Step {}
 
+    /**
+     * GoogleSearchCallArguments.
+     *
+     * @param queries queries parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleSearchCallArguments(
         List<String> queries
     ) {}
 
+    /**
+     * GoogleSearchResultStep.
+     *
+     * @param type type parameter.
+     * @param callId callId parameter.
+     * @param signature signature parameter.
+     * @param result result parameter.
+     * @param isError isError parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleSearchResultStep(
         String type,
@@ -193,6 +306,13 @@ public sealed interface Step permits
         @JsonProperty("is_error") Boolean isError
     ) implements Step {}
 
+    /**
+     * GoogleSearchResult.
+     *
+     * @param url url parameter.
+     * @param title title parameter.
+     * @param renderedContent renderedContent parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleSearchResult(
         String url,
@@ -202,6 +322,15 @@ public sealed interface Step permits
 
     // --- MCP Server ---
 
+    /**
+     * McpServerToolCallStep.
+     *
+     * @param type type parameter.
+     * @param id id parameter.
+     * @param name name parameter.
+     * @param serverName serverName parameter.
+     * @param arguments arguments parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record McpServerToolCallStep(
         String type,
@@ -211,6 +340,15 @@ public sealed interface Step permits
         Map<String, Object> arguments
     ) implements Step {}
 
+    /**
+     * McpServerToolResultStep.
+     *
+     * @param type type parameter.
+     * @param callId callId parameter.
+     * @param name name parameter.
+     * @param serverName serverName parameter.
+     * @param result result parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record McpServerToolResultStep(
         String type,
@@ -222,18 +360,38 @@ public sealed interface Step permits
 
     // --- File Search ---
 
+    /**
+     * FileSearchCallStep.
+     *
+     * @param type type parameter.
+     * @param id id parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FileSearchCallStep(
         String type,
         String id
     ) implements Step {}
 
+    /**
+     * FileSearchResultStep.
+     *
+     * @param type type parameter.
+     * @param result result parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FileSearchResultStep(
         String type,
         List<FileSearchResult> result
     ) implements Step {}
 
+    /**
+     * FileSearchResult.
+     *
+     * @param title title parameter.
+     * @param text text parameter.
+     * @param fileSearchStore fileSearchStore parameter.
+     * @param customMetadata customMetadata parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FileSearchResult(
         String title,
@@ -244,6 +402,14 @@ public sealed interface Step permits
 
     // --- Google Maps ---
 
+    /**
+     * GoogleMapsCallStep.
+     *
+     * @param type type parameter.
+     * @param id id parameter.
+     * @param arguments arguments parameter.
+     * @param signature signature parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleMapsCallStep(
         String type,
@@ -252,11 +418,24 @@ public sealed interface Step permits
         String signature
     ) implements Step {}
 
+    /**
+     * GoogleMapsCallArguments.
+     *
+     * @param queries queries parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleMapsCallArguments(
         List<String> queries
     ) {}
 
+    /**
+     * GoogleMapsResultStep.
+     *
+     * @param type type parameter.
+     * @param callId callId parameter.
+     * @param signature signature parameter.
+     * @param result result parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleMapsResultStep(
         String type,
@@ -265,12 +444,26 @@ public sealed interface Step permits
         List<GoogleMapsResult> result
     ) implements Step {}
 
+    /**
+     * GoogleMapsResult.
+     *
+     * @param places places parameter.
+     * @param widgetContextToken widgetContextToken parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleMapsResult(
         List<Places> places,
         @JsonProperty("widget_context_token") String widgetContextToken
     ) {}
 
+    /**
+     * Places.
+     *
+     * @param placeId placeId parameter.
+     * @param name name parameter.
+     * @param url url parameter.
+     * @param reviewSnippets reviewSnippets parameter.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Places(
         @JsonProperty("place_id") String placeId,

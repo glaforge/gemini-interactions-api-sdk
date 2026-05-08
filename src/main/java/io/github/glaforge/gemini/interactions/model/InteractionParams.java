@@ -141,9 +141,19 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder inputContents(List<Content> content) { this.input = content; return this; }
-            /** Sets the input using one or more Steps. */
+            /**
+             * Sets the input using one or more Steps.
+             *
+             * @param steps The input steps.
+             * @return This builder.
+             */
             public Builder input(Step... steps) { this.input = List.of(steps); return this; }
-            /** Sets the input using a list of Steps. */
+            /**
+             * Sets the input using a list of Steps.
+             *
+             * @param steps The input steps.
+             * @return This builder.
+             */
             public Builder inputSteps(List<Step> steps) { this.input = steps; return this; }
 
             /**
@@ -434,9 +444,19 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder inputContents(List<Content> content) { this.input = content; return this; }
-            /** Sets the input using one or more Steps. */
+            /**
+             * Sets the input using one or more Steps.
+             *
+             * @param steps The input steps.
+             * @return This builder.
+             */
             public Builder input(Step... steps) { this.input = List.of(steps); return this; }
-            /** Sets the input using a list of Steps. */
+            /**
+             * Sets the input using a list of Steps.
+             *
+             * @param steps The input steps.
+             * @return This builder.
+             */
             public Builder inputSteps(List<Step> steps) { this.input = steps; return this; }
 
             /**

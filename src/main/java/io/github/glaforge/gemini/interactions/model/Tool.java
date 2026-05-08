@@ -251,6 +251,9 @@ public sealed interface Tool permits
     ) implements Tool {
         /**
          * Creates a new Retrieval tool with default type "retrieval".
+         *
+         * @param retrievalTypes       The retrieval types.
+         * @param vertexAiSearchConfig The vertex AI search config.
          */
         public Retrieval(List<String> retrievalTypes, VertexAISearchConfig vertexAiSearchConfig) {
             this("retrieval", retrievalTypes, vertexAiSearchConfig);
