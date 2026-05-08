@@ -69,7 +69,6 @@ public class InteractionParams {
      * @param systemInstruction     System instruction for the model.
      * @param responseModalities    Requested response modalities.
      * @param responseFormat        Requested response format (JSON Schema).
-     * @param responseMimeType      Requested response MIME type.
      * @param previousInteractionId ID of the previous interaction to continue.
      * @param serviceTier           The service tier for the interaction.
      */
@@ -360,7 +359,6 @@ public class InteractionParams {
      * @param systemInstruction     System instruction.
      * @param responseModalities    Requested response modalities.
      * @param responseFormat        Requested response format.
-     * @param responseMimeType      Requested response MIME type.
      * @param previousInteractionId ID of the previous interaction.
      * @param serviceTier           The service tier for the interaction.
      */

@@ -32,7 +32,7 @@ import java.time.Instant;
  * @param updated               Last update timestamp.
  * @param role                  The role of the interaction participant.
  * @param status                The status of the interaction.
- * @param outputs               List of content outputs.
+ * @param steps                 List of steps.
  * @param usage                 Token usage details.
  * @param previousInteractionId ID of the previous interaction in the conversation.
  */
