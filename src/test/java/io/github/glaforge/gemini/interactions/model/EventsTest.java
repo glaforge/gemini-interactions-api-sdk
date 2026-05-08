@@ -21,7 +21,6 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,10 +29,10 @@ class EventsTest {
     private final ObjectMapper mapper = JsonMapper.builder().build();
 
     @Test
-    void testInteractionStartDeserialization() throws JacksonException {
+    void testInteractionCreatedDeserialization() throws JacksonException {
         String json = """
             {
-              "event_type": "interaction.start",
+              "event_type": "interaction.created",
               "event_id": "evt-123",
               "interaction": {
                 "id": "interaction-123",
@@ -45,18 +44,18 @@ class EventsTest {
 
         Events event = mapper.readValue(json, Events.class);
 
-        assertTrue(event instanceof Events.InteractionEvent);
-        Events.InteractionEvent interactionEvent = (Events.InteractionEvent) event;
-        assertEquals(Events.EventType.INTERACTION_START, interactionEvent.eventType());
-        assertEquals("evt-123", interactionEvent.eventId());
-        assertEquals("interaction-123", interactionEvent.interaction().id());
+        assertTrue(event instanceof Events.InteractionCreated);
+        Events.InteractionCreated interactionCreated = (Events.InteractionCreated) event;
+        assertEquals(Events.EventType.INTERACTION_CREATED, interactionCreated.eventType());
+        assertEquals("evt-123", interactionCreated.eventId());
+        assertEquals("interaction-123", interactionCreated.interaction().id());
     }
 
     @Test
-    void testInteractionCompleteDeserialization() throws JacksonException {
+    void testInteractionCompletedDeserialization() throws JacksonException {
         String json = """
             {
-              "event_type": "interaction.complete",
+              "event_type": "interaction.completed",
               "event_id": "evt-456",
               "interaction": {
                 "id": "interaction-123",
@@ -68,9 +67,9 @@ class EventsTest {
 
         Events event = mapper.readValue(json, Events.class);
 
-        assertTrue(event instanceof Events.InteractionEvent);
-        Events.InteractionEvent interactionEvent = (Events.InteractionEvent) event;
-        assertEquals(Events.EventType.INTERACTION_COMPLETE, interactionEvent.eventType());
+        assertTrue(event instanceof Events.InteractionCompleted);
+        Events.InteractionCompleted interactionCompleted = (Events.InteractionCompleted) event;
+        assertEquals(Events.EventType.INTERACTION_COMPLETED, interactionCompleted.eventType());
     }
 
     @Test
@@ -95,13 +94,62 @@ class EventsTest {
     }
 
     @Test
+    void testStepDeltaDeserialization() throws JacksonException {
+        String json = """
+            {
+              "event_type": "step.delta",
+              "event_id": "evt-789",
+              "index": 0,
+              "delta": {
+                "type": "text",
+                "text": "Hello"
+              }
+            }
+            """;
+
+        Events event = mapper.readValue(json, Events.class);
+
+        assertTrue(event instanceof Events.StepDelta);
+        Events.StepDelta stepDelta = (Events.StepDelta) event;
+        assertEquals(Events.EventType.STEP_DELTA, stepDelta.eventType());
+        assertEquals("evt-789", stepDelta.eventId());
+        assertEquals(0, stepDelta.index());
+        assertTrue(stepDelta.delta() instanceof Events.TextDelta);
+        assertEquals("Hello", ((Events.TextDelta) stepDelta.delta()).text());
+    }
+
+    @Test
+    void testStepStartDeserialization() throws JacksonException {
+        String json = """
+            {
+              "event_type": "step.start",
+              "event_id": "evt-abc",
+              "index": 1,
+              "step": {
+                "type": "model_output",
+                "content": []
+              }
+            }
+            """;
+
+        Events event = mapper.readValue(json, Events.class);
+
+        assertTrue(event instanceof Events.StepStart);
+        Events.StepStart stepStart = (Events.StepStart) event;
+        assertEquals(Events.EventType.STEP_START, stepStart.eventType());
+        assertEquals("evt-abc", stepStart.eventId());
+        assertEquals(1, stepStart.index());
+        assertTrue(stepStart.step() instanceof Step.ModelOutputStep);
+    }
+
+    @Test
     void testEventTypeEnumValues() {
-        assertEquals("interaction.start", Events.EventType.INTERACTION_START.getJsonValue());
-        assertEquals("interaction.complete", Events.EventType.INTERACTION_COMPLETE.getJsonValue());
+        assertEquals("interaction.created", Events.EventType.INTERACTION_CREATED.getJsonValue());
+        assertEquals("interaction.completed", Events.EventType.INTERACTION_COMPLETED.getJsonValue());
         assertEquals("interaction.status_update", Events.EventType.INTERACTION_STATUS_UPDATE.getJsonValue());
-        assertEquals("content.start", Events.EventType.CONTENT_START.getJsonValue());
-        assertEquals("content.delta", Events.EventType.CONTENT_DELTA.getJsonValue());
-        assertEquals("content.stop", Events.EventType.CONTENT_STOP.getJsonValue());
+        assertEquals("step.start", Events.EventType.STEP_START.getJsonValue());
+        assertEquals("step.delta", Events.EventType.STEP_DELTA.getJsonValue());
+        assertEquals("step.stop", Events.EventType.STEP_STOP.getJsonValue());
         assertEquals("error", Events.EventType.ERROR.getJsonValue());
     }
 }

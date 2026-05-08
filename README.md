@@ -8,6 +8,16 @@ A modern Java SDK for the Google Gemini Interactions API.
 - **Multimodal**: Native support for Text, Image, and Function Calling.
 - **Lightweight**: Minimal dependencies (Jackson, Java Standard Library).
 
+> [!WARNING] ⚠️ API Migration Notice (May 2026)
+> The Gemini Interactions API has undergone a major breaking change to a polymorphic `Step`-based architecture.
+> - **Legacy:** `interaction.outputs()`
+> - **New:** `interaction.steps()`
+>
+> Interactions now consist of a sequence of `Step` objects (e.g., `ModelOutputStep`, `FunctionCallStep`). All `Content` items
+> are now nested within these steps. To retrieve the model's text response, you must extract the `ModelOutputStep` from the
+> `steps()` list, and then retrieve the `TextContent` from that step's `content()` list. Furthermore, Server-Sent Events
+> (SSE) now use `StepDelta` instead of `ContentDelta`.
+
 ## Installation
 
 Add the dependency to your `pom.xml`:
@@ -16,7 +26,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>0.8.0</version>
+    <version>0.9.0</version>
 </dependency>
 ```
 
@@ -41,12 +51,13 @@ ModelInteractionParams request = ModelInteractionParams.builder()
     .build();
 
 Interaction response = client.create(request);
-System.out.println(response.outputs().get(0));
+Step.ModelOutputStep step = (Step.ModelOutputStep) response.steps().get(0);
+System.out.println(step.content().get(0));
 ```
 
 ### Streaming Response
 ```java
-import io.github.glaforge.gemini.interactions.model.Events.ContentDelta;
+import io.github.glaforge.gemini.interactions.model.Events.StepDelta;
 import io.github.glaforge.gemini.interactions.model.Events.TextDelta;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
@@ -56,7 +67,7 @@ ModelInteractionParams request = ModelInteractionParams.builder()
     .build();
 
 client.stream(request).forEach(event -> {
-    if (event instanceof ContentDelta delta) {
+    if (event instanceof StepDelta delta) {
         if (delta.delta() instanceof TextDelta textPart) {
             System.out.print(textPart.text());
         }
@@ -97,7 +108,8 @@ ModelInteractionParams turn1 = ModelInteractionParams.builder()
 
 Interaction response1 = client.create(turn1);
 String id = response1.id();
-System.out.println(response1.outputs().get(0));
+Step.ModelOutputStep step1 = (Step.ModelOutputStep) response1.steps().get(0);
+System.out.println(step1.content().get(0));
 
 // 2. Second turn (referencing previous ID)
 ModelInteractionParams turn2 = ModelInteractionParams.builder()
@@ -108,7 +120,8 @@ ModelInteractionParams turn2 = ModelInteractionParams.builder()
     .build();
 
 Interaction response2 = client.create(turn2);
-System.out.println(response2.outputs().get(0));
+Step.ModelOutputStep step2 = (Step.ModelOutputStep) response2.steps().get(0);
+System.out.println(step2.content().get(0));
 ```
 
 ### Multimodal (Image)
@@ -157,10 +170,14 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 
 Interaction interaction = client.create(request);
 
-interaction.outputs().forEach(content -> {
-    if (content instanceof ImageContent image) {
-        byte[] imageBytes = Base64.getDecoder().decode(image.data());
-        // Save imageBytes to a file
+interaction.steps().forEach(step -> {
+    if (step instanceof Step.ModelOutputStep modelOutputStep) {
+        modelOutputStep.content().forEach(content -> {
+            if (content instanceof ImageContent image) {
+                byte[] imageBytes = Base64.getDecoder().decode(image.data());
+                // Save imageBytes to a file
+            }
+        });
     }
 });
 ```
@@ -181,10 +198,14 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 
 Interaction interaction = client.create(request);
 
-interaction.outputs().forEach(content -> {
-    if (content instanceof AudioContent audio) {
-        byte[] audioBytes = audio.data();
-        // Save audioBytes to a raw PCM file (16-bit little-endian, 24kHz, mono)
+interaction.steps().forEach(step -> {
+    if (step instanceof Step.ModelOutputStep modelOutputStep) {
+        modelOutputStep.content().forEach(content -> {
+            if (content instanceof AudioContent audio) {
+                byte[] audioBytes = audio.data();
+                // Save audioBytes to a raw PCM file (16-bit little-endian, 24kHz, mono)
+            }
+        });
     }
 });
 ```
@@ -205,17 +226,21 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 
 Interaction interaction = client.create(request);
 
-interaction.outputs().forEach(content -> {
-    if (content instanceof TextContent text) {
-        System.out.println("Lyrics / Structure Generated:\\n" + text.text());
-    }
-    if (content instanceof AudioContent audio) {
-        // Lyria directly returns an encoded MP3 byte stream!
-        try {
-            Files.write(Paths.get("quest-song.mp3"), audio.data());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+interaction.steps().forEach(step -> {
+    if (step instanceof Step.ModelOutputStep modelOutputStep) {
+        modelOutputStep.content().forEach(content -> {
+            if (content instanceof TextContent text) {
+                System.out.println("Lyrics / Structure Generated:\\n" + text.text());
+            }
+            if (content instanceof AudioContent audio) {
+                // Lyria directly returns an encoded MP3 byte stream!
+                try {
+                    Files.write(Paths.get("quest-song.mp3"), audio.data());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 });
 ```
@@ -239,7 +264,7 @@ while (interaction.status() != Status.COMPLETED) {
     interaction = client.get(interaction.id());
 }
 
-System.out.println(interaction.outputs());
+System.out.println(interaction.steps());
 ```
 
 ### Function Calling
@@ -274,29 +299,27 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 Interaction interaction = client.create(request);
 
 // 3. Handle Function Call
-Content lastOutput = interaction.outputs().getLast();
-if (lastOutput instanceof FunctionCallContent call) {
-    if ("get_weather".equals(call.name())) {
-        String location = (String) call.arguments().get("location");
-        // Execute local logic...
-        String weather = "Rainy, 15°C"; // Simulated result
+Step.FunctionCallStep callStep = (Step.FunctionCallStep) interaction.steps().getLast();
+if ("get_weather".equals(callStep.name())) {
+    String location = (String) callStep.arguments().get("location");
+    // Execute local logic...
+    String weather = "Rainy, 15°C"; // Simulated result
 
-        // 4. Send Function Result
-        ModelInteractionParams continuation = ModelInteractionParams.builder()
-            .model("gemini-2.5-flash")
-            .previousInteractionId(interaction.id())
-            .input(new FunctionResultContent(
-                "function_result",
-                call.id(),
-                call.name(),
-                false,
-                Map.of("weather", weather)
-            ))
-            .build();
+    // 4. Send Function Result
+    ModelInteractionParams continuation = ModelInteractionParams.builder()
+        .model("gemini-2.5-flash")
+        .previousInteractionId(interaction.id())
+        .input(new Step.FunctionResultStep(
+            "step-result-id",
+            callStep.name(),
+            false,
+            Map.of("weather", weather)
+        ))
+        .build();
 
-        Interaction finalResponse = client.create(continuation);
-        System.out.println(finalResponse.outputs().getLast());
-    }
+    Interaction finalResponse = client.create(continuation);
+    Step.ModelOutputStep finalStep = (Step.ModelOutputStep) finalResponse.steps().getLast();
+    System.out.println(finalStep.content().getLast());
 }
 ```
 
@@ -315,7 +338,8 @@ ModelInteractionParams request = ModelInteractionParams.builder()
     .build();
 
 Interaction interaction = client.create(request);
-System.out.println(interaction.outputs().getLast());
+Step.ModelOutputStep step = (Step.ModelOutputStep) interaction.steps().getLast();
+System.out.println(step.content().getLast());
 ```
 
 #### Grounded Search (Gemma 4 31B)
@@ -333,7 +357,8 @@ ModelInteractionParams request = ModelInteractionParams.builder()
     .build();
 
 Interaction interaction = client.create(request);
-System.out.println(interaction.outputs().getLast());
+Step.ModelOutputStep step = (Step.ModelOutputStep) interaction.steps().getLast();
+System.out.println(step.content().getLast());
 ```
 
 ### Built-in Tools (Google Maps)
@@ -355,7 +380,8 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 Interaction interaction = client.create(request);
 
 // 3. Handle Result
-System.out.println(interaction.outputs().getLast());
+Step.ModelOutputStep step = (Step.ModelOutputStep) interaction.steps().getLast();
+System.out.println(step.content().getLast());
 ```
 
 ### JSON Output (Structured Output)

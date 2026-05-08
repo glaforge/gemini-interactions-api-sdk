@@ -46,7 +46,7 @@ public record Interaction(
     Instant updated,
     Role role,
     Status status,
-    List<Content> outputs,
+    List<Step> steps,
     Usage usage,
     @JsonProperty("previous_interaction_id") String previousInteractionId
 ) {

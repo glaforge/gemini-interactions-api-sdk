@@ -17,11 +17,10 @@
 package io.github.glaforge.gemini.interactions;
 
 import io.github.glaforge.gemini.interactions.model.Content;
-import io.github.glaforge.gemini.interactions.model.Content.FunctionCallContent;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
-import io.github.glaforge.gemini.interactions.model.Content.FunctionResultContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Tool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -87,13 +86,13 @@ public class WeatherToolTest {
         System.out.println("Sending initial request...");
         Interaction interaction = client.create(createParams);
         System.out.println("Initial response status: " + interaction.status());
-        assertNotNull(interaction.outputs(), "Interaction outputs should not be null");
+        assertNotNull(interaction.steps(), "Interaction steps should not be null");
 
         // 3. Handle Function Call
-        Content lastOutput = interaction.outputs().getLast();
-        assertTrue(lastOutput instanceof FunctionCallContent, "Expected function call but got: " + lastOutput);
+        Step lastOutput = interaction.steps().getLast();
+        assertTrue(lastOutput instanceof Step.FunctionCallStep, "Expected function call but got: " + lastOutput);
 
-        FunctionCallContent call = (FunctionCallContent) lastOutput;
+        Step.FunctionCallStep call = (Step.FunctionCallStep) lastOutput;
         System.out.println("Function call received: " + call.name());
         if ("get_weather".equals(call.name())) {
              String location = (String) call.arguments().get("location");
@@ -108,32 +107,36 @@ public class WeatherToolTest {
              // We create a new interaction (continuation) referring to the previous ID
              System.out.println("Sending function result...");
 
-             Content resultPart = new FunctionResultContent(
+             Step resultPart = new Step.FunctionResultStep(
                  "function_result",
                  call.id(),
                  call.name(),
-                     false,
-                     resultData
-                 );
+                 false,
+                 resultData
+             );
 
-                 InteractionParams.ModelInteractionParams continuationParams = InteractionParams.ModelInteractionParams.builder()
-                     .model("gemini-2.5-flash")
-                     .previousInteractionId(interaction.id())
-                     // We pass the function result as the input for the next turn
-                     .input(resultPart)
-                     .build();
+             InteractionParams.ModelInteractionParams continuationParams = InteractionParams.ModelInteractionParams.builder()
+                 .model("gemini-2.5-flash")
+                 .previousInteractionId(interaction.id())
+                 // We pass the function result as the input for the next turn
+                 .input(resultPart)
+                 .build();
 
-                 Interaction followUpInteraction = client.create(continuationParams);
-                 System.out.println("Follow-up response status: " + followUpInteraction.status());
+             Interaction followUpInteraction = client.create(continuationParams);
+             System.out.println("Follow-up response status: " + followUpInteraction.status());
 
-                 // 5. Verify Model Response
-                 Content finalOutput = followUpInteraction.outputs().getLast();
-                 if (finalOutput instanceof TextContent text) {
-                     System.out.println("Model Answer: " + text.text());
-                     assertTrue(text.text().contains("Sunny") || text.text().contains("25"), "Response should reflect weather data");
-                 } else {
-                     System.out.println("Unexpected final output type: " + finalOutput);
-                 }
+             // 5. Verify Model Response
+             Step finalOutput = followUpInteraction.steps().getLast();
+             if (finalOutput instanceof Step.ModelOutputStep out) {
+                 out.content().forEach(content -> {
+                     if (content instanceof TextContent text) {
+                         System.out.println("Model Answer: " + text.text());
+                         assertTrue(text.text().contains("Sunny") || text.text().contains("25"), "Response should reflect weather data");
+                     }
+                 });
+             } else {
+                 System.out.println("Unexpected final output type: " + finalOutput);
+             }
         }
     }
 }

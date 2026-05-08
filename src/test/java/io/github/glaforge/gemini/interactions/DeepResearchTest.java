@@ -39,13 +39,20 @@ public class DeepResearchTest {
             interaction = client.get(interaction.id());
         }
 
-        if (interaction.outputs() != null && interaction.outputs().size() > 0) {
-            if (interaction.outputs().get(0) instanceof TextContent text) {
-                System.out.println(text.text());
-                Files.write(Paths.get("target/output.md"), text.text().getBytes());
-            } else {
-                System.out.println("Output is not a text");
-            }
+        if (interaction.steps() != null && interaction.steps().size() > 0) {
+            interaction.steps().stream().filter(s -> s instanceof io.github.glaforge.gemini.interactions.model.Step.ModelOutputStep)
+                .flatMap(s -> ((io.github.glaforge.gemini.interactions.model.Step.ModelOutputStep)s).content().stream())
+                .filter(c -> c instanceof TextContent)
+                .findFirst()
+                .ifPresent(c -> {
+                    TextContent text = (TextContent) c;
+                    System.out.println(text.text());
+                    try {
+                        Files.write(Paths.get("target/output.md"), text.text().getBytes());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
         } else {
             System.out.println("No output");
         }

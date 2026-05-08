@@ -19,10 +19,10 @@ package io.github.glaforge.gemini.interactions;
 import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
-import io.github.glaforge.gemini.interactions.model.Content.ThoughtContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,14 +49,16 @@ public class IntegrationTest {
 
         System.out.println(interaction);
 
-        interaction.outputs().forEach((Content output) -> {
-            switch (output) {
-                case TextContent text -> System.out.println(text.text());
-                case ImageContent image -> System.out.println(image.data());
-                case ThoughtContent thought -> System.out.println("Thought: " + thought.signature());
-                default -> System.out.println("Unknown content type: " + output);
-            }
-        });
+        interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
+            .forEach((Content output) -> {
+                switch (output) {
+                    case TextContent text -> System.out.println(text.text());
+                    case ImageContent image -> System.out.println(image.data());
+                    default -> System.out.println("Unknown content type: " + output);
+                }
+            });
     }
 
     @Test
@@ -83,14 +85,16 @@ public class IntegrationTest {
 
         System.out.println(interaction);
 
-        interaction.outputs().forEach((Content output) -> {
-            switch (output) {
-                case TextContent text -> System.out.println(text.text());
-                case ImageContent image -> System.out.println(image.uri());
-                case ThoughtContent thought -> System.out.println("Thought: " + thought.signature());
-                default -> System.out.println("Unknown content type: " + output);
-            }
-        });
+        interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
+            .forEach((Content output) -> {
+                switch (output) {
+                    case TextContent text -> System.out.println(text.text());
+                    case ImageContent image -> System.out.println(image.uri());
+                    default -> System.out.println("Unknown content type: " + output);
+                }
+            });
     }
 
     @Test
@@ -108,21 +112,23 @@ public class IntegrationTest {
 
         System.out.println(interaction);
 
-        interaction.outputs().forEach((Content output) -> {
-            switch (output) {
-                case TextContent text -> System.out.println(text.text());
-                case ImageContent image -> {
-                    System.out.println("Image received. Saving to image.png...");
-                    byte[] imageBytes = image.data();
-                    try (FileOutputStream fos = new FileOutputStream("target/image.png")) {
-                        fos.write(imageBytes);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
+        interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
+            .forEach((Content output) -> {
+                switch (output) {
+                    case TextContent text -> System.out.println(text.text());
+                    case ImageContent image -> {
+                        System.out.println("Image received. Saving to image.png...");
+                        byte[] imageBytes = image.data();
+                        try (FileOutputStream fos = new FileOutputStream("target/image.png")) {
+                            fos.write(imageBytes);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
                     }
+                    default -> System.out.println("Unknown content type: " + output);
                 }
-                case ThoughtContent thought -> System.out.println("Thought: " + thought.signature());
-                default -> System.out.println("Unknown content type: " + output);
-            }
-        });
+            });
     }
 }

@@ -84,8 +84,7 @@ public class InteractionParams {
         Boolean background,
         @JsonProperty("system_instruction") String systemInstruction,
         @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
-        @JsonProperty("response_format") Object responseFormat, // JSON Schema object
-        @JsonProperty("response_mime_type") String responseMimeType,
+        @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier
     ) implements Request {
@@ -107,12 +106,10 @@ public class InteractionParams {
             private Boolean background;
             private String systemInstruction;
             private List<Interaction.Modality> responseModalities;
-            private Object responseFormat;
-            private String responseMimeType;
+            private Config.ResponseFormat responseFormat;
             private String previousInteractionId;
             private ServiceTier serviceTier;
             private List<Config.SpeechConfig> speechConfigs;
-            private Config.ImageConfig imageConfig;
 
             /**
              * Sets the model.
@@ -145,6 +142,10 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder inputContents(List<Content> content) { this.input = content; return this; }
+            /** Sets the input using one or more Steps. */
+            public Builder input(Step... steps) { this.input = List.of(steps); return this; }
+            /** Sets the input using a list of Steps. */
+            public Builder inputSteps(List<Step> steps) { this.input = steps; return this; }
 
             /**
              * Sets the input content as a list of Turns (multi-turn history).
@@ -240,33 +241,48 @@ public class InteractionParams {
              * @param responseFormat The response format.
              * @return This builder.
              */
-            public Builder responseFormat(Object responseFormat) {
-                if (responseFormat instanceof Schema schema) {
-                    this.responseFormat = schema.toMap();
-                } else {
-                    this.responseFormat = responseFormat;
-                }
+            public Builder responseFormat(Config.ResponseFormat responseFormat) {
+                this.responseFormat = responseFormat;
+                return this;
+            }
+
+            /**
+             * Sets the response format using a Map representing a JSON schema.
+             *
+             * @param responseFormat The schema as a Map.
+             * @return This builder.
+             */
+            public Builder responseFormat(Map<String, Object> responseFormat) {
+                this.responseFormat = new Config.TextResponseFormat("text", "application/json", responseFormat);
                 return this;
             }
 
             /**
              * Sets the response format using a Schema object.
              *
-             * @param schema The schema to use as response format.
+             * @param responseFormat The schema object.
              * @return This builder.
              */
-            public Builder responseFormat(Schema schema) {
-                this.responseFormat = schema.toMap();
+            public Builder responseFormat(Schema responseFormat) {
+                this.responseFormat = new Config.TextResponseFormat("text", "application/json", responseFormat.toMap());
                 return this;
             }
 
             /**
-             * Sets the response MIME type.
+             * Sets the response format from a JSON string representation.
              *
-             * @param responseMimeType The response MIME type.
+             * @param responseFormat The JSON string schema.
              * @return This builder.
              */
-            public Builder responseMimeType(String responseMimeType) { this.responseMimeType = responseMimeType; return this; }
+            public Builder responseFormat(String responseFormat) {
+                try {
+                    Map<String, Object> map = io.github.glaforge.gemini.schema.GSchema.fromJson(responseFormat).toMap();
+                    this.responseFormat = new Config.TextResponseFormat("text", "application/json", map);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("Invalid JSON for responseFormat", e);
+                }
+                return this;
+            }
 
             /**
              * Sets the previous interaction ID.
@@ -284,13 +300,6 @@ public class InteractionParams {
              */
             public Builder serviceTier(ServiceTier serviceTier) { this.serviceTier = serviceTier; return this; }
 
-            /**
-             * Sets the image config.
-             *
-             * @param imageConfig The image configuration.
-             * @return This builder.
-             */
-            public Builder imageConfig(Config.ImageConfig imageConfig) { this.imageConfig = imageConfig; return this; }
 
             /**
              * Sets the speech config.
@@ -315,9 +324,9 @@ public class InteractionParams {
              */
             public ModelInteractionParams build() {
                 Config.GenerationConfig finalConfig = generationConfig;
-                if (imageConfig != null || speechConfigs != null) {
+                if (speechConfigs != null) {
                     if (finalConfig == null) {
-                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, imageConfig);
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs);
                     } else {
                         finalConfig = new Config.GenerationConfig(
                             finalConfig.temperature(),
@@ -328,12 +337,11 @@ public class InteractionParams {
                             finalConfig.thinkingLevel(),
                             finalConfig.thinkingSummaries(),
                             finalConfig.maxOutputTokens(),
-                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig(),
-                            imageConfig != null ? imageConfig : finalConfig.imageConfig()
+                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig()
                         );
                     }
                 }
-                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId, serviceTier);
+                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier);
             }
         }
     }
@@ -368,8 +376,7 @@ public class InteractionParams {
         Boolean background,
         @JsonProperty("system_instruction") String systemInstruction,
         @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
-        @JsonProperty("response_format") Object responseFormat,
-        @JsonProperty("response_mime_type") String responseMimeType,
+        @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier
     ) implements Request {
@@ -393,12 +400,10 @@ public class InteractionParams {
             private Boolean background;
             private String systemInstruction;
             private List<Interaction.Modality> responseModalities;
-            private Object responseFormat;
-            private String responseMimeType;
+            private Config.ResponseFormat responseFormat;
             private String previousInteractionId;
             private ServiceTier serviceTier;
             private List<Config.SpeechConfig> speechConfigs;
-            private Config.ImageConfig imageConfig;
 
             /**
              * Sets the agent.
@@ -431,6 +436,10 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder inputContents(List<Content> content) { this.input = content; return this; }
+            /** Sets the input using one or more Steps. */
+            public Builder input(Step... steps) { this.input = List.of(steps); return this; }
+            /** Sets the input using a list of Steps. */
+            public Builder inputSteps(List<Step> steps) { this.input = steps; return this; }
 
             /**
              * Sets the input content as a list of Turns (multi-turn history).
@@ -528,13 +537,24 @@ public class InteractionParams {
             public Builder responseModalities(List<Interaction.Modality> responseModalities) { this.responseModalities = responseModalities; return this; }
 
             /**
+             * Sets the response format.
+             *
+             * @param responseFormat The response format.
+             * @return This builder.
+             */
+            public Builder responseFormat(Config.ResponseFormat responseFormat) {
+                this.responseFormat = responseFormat;
+                return this;
+            }
+
+            /**
              * Sets the response format from a map.
              *
              * @param responseFormat The response format map.
              * @return This builder.
              */
             public Builder responseFormat(Map<String, Object> responseFormat) {
-                this.responseFormat = responseFormat;
+                this.responseFormat = new Config.TextResponseFormat("text", "application/json", responseFormat);
                 return this;
             }
 
@@ -545,7 +565,7 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder responseFormat(Schema responseFormat) {
-                this.responseFormat = responseFormat.toMap();
+                this.responseFormat = new Config.TextResponseFormat("text", "application/json", responseFormat.toMap());
                 return this;
             }
 
@@ -556,17 +576,9 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder responseFormat(String responseFormat) {
-                this.responseFormat = fromJson(responseFormat).toMap();
+                this.responseFormat = new Config.TextResponseFormat("text", "application/json", fromJson(responseFormat).toMap());
                 return this;
             }
-
-            /**
-             * Sets the response MIME type.
-             *
-             * @param responseMimeType The response MIME type.
-             * @return This builder.
-             */
-            public Builder responseMimeType(String responseMimeType) { this.responseMimeType = responseMimeType; return this; }
 
             /**
              * Sets the previous interaction ID.
@@ -584,13 +596,6 @@ public class InteractionParams {
              */
             public Builder serviceTier(ServiceTier serviceTier) { this.serviceTier = serviceTier; return this; }
 
-            /**
-             * Sets the image config.
-             *
-             * @param imageConfig The image configuration.
-             * @return This builder.
-             */
-            public Builder imageConfig(Config.ImageConfig imageConfig) { this.imageConfig = imageConfig; return this; }
 
             /**
              * Sets the speech config.
@@ -615,9 +620,9 @@ public class InteractionParams {
              */
             public AgentInteractionParams build() {
                 Config.GenerationConfig finalConfig = generationConfig;
-                if (imageConfig != null || speechConfigs != null) {
+                if (speechConfigs != null) {
                     if (finalConfig == null) {
-                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, imageConfig);
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs);
                     } else {
                         finalConfig = new Config.GenerationConfig(
                             finalConfig.temperature(),
@@ -628,12 +633,11 @@ public class InteractionParams {
                             finalConfig.thinkingLevel(),
                             finalConfig.thinkingSummaries(),
                             finalConfig.maxOutputTokens(),
-                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig(),
-                            imageConfig != null ? imageConfig : finalConfig.imageConfig()
+                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig()
                         );
                     }
                 }
-                return new AgentInteractionParams(agent, input, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, responseMimeType, previousInteractionId, serviceTier);
+                return new AgentInteractionParams(agent, input, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier);
             }
         }
     }

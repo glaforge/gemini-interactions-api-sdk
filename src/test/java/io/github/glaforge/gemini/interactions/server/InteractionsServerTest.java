@@ -113,13 +113,13 @@ class InteractionsServerTest {
             @Override
             public Stream<Events> stream(InteractionParams.Request request) {
                 return Stream.of(
-                    new Events.InteractionEvent(
-                        Events.EventType.INTERACTION_START,
+                    new Events.InteractionCreated(
+                        Events.EventType.INTERACTION_CREATED,
                         "evt-1",
                         new Interaction("interaction-123", "gemini-pro", null, "interaction", Instant.parse("2025-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"), Interaction.Role.MODEL, Interaction.Status.IN_PROGRESS, Collections.emptyList(), null, null)
                     ),
-                    new Events.ContentDelta(
-                        Events.EventType.CONTENT_DELTA,
+                    new Events.StepDelta(
+                        Events.EventType.STEP_DELTA,
                         "evt-2",
                         0,
                         new Events.TextDelta(Events.DeltaType.TEXT, "Hello world", null)

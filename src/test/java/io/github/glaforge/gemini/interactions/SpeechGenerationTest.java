@@ -20,6 +20,8 @@ import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
 import io.github.glaforge.gemini.interactions.model.Content.AudioContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
@@ -50,14 +52,18 @@ public class SpeechGenerationTest {
         Interaction interaction = client.create(request);
 
         assertNotNull(interaction);
-        assertNotNull(interaction.outputs());
+        assertNotNull(interaction.steps());
 
-        boolean hasAudio = interaction.outputs().stream()
+        boolean hasAudio = interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
             .anyMatch(output -> output instanceof AudioContent);
 
         assertTrue(hasAudio, "Response should contain audio content");
 
-        interaction.outputs().stream()
+        interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
             .filter(output -> output instanceof AudioContent)
             .map(output -> (AudioContent) output)
             .forEach(audio -> {

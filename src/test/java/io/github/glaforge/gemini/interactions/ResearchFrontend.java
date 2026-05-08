@@ -17,13 +17,14 @@ import io.github.glaforge.gemini.interactions.model.Config.DeepResearchAgentConf
 import io.github.glaforge.gemini.interactions.model.Config.ThinkingSummaries;
 import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
-import io.github.glaforge.gemini.interactions.model.Events.ContentDelta;
+import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Events.ImageDelta;
 import io.github.glaforge.gemini.interactions.model.Events.TextDelta;
 import io.github.glaforge.gemini.interactions.model.Events.ThoughtSummaryDelta;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Tool.GoogleSearch;
 import io.github.glaforge.gemini.schema.GSchema;
 import io.javelit.core.Jt;
@@ -150,7 +151,7 @@ public class ResearchFrontend {
             long startTime = System.currentTimeMillis();
 
             client.stream(researchParams).forEach(event -> {
-                if (event instanceof ContentDelta delta) {
+                if (event instanceof Events.StepDelta delta) {
                     if (delta.delta() instanceof ThoughtSummaryDelta thought) {
                         if (thought.content() instanceof TextContent textContent) {
                             long elapsed = System.currentTimeMillis() - startTime;
@@ -209,10 +210,12 @@ public class ResearchFrontend {
     }
 
     private static List<String> getTopics(Interaction interaction) {
-        if (interaction.outputs() == null)
+        if (interaction.steps() == null)
             return List.of();
 
-        return interaction.outputs().stream()
+        return interaction.steps().stream()
+                .filter(s -> s instanceof Step.ModelOutputStep)
+                .flatMap(s -> ((Step.ModelOutputStep) s).content().stream())
                 .filter(c -> c instanceof TextContent)
                 .map(c -> ((TextContent) c).text())
                 .flatMap(text -> {
@@ -227,18 +230,22 @@ public class ResearchFrontend {
     }
 
     private static String getText(Interaction interaction) {
-        if (interaction.outputs() == null)
+        if (interaction.steps() == null)
             return "";
-        return interaction.outputs().stream()
+        return interaction.steps().stream()
+                .filter(s -> s instanceof Step.ModelOutputStep)
+                .flatMap(s -> ((Step.ModelOutputStep) s).content().stream())
                 .filter(c -> c instanceof TextContent)
                 .map(c -> ((TextContent) c).text())
                 .collect(Collectors.joining("\n"));
     }
 
     private static byte[] getInfographicData(Interaction interaction) {
-        if (interaction.outputs() == null)
+        if (interaction.steps() == null)
             return null;
-        return interaction.outputs().stream()
+        return interaction.steps().stream()
+                .filter(s -> s instanceof Step.ModelOutputStep)
+                .flatMap(s -> ((Step.ModelOutputStep) s).content().stream())
                 .filter(c -> c instanceof ImageContent)
                 .map(c -> ((ImageContent) c).data())
                 .findFirst()

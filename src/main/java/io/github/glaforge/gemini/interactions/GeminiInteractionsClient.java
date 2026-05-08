@@ -100,6 +100,7 @@ public class GeminiInteractionsClient {
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
                 .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -129,6 +130,7 @@ public class GeminiInteractionsClient {
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
                 .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -186,6 +188,7 @@ public class GeminiInteractionsClient {
             HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
                 .GET()
                 .build();
 
@@ -213,6 +216,7 @@ public class GeminiInteractionsClient {
             HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
                 .DELETE()
                 .build();
 
@@ -239,6 +243,7 @@ public class GeminiInteractionsClient {
             HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
 

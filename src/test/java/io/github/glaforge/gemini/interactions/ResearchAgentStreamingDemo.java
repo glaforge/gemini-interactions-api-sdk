@@ -56,7 +56,7 @@ public class ResearchAgentStreamingDemo {
             eventStream.forEach(event -> {
                 System.out.println("Received event: " + event.eventType());
 
-                if (event instanceof Events.ContentDelta deltaInfo) {
+                if (event instanceof Events.StepDelta deltaInfo) {
                     Events.Delta delta = deltaInfo.delta();
                     if (delta instanceof Events.TextDelta textDelta) {
                         System.out.print(textDelta.text());

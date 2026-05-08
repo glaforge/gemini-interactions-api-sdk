@@ -34,10 +34,10 @@ class AgentInteractionParamsTest {
                 .responseFormat(formatMap)
                 .build();
 
-        Object responseFormat = params.responseFormat();
+        Config.ResponseFormat responseFormat = params.responseFormat();
         assertNotNull(responseFormat);
-        assertTrue(responseFormat instanceof Map);
-        assertEquals(formatMap, responseFormat);
+        assertTrue(responseFormat instanceof Config.TextResponseFormat);
+        assertEquals(formatMap, ((Config.TextResponseFormat) responseFormat).schema());
     }
 
     @Test
@@ -50,12 +50,11 @@ class AgentInteractionParamsTest {
                 .responseFormat(schema)
                 .build();
 
-        Object responseFormat = params.responseFormat();
+        Config.ResponseFormat responseFormat = params.responseFormat();
         assertNotNull(responseFormat);
-        assertTrue(responseFormat instanceof Map);
+        assertTrue(responseFormat instanceof Config.TextResponseFormat);
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) responseFormat;
+        Map<String, Object> map = ((Config.TextResponseFormat) responseFormat).schema();
         assertEquals("string", map.get("type"));
         assertEquals("A simple string", map.get("description"));
     }
@@ -73,11 +72,10 @@ class AgentInteractionParamsTest {
                 .responseFormat(jsonSchema)
                 .build();
 
-        Object responseFormat = params.responseFormat();
-        assertTrue(responseFormat instanceof Map);
+        Config.ResponseFormat responseFormat = params.responseFormat();
+        assertTrue(responseFormat instanceof Config.TextResponseFormat);
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) responseFormat;
+        Map<String, Object> map = ((Config.TextResponseFormat) responseFormat).schema();
         assertEquals("string", map.get("type"));
         assertEquals("Parsed from JSON string", map.get("description"));
     }

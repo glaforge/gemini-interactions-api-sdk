@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Configuration records for interactions.
@@ -42,7 +43,6 @@ public class Config {
      * @param thinkingSummaries Configuration for thinking summaries.
      * @param maxOutputTokens  The maximum number of tokens to include in a candidate.
      * @param speechConfig     Configuration for speech generation.
-     * @param imageConfig      Configuration for image generation.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GenerationConfig(
@@ -54,8 +54,7 @@ public class Config {
         @JsonProperty("thinking_level") ThinkingLevel thinkingLevel,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("max_output_tokens") Integer maxOutputTokens,
-        @JsonProperty("speech_config") List<SpeechConfig> speechConfig,
-        @JsonProperty("image_config") ImageConfig imageConfig
+        @JsonProperty("speech_config") List<SpeechConfig> speechConfig
     ) {}
 
     /**
@@ -103,16 +102,57 @@ public class Config {
     }
 
     /**
-     * Configuration for image generation.
-     *
-     * @param aspectRatio The aspect ratio of the generated image.
-     * @param imageSize   The size of the generated image.
+     * Sealed interface for response formats.
      */
+    @JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type",
+        visible = true
+    )
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = TextResponseFormat.class, name = "text"),
+        @JsonSubTypes.Type(value = ImageResponseFormat.class, name = "image"),
+        @JsonSubTypes.Type(value = AudioResponseFormat.class, name = "audio"),
+        @JsonSubTypes.Type(value = VideoResponseFormat.class, name = "video")
+    })
+    public sealed interface ResponseFormat permits TextResponseFormat, ImageResponseFormat, AudioResponseFormat, VideoResponseFormat {
+        String type();
+    }
+
+    /** Configuration for text output format. */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ImageConfig(
+    public record TextResponseFormat(
+        String type,
+        @JsonProperty("mime_type") String mimeType,
+        Map<String, Object> schema
+    ) implements ResponseFormat {}
+
+    /** Configuration for image output format. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ImageResponseFormat(
+        String type,
+        @JsonProperty("mime_type") String mimeType,
+        String delivery,
         @JsonProperty("aspect_ratio") AspectRatio aspectRatio,
         @JsonProperty("image_size") ImageSize imageSize
-    ) {}
+    ) implements ResponseFormat {}
+
+    /** Configuration for audio output format. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record AudioResponseFormat(
+        String type,
+        @JsonProperty("mime_type") String mimeType,
+        String delivery,
+        @JsonProperty("sample_rate") Integer sampleRate,
+        @JsonProperty("bit_rate") Integer bitRate
+    ) implements ResponseFormat {}
+
+    /** Configuration for video output format. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record VideoResponseFormat(
+        String type
+    ) implements ResponseFormat {}
 
     /**
      * Aspect ratio for generated images.

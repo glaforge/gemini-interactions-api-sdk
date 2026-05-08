@@ -3,6 +3,7 @@ package io.github.glaforge.gemini.interactions;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Tool;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,10 +31,12 @@ public class GemmaTest {
         Interaction interaction = client.create(request);
 
         assertNotNull(interaction);
-        assertNotNull(interaction.outputs());
-        assertTrue(interaction.outputs().stream().anyMatch(content -> content instanceof TextContent));
+        assertNotNull(interaction.steps());
+        assertTrue(interaction.steps().stream().anyMatch(step -> step instanceof Step.ModelOutputStep));
 
-        interaction.outputs().stream()
+        interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
             .filter(output -> output instanceof TextContent)
             .map(output -> (TextContent) output)
             .findFirst()
@@ -58,10 +61,12 @@ public class GemmaTest {
         Interaction interaction = client.create(request);
 
         assertNotNull(interaction);
-        assertNotNull(interaction.outputs());
-        assertTrue(interaction.outputs().stream().anyMatch(content -> content instanceof TextContent));
+        assertNotNull(interaction.steps());
+        assertTrue(interaction.steps().stream().anyMatch(step -> step instanceof Step.ModelOutputStep));
 
-        interaction.outputs().stream()
+        interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
             .filter(output -> output instanceof TextContent)
             .map(output -> (TextContent) output)
             .findFirst()

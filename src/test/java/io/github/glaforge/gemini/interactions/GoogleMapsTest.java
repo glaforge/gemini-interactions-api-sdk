@@ -20,6 +20,7 @@ import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Tool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -57,10 +58,14 @@ public class GoogleMapsTest {
         System.out.println("Sending search request with Google Maps tool...");
         Interaction interaction = client.create(createParams);
         System.out.println("Response status: " + interaction.status());
-        assertNotNull(interaction.outputs(), "Interaction outputs should not be null");
+        assertNotNull(interaction.steps(), "Interaction steps should not be null");
 
         // 3. Verify Response
-        Content lastOutput = interaction.outputs().getLast();
+        var modelSteps = interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .toList();
+        Step.ModelOutputStep lastStep = (Step.ModelOutputStep) modelSteps.getLast();
+        Content lastOutput = lastStep.content().getLast();
         System.out.println("Last output type: " + lastOutput.getClass().getSimpleName());
 
         if (lastOutput instanceof TextContent text) {

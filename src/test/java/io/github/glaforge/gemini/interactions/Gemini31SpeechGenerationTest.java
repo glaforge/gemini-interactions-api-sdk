@@ -1,15 +1,24 @@
 package io.github.glaforge.gemini.interactions;
 
 import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
+
 import org.junit.jupiter.api.Test;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import java.util.Base64;
 
 import javax.sound.sampled.*;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class Gemini31SpeechGenerationTest {
 
     @Test
-    public void testSpeechGenerationWithTagsAndContext() {
+    public void testSpeechGenerationWithTagsAndContext() throws Exception {
         GeminiInteractionsClient client = GeminiInteractionsClient.builder()
             .apiKey(System.getenv("GEMINI_API_KEY"))
             .build();
@@ -54,20 +63,66 @@ public class Gemini31SpeechGenerationTest {
             AudioFormat format = new AudioFormat(24000, 16, 1, true, false);
             DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
 
-            try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info)) {
+            try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info);
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
                 line.open(format);
                 line.start();
                 System.out.println("Streaming audio playback in real-time...");
 
                 eventStream.forEach(event -> {
-                    if (event instanceof Events.ContentDelta cd && cd.delta() instanceof Events.AudioDelta audioDelta) {
+                    System.out.println("Received event: " + event.getClass().getSimpleName());
+
+                    // Handle streaming deltas
+                    if (event instanceof Events.StepDelta cd && cd.delta() instanceof Events.AudioDelta audioDelta) {
                         byte[] audioData = Base64.getDecoder().decode(audioDelta.data());
                         line.write(audioData, 0, audioData.length);
+                        try {
+                            outputStream.write(audioData);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Failed to write audio data to buffer", e);
+                        }
                     }
+
+                    // Check StepStart
+                    if (event instanceof Events.StepStart startEvent) {
+                        if (startEvent.step() instanceof Step.ModelOutputStep out) {
+                            if (out.content() != null) {
+                                out.content().forEach(content -> {
+                                    if (content instanceof Content.AudioContent audioContent) {
+                                        line.write(audioContent.data(), 0, audioContent.data().length);
+                                        try {
+                                            outputStream.write(audioContent.data());
+                                        } catch (IOException e) {
+                                            throw new RuntimeException("Failed to write audio data to buffer", e);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+
+                    // Check StepStop - actually wait, StepStop doesn't have Step object, just index
+                    // Events.StepStop only has index according to Events.java
                 });
 
                 line.drain();
                 System.out.println("Playback complete.");
+
+                try {
+                    Path targetPath = Paths.get("target", "gemini-3.1-streaming-audio.wav");
+                    Files.createDirectories(targetPath.getParent());
+                    byte[] fullAudioData = outputStream.toByteArray();
+
+                    try (AudioInputStream audioInputStream = new AudioInputStream(
+                        new ByteArrayInputStream(fullAudioData),
+                        format,
+                        fullAudioData.length / format.getFrameSize())) {
+                        AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, targetPath.toFile());
+                    }
+                    System.out.println("Saved audio stream to: " + targetPath.toAbsolutePath());
+                } catch (IOException e) {
+                    fail("Failed to save audio file: " + e.getMessage());
+                }
             }
         } catch (LineUnavailableException e) {
             fail("Failed to open audio line: " + e.getMessage());

@@ -16,6 +16,7 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import io.github.glaforge.gemini.schema.Schema;
 import io.github.glaforge.gemini.schema.StringSchema;
 import org.junit.jupiter.api.Test;
 import java.util.Map;
@@ -34,12 +35,11 @@ class ModelInteractionParamsTest {
                 .responseFormat(schema)
                 .build();
 
-        Object responseFormat = params.responseFormat();
+        Config.ResponseFormat responseFormat = params.responseFormat();
         assertNotNull(responseFormat);
-        assertTrue(responseFormat instanceof Map);
+        assertTrue(responseFormat instanceof Config.TextResponseFormat);
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) responseFormat;
+        Map<String, Object> map = ((Config.TextResponseFormat) responseFormat).schema();
         assertEquals("string", map.get("type"));
         assertEquals("A simple string", map.get("description"));
 
@@ -55,16 +55,15 @@ class ModelInteractionParamsTest {
         // Test that the Object overload still works for other types if needed,
         // or specifically that it delegates to Schema handling if a Schema is passed as Object.
 
-        Object schemaAsObject = new StringSchema().desc("Object Schema");
+        Schema schemaAsObject = new StringSchema().desc("Object Schema");
 
         InteractionParams.ModelInteractionParams params = InteractionParams.ModelInteractionParams.builder()
                 .responseFormat(schemaAsObject)
                 .build();
 
-        Object responseFormat = params.responseFormat();
-        assertTrue(responseFormat instanceof Map);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) responseFormat;
+        Config.ResponseFormat responseFormat = params.responseFormat();
+        assertTrue(responseFormat instanceof Config.TextResponseFormat);
+        Map<String, Object> map = ((Config.TextResponseFormat) responseFormat).schema();
         assertEquals("string", map.get("type"));
         assertEquals("Object Schema", map.get("description"));
     }

@@ -36,44 +36,45 @@ import java.util.Map;
     visible = true
 )
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = Events.InteractionEvent.class, name = "interaction.start"),
-    @JsonSubTypes.Type(value = Events.InteractionEvent.class, name = "interaction.complete"),
+    @JsonSubTypes.Type(value = Events.InteractionCreated.class, name = "interaction.created"),
+    @JsonSubTypes.Type(value = Events.InteractionCompleted.class, name = "interaction.completed"),
     @JsonSubTypes.Type(value = Events.InteractionStatusUpdate.class, name = "interaction.status_update"),
-    @JsonSubTypes.Type(value = Events.ContentStart.class, name = "content.start"),
-    @JsonSubTypes.Type(value = Events.ContentDelta.class, name = "content.delta"),
-    @JsonSubTypes.Type(value = Events.ContentStop.class, name = "content.stop"),
+    @JsonSubTypes.Type(value = Events.StepStart.class, name = "step.start"),
+    @JsonSubTypes.Type(value = Events.StepDelta.class, name = "step.delta"),
+    @JsonSubTypes.Type(value = Events.StepStop.class, name = "step.stop"),
     @JsonSubTypes.Type(value = Events.ErrorEvent.class, name = "error")
 })
 public sealed interface Events permits
-    Events.InteractionEvent,
+    Events.InteractionCreated,
+    Events.InteractionCompleted,
     Events.InteractionStatusUpdate,
-    Events.ContentStart,
-    Events.ContentDelta,
-    Events.ContentStop,
+    Events.StepStart,
+    Events.StepDelta,
+    Events.StepStop,
     Events.ErrorEvent {
 
     /**
      * Enumeration of all supported event types.
      */
     enum EventType {
-        /** Interaction has started. */
-        @JsonProperty("interaction.start")
-        INTERACTION_START("interaction.start"),
+        /** Interaction has been created. */
+        @JsonProperty("interaction.created")
+        INTERACTION_CREATED("interaction.created"),
         /** Interaction has completed. */
-        @JsonProperty("interaction.complete")
-        INTERACTION_COMPLETE("interaction.complete"),
+        @JsonProperty("interaction.completed")
+        INTERACTION_COMPLETED("interaction.completed"),
         /** Interaction status has been updated. */
         @JsonProperty("interaction.status_update")
         INTERACTION_STATUS_UPDATE("interaction.status_update"),
-        /** Content generation has started. */
-        @JsonProperty("content.start")
-        CONTENT_START("content.start"),
-        /** Content delta has been received. */
-        @JsonProperty("content.delta")
-        CONTENT_DELTA("content.delta"),
-        /** Content generation has stopped. */
-        @JsonProperty("content.stop")
-        CONTENT_STOP("content.stop"),
+        /** Step generation has started. */
+        @JsonProperty("step.start")
+        STEP_START("step.start"),
+        /** Step delta has been received. */
+        @JsonProperty("step.delta")
+        STEP_DELTA("step.delta"),
+        /** Step generation has stopped. */
+        @JsonProperty("step.stop")
+        STEP_STOP("step.stop"),
         /** An error occurred. */
         @JsonProperty("error")
         ERROR("error");
@@ -113,14 +114,28 @@ public sealed interface Events permits
     String eventId(); // Common to all events for resumption
 
     /**
-     * Event indicating the start or completion of an interaction.
+     * Event indicating the creation of an interaction.
      *
-     * @param eventType   The type of event ("interaction.start" or "interaction.complete").
+     * @param eventType   The type of event ("interaction.created").
      * @param eventId     The unique identifier for the event.
      * @param interaction The interaction object.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record InteractionEvent(
+    record InteractionCreated(
+        @JsonProperty("event_type") EventType eventType,
+        @JsonProperty("event_id") String eventId,
+        Interaction interaction
+    ) implements Events {}
+
+    /**
+     * Event indicating the completion of an interaction.
+     *
+     * @param eventType   The type of event ("interaction.completed").
+     * @param eventId     The unique identifier for the event.
+     * @param interaction The interaction object.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record InteractionCompleted(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Interaction interaction
@@ -143,30 +158,30 @@ public sealed interface Events permits
     ) implements Events {}
 
     /**
-     * Event indicating the start of a content part.
+     * Event indicating the start of a step.
      *
-     * @param eventType The type of event ("content.start").
+     * @param eventType The type of event ("step.start").
      * @param eventId   The unique identifier for the event.
-     * @param index     The index of the content part.
-     * @param content   The content that is starting.
+     * @param index     The index of the step.
+     * @param step      The step that is starting.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record ContentStart(
+    record StepStart(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
-        Content content
+        Step step
     ) implements Events {}
 
     /**
-     * Event indicating the end of a content part.
+     * Event indicating the end of a step.
      *
-     * @param eventType The type of event ("content.stop").
+     * @param eventType The type of event ("step.stop").
      * @param eventId   The unique identifier for the event.
-     * @param index     The index of the content part.
+     * @param index     The index of the step.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record ContentStop(
+    record StepStop(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index
@@ -199,15 +214,15 @@ public sealed interface Events permits
     ) {}
 
     /**
-     * Event indicating a delta update for a content part.
+     * Event indicating a delta update for a step.
      *
-     * @param eventType The type of event ("content.delta").
+     * @param eventType The type of event ("step.delta").
      * @param eventId   The unique identifier for the event.
-     * @param index     The index of the content part.
+     * @param index     The index of the step.
      * @param delta     The delta update.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record ContentDelta(
+    record StepDelta(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
@@ -452,7 +467,7 @@ public sealed interface Events permits
      * @param arguments The code execution arguments.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record CodeExecutionCallDelta(DeltaType type, String id, Content.CodeExecutionCallArguments arguments) implements Delta {}
+    record CodeExecutionCallDelta(DeltaType type, String id, Step.CodeExecutionCallArguments arguments) implements Delta {}
 
     /**
      * Delta for code execution result.
@@ -474,7 +489,7 @@ public sealed interface Events permits
      * @param arguments The URL context arguments.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record UrlContextCallDelta(DeltaType type, String id, Content.UrlContextCallArguments arguments) implements Delta {}
+    record UrlContextCallDelta(DeltaType type, String id, Step.UrlContextCallArguments arguments) implements Delta {}
 
     /**
      * Delta for URL context result.
@@ -486,7 +501,7 @@ public sealed interface Events permits
      * @param isError   Whether the result is an error.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record UrlContextResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String signature, List<Content.UrlContextResult> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
+    record UrlContextResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String signature, List<Step.UrlContextResult> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
 
     /**
      * Delta for Google Search call.
@@ -496,7 +511,7 @@ public sealed interface Events permits
      * @param arguments The Google Search arguments.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record GoogleSearchCallDelta(DeltaType type, String id, Content.GoogleSearchCallArguments arguments) implements Delta {}
+    record GoogleSearchCallDelta(DeltaType type, String id, Step.GoogleSearchCallArguments arguments) implements Delta {}
 
     /**
      * Delta for Google Search result.
@@ -508,7 +523,7 @@ public sealed interface Events permits
      * @param isError   Whether the result is an error.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record GoogleSearchResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String signature, List<Content.GoogleSearchResult> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
+    record GoogleSearchResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String signature, List<Step.GoogleSearchResult> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
 
     /**
      * Delta for MCP server tool call.
@@ -551,7 +566,7 @@ public sealed interface Events permits
      * @param result The list of file search results.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record FileSearchResultDelta(DeltaType type, List<Content.FileSearchResult> result) implements Delta {}
+    record FileSearchResultDelta(DeltaType type, List<Step.FileSearchResult> result) implements Delta {}
 
     /**
      * Delta for Google Maps call.

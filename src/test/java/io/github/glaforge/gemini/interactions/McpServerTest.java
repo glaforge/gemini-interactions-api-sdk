@@ -20,6 +20,7 @@ import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Tool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -61,17 +62,18 @@ public class McpServerTest {
         System.out.println("Interaction: " + interaction);
 
         System.out.println("Response status: " + interaction.status());
-        assertNotNull(interaction.outputs(), "Interaction outputs should not be null");
+        assertNotNull(interaction.steps(), "Interaction steps should not be null");
 
         // 3. Verify Response
-        System.out.println("Outputs count: " + interaction.outputs().size());
+        System.out.println("Steps count: " + interaction.steps().size());
         // aggregate the text responses into a StringBuilder
         StringBuilder textResponses = new StringBuilder();
-        for (Content content : interaction.outputs()) {
-            if (content instanceof TextContent text) {
-                textResponses.append(text.text());
-            }
-        }
+        interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
+            .filter(content -> content instanceof TextContent)
+            .map(content -> (TextContent) content)
+            .forEach(text -> textResponses.append(text.text()));
         String completeText = textResponses.toString();
         System.out.println("Text responses: " + completeText);
 

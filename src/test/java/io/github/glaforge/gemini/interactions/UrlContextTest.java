@@ -20,6 +20,7 @@ import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Tool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -63,34 +64,32 @@ public class UrlContextTest {
         System.out.println("Sending URL context request...");
         Interaction interaction = client.create(createParams);
         System.out.println("Response status: " + interaction.status());
-        assertNotNull(interaction.outputs(), "Interaction outputs should not be null");
+        assertNotNull(interaction.steps(), "Interaction steps should not be null");
 
         // 3. Verify Response
-        System.out.println("Outputs count: " + interaction.outputs().size());
-        for (Content content : interaction.outputs()) {
-            System.out.println("Output Item Type: " + content.getClass().getSimpleName());
-            if (content instanceof Content.UrlContextResultContent urlResult) {
+        System.out.println("Steps count: " + interaction.steps().size());
+        for (Step step : interaction.steps()) {
+            System.out.println("Step Type: " + step.getClass().getSimpleName());
+            if (step instanceof Step.UrlContextResultStep urlResult) {
                 System.out.println("  URL Result: " + urlResult);
-            } else if (content instanceof TextContent text) {
-                System.out.println("  Text: " + text.text());
+            } else if (step instanceof Step.ModelOutputStep out) {
+                out.content().forEach(c -> {
+                    if (c instanceof TextContent text) {
+                        System.out.println("  Text: " + text.text());
+                    }
+                });
             }
         }
 
-        Content lastOutput = interaction.outputs().getLast();
+        Step lastOutput = interaction.steps().getLast();
         System.out.println("Last output type: " + lastOutput.getClass().getSimpleName());
 
-        if (lastOutput instanceof Content.UrlContextResultContent urlResult) {
+        if (lastOutput instanceof Step.UrlContextResultStep urlResult) {
              System.out.println("URL Context Result received.");
-             for (Content.UrlContextResult res : urlResult.result()) {
+             for (Step.UrlContextResult res : urlResult.result()) {
                  System.out.println("  URL: " + res.url() + ", Status: " + res.status());
              }
 
-             // If status is SUCCESS, we expect the model to verify.
-             // If the model didn't return text, maybe we need to ask it again?
-             // But usually it generates text in the same turn if it has the context.
-
-             // Let's force a follow-up with a text prompt "Please summarize now based on the context."
-             // instead of passing the result back (which caused 400).
              System.out.println("Sending follow-up prompt...");
 
              InteractionParams.ModelInteractionParams continuationParams = InteractionParams.ModelInteractionParams.builder()
@@ -102,29 +101,39 @@ public class UrlContextTest {
              Interaction followUp = client.create(continuationParams);
              System.out.println("Follow-up Status: " + followUp.status());
 
-             for (Content content : followUp.outputs()) {
-                 if (content instanceof TextContent text) {
-                     System.out.println("Follow-up Text: " + text.text());
-                     if (text.text().length() > 10) {
-                         assertTrue(true, "Got summary");
-                         return; // Success
+             for (Step step : followUp.steps()) {
+                 if (step instanceof Step.ModelOutputStep out) {
+                     for (Content c : out.content()) {
+                         if (c instanceof TextContent text) {
+                             System.out.println("Follow-up Text: " + text.text());
+                             if (text.text().length() > 10) {
+                                 assertTrue(true, "Got summary");
+                                 return; // Success
+                             }
+                         }
                      }
                  }
              }
 
              // If we reach here without return, check if we got anything valid
-             Content followUpOutput = followUp.outputs().getLast();
-             if (followUpOutput instanceof TextContent text) {
-                 assertTrue(text.text().length() > 10, "Summary should be descriptive");
+             Step followUpOutput = followUp.steps().getLast();
+             if (followUpOutput instanceof Step.ModelOutputStep out) {
+                 for (Content c : out.content()) {
+                     if (c instanceof TextContent text) {
+                         assertTrue(text.text().length() > 10, "Summary should be descriptive");
+                     }
+                 }
              } else {
                  System.out.println("Unexpected follow-up output: " + followUpOutput);
-                 // Fail if no text
-                 // assertTrue(false, "Did not get text summary in follow-up");
              }
 
-        } else if (lastOutput instanceof TextContent text) {
-            System.out.println("Model Answer: " + text.text());
-            assertTrue(text.text().length() > 10, "Summary should be descriptive");
+        } else if (lastOutput instanceof Step.ModelOutputStep out) {
+             for (Content c : out.content()) {
+                 if (c instanceof TextContent text) {
+                     System.out.println("Model Answer: " + text.text());
+                     assertTrue(text.text().length() > 10, "Summary should be descriptive");
+                 }
+             }
         } else {
             System.out.println("Output content: " + lastOutput);
         }

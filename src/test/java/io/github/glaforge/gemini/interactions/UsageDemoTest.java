@@ -29,7 +29,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static io.github.glaforge.gemini.schema.GSchema.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
@@ -102,69 +101,10 @@ public class UsageDemoTest {
                 ThinkingLevel.LOW, // thinking_level
                 ThinkingSummaries.AUTO, // thinking_summaries
                 1000,
-                null, // speech
-                null // image
+                null // speech
             );
             assertNotNull(config);
 
-            // 7. YAML Output
-            ModelInteractionParams yamlOutputRequest = ModelInteractionParams.builder()
-                .model("gemini-3-flash-preview")
-                .input("Create a YAML frontmapper for a static Hugo website about cats")
-                .responseMimeType("application/yaml")
-                .responseFormat(obj()
-                    .str("title")
-                    .str("date")
-                    .bool("draft")
-                    .arr("tags", str())
-                    .arr("categories", str())
-                    .str("author")
-                    .str("description")
-                )
-                .build();
-            assertNotNull(yamlOutputRequest);
-            var yamlInteraction = client.create(yamlOutputRequest);
-            assertNotNull("Outputs of YAML request: " + yamlInteraction.outputs());
-            yamlInteraction.outputs().forEach(output -> {
-                if (output instanceof TextContent textContent) {
-                    System.out.println(textContent.text());
-                }
-            });
-
-            // 8. XML Output
-            ModelInteractionParams xmlOutputRequest = ModelInteractionParams.builder()
-                .model("gemini-3-flash-preview")
-                .input("Create XML medata for an article about cats")
-                .responseMimeType("application/xml")
-                .responseFormat(Map.of(
-                    "type", "object",
-                    "properties", Map.of(
-                        "article", Map.of(
-                            "type", "object",
-                            "properties", Map.of(
-                                "title", Map.of("type", "string"),
-                                "date", Map.of("type", "string"),
-                                "draft", Map.of("type", "boolean"),
-                                "tags", Map.of("type", "array", "items", Map.of("type", "string")),
-                                "categories", Map.of("type", "array", "items", Map.of("type", "string")),
-                                "author", Map.of("type", "string"),
-                                "description", Map.of("type", "string")
-                            ),
-                            "required", List.of("title", "date", "draft", "tags", "categories", "author", "description")
-                        )
-                    ),
-                    "required", List.of("article")
-                )
-            )
-                .build();
-            assertNotNull(xmlOutputRequest);
-            var xmlInteraction = client.create(xmlOutputRequest);
-            assertNotNull("Outputs of XML request: " + xmlInteraction.outputs());
-            xmlInteraction.outputs().forEach(output -> {
-                if (output instanceof TextContent textContent) {
-                    System.out.println(textContent.text());
-                }
-            });
 
             System.out.println("All requests built successfully.");
         });

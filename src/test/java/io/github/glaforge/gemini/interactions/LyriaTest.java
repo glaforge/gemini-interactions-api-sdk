@@ -1,10 +1,13 @@
 package io.github.glaforge.gemini.interactions;
 
+import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Content.AudioContent;
 import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
@@ -14,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.net.URI;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,8 +48,15 @@ public class LyriaTest {
         }
     }
 
+    private Stream<Content> getContents(Interaction interaction) {
+        if (interaction.steps() == null) return Stream.empty();
+        return interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream());
+    }
+
     private void printLyrics(Interaction interaction) {
-        interaction.outputs().stream()
+        getContents(interaction)
             .filter(output -> output instanceof TextContent)
             .map(output -> (TextContent) output)
             .findFirst()
@@ -66,15 +77,15 @@ public class LyriaTest {
         Interaction interaction = client.create(request);
 
         assertNotNull(interaction);
-        assertNotNull(interaction.outputs());
+        assertNotNull(interaction.steps());
 
         printLyrics(interaction);
 
-        boolean hasAudio = interaction.outputs().stream()
+        boolean hasAudio = getContents(interaction)
             .anyMatch(output -> output instanceof AudioContent);
         assertTrue(hasAudio, "Response should contain audio content");
 
-        interaction.outputs().stream()
+        getContents(interaction)
             .filter(output -> output instanceof AudioContent)
             .map(output -> (AudioContent) output)
             .findFirst()
@@ -99,7 +110,7 @@ public class LyriaTest {
         Interaction interaction = client.create(request);
         printLyrics(interaction);
 
-        interaction.outputs().stream()
+        getContents(interaction)
             .filter(output -> output instanceof AudioContent)
             .map(output -> (AudioContent) output)
             .findFirst()
@@ -126,7 +137,7 @@ public class LyriaTest {
         Interaction interaction = client.create(request);
         printLyrics(interaction);
 
-        interaction.outputs().stream()
+        getContents(interaction)
             .filter(output -> output instanceof AudioContent)
             .map(output -> (AudioContent) output)
             .findFirst()
@@ -149,7 +160,7 @@ public class LyriaTest {
 
         Interaction interaction = client.create(request);
 
-        interaction.outputs().stream()
+        getContents(interaction)
             .filter(output -> output instanceof AudioContent)
             .map(output -> (AudioContent) output)
             .findFirst()
@@ -169,7 +180,7 @@ public class LyriaTest {
         Interaction interaction = client.create(request);
         printLyrics(interaction);
 
-        interaction.outputs().stream()
+        getContents(interaction)
             .filter(output -> output instanceof AudioContent)
             .map(output -> (AudioContent) output)
             .findFirst()
@@ -200,7 +211,7 @@ public class LyriaTest {
             Interaction interaction = client.create(request);
             printLyrics(interaction);
 
-            interaction.outputs().stream()
+            getContents(interaction)
                 .filter(output -> output instanceof AudioContent)
                 .map(output -> (AudioContent) output)
                 .findFirst()

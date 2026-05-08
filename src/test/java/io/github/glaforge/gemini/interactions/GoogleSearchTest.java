@@ -20,6 +20,7 @@ import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Tool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -60,16 +61,20 @@ public class GoogleSearchTest {
         System.out.println("Sending search request...");
         Interaction interaction = client.create(createParams);
         System.out.println("Response status: " + interaction.status());
-        assertNotNull(interaction.outputs(), "Interaction outputs should not be null");
+        assertNotNull(interaction.steps(), "Interaction steps should not be null");
 
         // 3. Verify Response
-        // The response should contain text and potentially citation info
-        // (though not explicitly checked here without inspecting metadata).
-        // Since Google Search is a built-in tool, the model might just return the answer directly
-        // using the tool in the background (hidden) or expose it.
-        // For interactions API, grounded responses are often integrated into text.
-
-        Content lastOutput = interaction.outputs().getLast();
+        // Since we provided a tool, the model might first output a tool call,
+        // then we (or the server if executing tool) provide tool result,
+        // then model outputs final answer.
+        // Assuming Interaction returns the final model output directly for this simplified test
+        // (If the server handles tool execution automatically, which might not be standard gemini API behavior without extensions,
+        // but let's check the final output text).
+        var modelSteps = interaction.steps().stream()
+            .filter(step -> step instanceof Step.ModelOutputStep)
+            .toList();
+        Step.ModelOutputStep lastStep = (Step.ModelOutputStep) modelSteps.getLast();
+        Content lastOutput = lastStep.content().getLast();
         System.out.println("Last output type: " + lastOutput.getClass().getSimpleName());
 
         if (lastOutput instanceof TextContent text) {

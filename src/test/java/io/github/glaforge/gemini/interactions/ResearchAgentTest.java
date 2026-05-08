@@ -20,7 +20,9 @@ import io.github.glaforge.gemini.interactions.model.Config.DeepResearchAgentConf
 import io.github.glaforge.gemini.interactions.model.Config.ThinkingSummaries;
 import io.github.glaforge.gemini.interactions.model.Config.Visualization;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Events;
+import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -71,9 +73,11 @@ public class ResearchAgentTest {
         StringBuilder researchTextBuilder = new StringBuilder();
         String[] capturedResearchId = new String[1];
 
+        boolean[] completed = new boolean[1];
+
         try (var eventStream = client.stream(researchParams)) {
             eventStream.forEach(event -> {
-                if (event instanceof Events.ContentDelta deltaEvent) {
+                if (event instanceof Events.StepDelta deltaEvent) {
                     var delta = deltaEvent.delta();
                     if (delta instanceof Events.TextDelta textDelta) {
                         System.out.print(textDelta.text());
@@ -126,27 +130,29 @@ public class ResearchAgentTest {
                     } else {
                         System.out.print("\n[Other Delta: " + delta.getClass().getSimpleName() + "]\n");
                     }
-                } else if (event instanceof Events.InteractionEvent interactionEvent) {
-                    if (interactionEvent.eventType() == Events.EventType.INTERACTION_START) {
-                        System.out.println("\n[Interaction Start: " + interactionEvent.interaction().id() + "]");
-                    } else if (interactionEvent.eventType() == Events.EventType.INTERACTION_COMPLETE) {
-                        capturedResearchId[0] = interactionEvent.interaction().id();
-                        System.out.println("\n[Interaction Complete: " + capturedResearchId[0] + "]");
-                        if (interactionEvent.interaction().outputs() != null) {
-                            for (var content : interactionEvent.interaction().outputs()) {
-                                if (content instanceof io.github.glaforge.gemini.interactions.model.Content.TextContent textContent) {
-                                    System.out.println(textContent.text());
-                                    researchTextBuilder.append(textContent.text());
-                                }
-                            }
-                        }
+                } else if (event instanceof Events.InteractionCreated interactionCreated) {
+                    System.out.println("\n[Interaction Start: " + interactionCreated.interaction().id() + "]");
+                } else if (event instanceof Events.InteractionCompleted interactionCompleted) {
+                    capturedResearchId[0] = interactionCompleted.interaction().id();
+                    completed[0] = true;
+                    System.out.println("\n[Interaction Complete: " + capturedResearchId[0] + "]");
+                    if (interactionCompleted.interaction().steps() != null) {
+                        interactionCompleted.interaction().steps().stream()
+                            .filter(s -> s instanceof Step.ModelOutputStep)
+                            .flatMap(s -> ((Step.ModelOutputStep)s).content().stream())
+                            .filter(c -> c instanceof Content.TextContent)
+                            .forEach(c -> {
+                                Content.TextContent textContent = (Content.TextContent) c;
+                                System.out.println(textContent.text());
+                                researchTextBuilder.append(textContent.text());
+                            });
                     }
                 } else if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
                     System.out.println("\n[Interaction Status Update: " + statusUpdate.interactionId() + " -> " + statusUpdate.status() + "]");
-                } else if (event instanceof Events.ContentStart contentStart) {
-                    System.out.println("\n[Content Start: index " + contentStart.index() + "]");
-                } else if (event instanceof Events.ContentStop contentStop) {
-                    System.out.println("\n[Content Stop: index " + contentStop.index() + "]");
+                } else if (event instanceof Events.StepStart contentStart) {
+                    System.out.println("\n[Step Start: index " + contentStart.index() + "]");
+                } else if (event instanceof Events.StepStop contentStop) {
+                    System.out.println("\n[Step Stop: index " + contentStop.index() + "]");
                 } else if (event instanceof Events.ErrorEvent errorEvent) {
                     System.err.println("\n[Error Event: " + errorEvent.error().code() + " - " + errorEvent.error().message() + "]");
                 } else {
@@ -169,19 +175,22 @@ public class ResearchAgentTest {
                 }
                 finalInteraction = client.get(capturedResearchId[0]);
             }
-            if (finalInteraction.outputs() != null) {
-                for (var content : finalInteraction.outputs()) {
-                    if (content instanceof io.github.glaforge.gemini.interactions.model.Content.TextContent textContent) {
+            if (finalInteraction.steps() != null) {
+                finalInteraction.steps().stream()
+                    .filter(s -> s instanceof Step.ModelOutputStep)
+                    .flatMap(s -> ((Step.ModelOutputStep)s).content().stream())
+                    .filter(c -> c instanceof Content.TextContent)
+                    .forEach(c -> {
+                        Content.TextContent textContent = (Content.TextContent) c;
                         researchTextBuilder.append(textContent.text());
-                    }
-                }
+                    });
             }
         }
 
         String researchText = researchTextBuilder.toString();
         System.out.println("\nResearch Result:\n\n" + researchText);
 
-        assertTrue(completed, "Research interaction stream should complete successfully");
+        assertTrue(completed[0], "Research interaction stream should complete successfully");
         assertNotNull(researchText, "Research text should not be null");
         assertFalse(researchText.isEmpty(), "Research text should not be empty");
 

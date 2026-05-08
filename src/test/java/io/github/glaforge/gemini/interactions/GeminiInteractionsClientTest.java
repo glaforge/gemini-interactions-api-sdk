@@ -16,8 +16,10 @@
 
 package io.github.glaforge.gemini.interactions;
 
+import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -59,10 +61,16 @@ public class GeminiInteractionsClientTest {
               "id": "interaction-123",
               "model": "gemini-2.5-flash",
               "status": "completed",
-              "outputs": [
+              "steps": [
                 {
-                  "type": "text",
-                  "text": "Hello world"
+                  "type": "model_output",
+                  "id": "step-1",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Hello world"
+                    }
+                  ]
                 }
               ]
             }
@@ -84,7 +92,8 @@ public class GeminiInteractionsClientTest {
         assertNotNull(interaction);
         assertEquals("interaction-123", interaction.id());
         assertEquals(Interaction.Status.COMPLETED, interaction.status());
-        assertEquals("Hello world", ((io.github.glaforge.gemini.interactions.model.Content.TextContent) interaction.outputs().get(0)).text());
+        Step.ModelOutputStep step = (Step.ModelOutputStep) interaction.steps().get(0);
+        assertEquals("Hello world", ((Content.TextContent) step.content().get(0)).text());
 
         // Verify request
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
