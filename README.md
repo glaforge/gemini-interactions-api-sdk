@@ -8,7 +8,8 @@ A modern Java SDK for the Google Gemini Interactions API.
 - **Multimodal**: Native support for Text, Image, and Function Calling.
 - **Lightweight**: Minimal dependencies (Jackson, Java Standard Library).
 
-> [!WARNING] ⚠️ API Migration Notice (May 2026)
+> [!WARNING]
+> **⚠️ API Migration Notice (May 2026)**
 > The Gemini Interactions API has undergone a major breaking change to a polymorphic `Step`-based architecture.
 > - **Legacy:** `interaction.outputs()`
 > - **New:** `interaction.steps()`
