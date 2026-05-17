@@ -254,6 +254,8 @@ public sealed interface Events permits
         @JsonProperty("function_call") FUNCTION_CALL("function_call"),
         /** Function result delta. */
         @JsonProperty("function_result") FUNCTION_RESULT("function_result"),
+        /** Arguments delta. */
+        @JsonProperty("arguments_delta") ARGUMENTS_DELTA("arguments_delta"),
         /** Code execution call delta. */
         @JsonProperty("code_execution_call") CODE_EXECUTION_CALL("code_execution_call"),
         /** Code execution result delta. */
@@ -321,6 +323,7 @@ public sealed interface Events permits
         @JsonSubTypes.Type(value = ThoughtSignatureDelta.class, name = "thought_signature"),
         @JsonSubTypes.Type(value = FunctionCallDelta.class, name = "function_call"),
         @JsonSubTypes.Type(value = FunctionResultDelta.class, name = "function_result"),
+        @JsonSubTypes.Type(value = ArgumentsDelta.class, name = "arguments_delta"),
         @JsonSubTypes.Type(value = CodeExecutionCallDelta.class, name = "code_execution_call"),
         @JsonSubTypes.Type(value = CodeExecutionResultDelta.class, name = "code_execution_result"),
         @JsonSubTypes.Type(value = UrlContextCallDelta.class, name = "url_context_call"),
@@ -338,7 +341,7 @@ public sealed interface Events permits
     sealed interface Delta permits
         TextDelta, ImageDelta, AudioDelta, DocumentDelta, VideoDelta,
         ThoughtSummaryDelta, ThoughtSignatureDelta,
-        FunctionCallDelta, FunctionResultDelta,
+        FunctionCallDelta, FunctionResultDelta, ArgumentsDelta,
         CodeExecutionCallDelta, CodeExecutionResultDelta,
         UrlContextCallDelta, UrlContextResultDelta,
         GoogleSearchCallDelta, GoogleSearchResultDelta,
@@ -458,6 +461,15 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FunctionResultDelta(DeltaType type, @JsonProperty("call_id") String callId, String name, @JsonProperty("is_error") Boolean isError, Object result) implements Delta {}
+
+    /**
+     * Delta for arguments.
+     *
+     * @param type      The type of delta ("arguments_delta").
+     * @param arguments The arguments string chunk.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ArgumentsDelta(DeltaType type, String arguments) implements Delta {}
 
     /**
      * Delta for code execution call.
