@@ -21,7 +21,9 @@ import io.github.glaforge.gemini.schema.StringSchema;
 import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.List;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ModelInteractionParamsTest {
 
@@ -53,7 +55,8 @@ class ModelInteractionParamsTest {
     @Test
     void testResponseFormatWithObject() {
         // Test that the Object overload still works for other types if needed,
-        // or specifically that it delegates to Schema handling if a Schema is passed as Object.
+        // or specifically that it delegates to Schema handling if a Schema is passed as
+        // Object.
 
         Schema schemaAsObject = new StringSchema().desc("Object Schema");
 

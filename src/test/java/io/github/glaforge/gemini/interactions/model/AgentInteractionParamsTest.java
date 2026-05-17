@@ -19,16 +19,17 @@ package io.github.glaforge.gemini.interactions.model;
 import io.github.glaforge.gemini.schema.StringSchema;
 import org.junit.jupiter.api.Test;
 import java.util.Map;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentInteractionParamsTest {
 
     @Test
     void testResponseFormatWithMap() {
         Map<String, Object> formatMap = Map.of(
-            "type", "string",
-            "description", "A simple string"
-        );
+                "type", "string",
+                "description", "A simple string");
 
         InteractionParams.AgentInteractionParams params = InteractionParams.AgentInteractionParams.builder()
                 .responseFormat(formatMap)
@@ -62,11 +63,11 @@ class AgentInteractionParamsTest {
     @Test
     void testResponseFormatWithString() {
         String jsonSchema = """
-            {
-              "type": "string",
-              "description": "Parsed from JSON string"
-            }
-            """;
+                {
+                  "type": "string",
+                  "description": "Parsed from JSON string"
+                }
+                """;
 
         InteractionParams.AgentInteractionParams params = InteractionParams.AgentInteractionParams.builder()
                 .responseFormat(jsonSchema)

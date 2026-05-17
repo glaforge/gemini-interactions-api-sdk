@@ -19,14 +19,17 @@ import java.util.List;
 import java.net.URI;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class LyriaTest {
 
     private final GeminiInteractionsClient client = GeminiInteractionsClient.builder()
-        .apiKey(System.getenv("GEMINI_API_KEY"))
-        .build();
+            .apiKey(System.getenv("GEMINI_API_KEY"))
+            .build();
 
     private void saveAudio(AudioContent audio, String filename) {
         assertNotNull(audio.data());
@@ -49,30 +52,31 @@ public class LyriaTest {
     }
 
     private Stream<Content> getContents(Interaction interaction) {
-        if (interaction.steps() == null) return Stream.empty();
+        if (interaction.steps() == null)
+            return Stream.empty();
         return interaction.steps().stream()
-            .filter(step -> step instanceof Step.ModelOutputStep)
-            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream());
+                .filter(step -> step instanceof Step.ModelOutputStep)
+                .flatMap(step -> ((Step.ModelOutputStep) step).content().stream());
     }
 
     private void printLyrics(Interaction interaction) {
         getContents(interaction)
-            .filter(output -> output instanceof TextContent)
-            .map(output -> (TextContent) output)
-            .findFirst()
-            .ifPresent(textContent -> System.out.println("Lyrics / Structure Generated:\n" + textContent.text()));
+                .filter(output -> output instanceof TextContent)
+                .map(output -> (TextContent) output)
+                .findFirst()
+                .ifPresent(textContent -> System.out.println("Lyrics / Structure Generated:\n" + textContent.text()));
     }
 
     @Test
     public void testBasicMusicGeneration() {
         System.out.println("Running testBasicMusicGeneration");
         ModelInteractionParams request = ModelInteractionParams.builder()
-            .model("models/lyria-3-clip-preview")
-            .input("An epic song with opera voices about a quest. Deep synths and a speeding up tempo.")
-            .responseModalities(
-                Interaction.Modality.AUDIO,
-                Interaction.Modality.TEXT)
-            .build();
+                .model("models/lyria-3-clip-preview")
+                .input("An epic song with opera voices about a quest. Deep synths and a speeding up tempo.")
+                .responseModalities(
+                        Interaction.Modality.AUDIO,
+                        Interaction.Modality.TEXT)
+                .build();
 
         Interaction interaction = client.create(request);
 
@@ -82,109 +86,112 @@ public class LyriaTest {
         printLyrics(interaction);
 
         boolean hasAudio = getContents(interaction)
-            .anyMatch(output -> output instanceof AudioContent);
+                .anyMatch(output -> output instanceof AudioContent);
         assertTrue(hasAudio, "Response should contain audio content");
 
         getContents(interaction)
-            .filter(output -> output instanceof AudioContent)
-            .map(output -> (AudioContent) output)
-            .findFirst()
-            .ifPresent(audio -> saveAudio(audio, "lyria-basic-quest.mp3"));
+                .filter(output -> output instanceof AudioContent)
+                .map(output -> (AudioContent) output)
+                .findFirst()
+                .ifPresent(audio -> saveAudio(audio, "lyria-basic-quest.mp3"));
     }
 
     @Test
     public void testStructuredMusicGeneration() {
         System.out.println("Running testStructuredMusicGeneration");
         ModelInteractionParams request = ModelInteractionParams.builder()
-            .model("models/lyria-3-clip-preview")
-            .input("""
-                [Intro] Calm piano music setting a sunset scene on the beach
-                [Verse] Epic rock balade as the storm rages.
-                [Outro] Opera with choir as the sun reappears again through the black clouds.
-            """)
-            .responseModalities(
-                Interaction.Modality.AUDIO,
-                Interaction.Modality.TEXT)
-            .build();
+                .model("models/lyria-3-clip-preview")
+                .input("""
+                            [Intro] Calm piano music setting a sunset scene on the beach
+                            [Verse] Epic rock balade as the storm rages.
+                            [Outro] Opera with choir as the sun reappears again through the black clouds.
+                        """)
+                .responseModalities(
+                        Interaction.Modality.AUDIO,
+                        Interaction.Modality.TEXT)
+                .build();
 
         Interaction interaction = client.create(request);
         printLyrics(interaction);
 
         getContents(interaction)
-            .filter(output -> output instanceof AudioContent)
-            .map(output -> (AudioContent) output)
-            .findFirst()
-            .ifPresent(audio -> saveAudio(audio, "lyria-structured-storm.mp3"));
+                .filter(output -> output instanceof AudioContent)
+                .map(output -> (AudioContent) output)
+                .findFirst()
+                .ifPresent(audio -> saveAudio(audio, "lyria-structured-storm.mp3"));
     }
 
     @Test
     public void testGenerationWithLyrics() {
         System.out.println("Running testGenerationWithLyrics");
         ModelInteractionParams request = ModelInteractionParams.builder()
-            .model("models/lyria-3-clip-preview")
-            .input("""
-                An uplifting song with guitar rifts about nano banana.
-                The lyrics should be:
-                  Yellow peel, a tiny sweet, The Nano Banana, a tropical treat. But wait—it
-                  hums, it starts to create, Switching into AI mode. Not a fruit, but a smart
-                  machine, The bananiest model you've ever seen.
-            """)
-            .responseModalities(
-                Interaction.Modality.AUDIO,
-                Interaction.Modality.TEXT)
-            .build();
+                .model("models/lyria-3-clip-preview")
+                .input("""
+                            An uplifting song with guitar rifts about nano banana.
+                            The lyrics should be:
+                              Yellow peel, a tiny sweet, The Nano Banana, a tropical treat. But wait—it
+                              hums, it starts to create, Switching into AI mode. Not a fruit, but a smart
+                              machine, The bananiest model you've ever seen.
+                        """)
+                .responseModalities(
+                        Interaction.Modality.AUDIO,
+                        Interaction.Modality.TEXT)
+                .build();
 
         Interaction interaction = client.create(request);
         printLyrics(interaction);
 
         getContents(interaction)
-            .filter(output -> output instanceof AudioContent)
-            .map(output -> (AudioContent) output)
-            .findFirst()
-            .ifPresent(audio -> saveAudio(audio, "lyria-lyrics-banana.mp3"));
+                .filter(output -> output instanceof AudioContent)
+                .map(output -> (AudioContent) output)
+                .findFirst()
+                .ifPresent(audio -> saveAudio(audio, "lyria-lyrics-banana.mp3"));
     }
 
     @Test
     public void testInstrumentalMusicGeneration() {
         System.out.println("Running testInstrumentalMusicGeneration");
         ModelInteractionParams request = ModelInteractionParams.builder()
-            .model("models/lyria-3-clip-preview")
-            // Lyria supports instrumental generation implicitly through prompts
-            // In python notebook, creating instrumental only is mentioned as:
-            // For background music, soundtracks, or game loops where vocals aren't needed, you can use the instrumental_only parameter.
-            // Wait, interactions API currently might not expose instrumental_only parameter directly on the top-level.
-            // Using a strong prompt indicating instrumental only instead, as shown in notebook's example prompt.
-            .input("Create a looping meditation music that feels like the wind. instrumental only.")
-            .responseModalities(Interaction.Modality.AUDIO)
-            .build();
+                .model("models/lyria-3-clip-preview")
+                // Lyria supports instrumental generation implicitly through prompts
+                // In python notebook, creating instrumental only is mentioned as:
+                // For background music, soundtracks, or game loops where vocals aren't needed,
+                // you can use the instrumental_only parameter.
+                // Wait, interactions API currently might not expose instrumental_only parameter
+                // directly on the top-level.
+                // Using a strong prompt indicating instrumental only instead, as shown in
+                // notebook's example prompt.
+                .input("Create a looping meditation music that feels like the wind. instrumental only.")
+                .responseModalities(Interaction.Modality.AUDIO)
+                .build();
 
         Interaction interaction = client.create(request);
 
         getContents(interaction)
-            .filter(output -> output instanceof AudioContent)
-            .map(output -> (AudioContent) output)
-            .findFirst()
-            .ifPresent(audio -> saveAudio(audio, "lyria-instrumental-wind.mp3"));
+                .filter(output -> output instanceof AudioContent)
+                .map(output -> (AudioContent) output)
+                .findFirst()
+                .ifPresent(audio -> saveAudio(audio, "lyria-instrumental-wind.mp3"));
     }
 
     @Test
     public void testFullSongGeneration() {
         System.out.println("Running testFullSongGeneration");
         ModelInteractionParams request = ModelInteractionParams.builder()
-            // Using the Lyria 3 Pro model for full-length song generation
-            .model("models/lyria-3-pro-preview")
-            .input("Write a full length epic power metal song about a brave knight fighting a dragon. It should have a guitar solo.")
-            .responseModalities(List.of(Interaction.Modality.AUDIO, Interaction.Modality.TEXT))
-            .build();
+                // Using the Lyria 3 Pro model for full-length song generation
+                .model("models/lyria-3-pro-preview")
+                .input("Write a full length epic power metal song about a brave knight fighting a dragon. It should have a guitar solo.")
+                .responseModalities(List.of(Interaction.Modality.AUDIO, Interaction.Modality.TEXT))
+                .build();
 
         Interaction interaction = client.create(request);
         printLyrics(interaction);
 
         getContents(interaction)
-            .filter(output -> output instanceof AudioContent)
-            .map(output -> (AudioContent) output)
-            .findFirst()
-            .ifPresent(audio -> saveAudio(audio, "lyria-full-knight-dragon.mp3"));
+                .filter(output -> output instanceof AudioContent)
+                .map(output -> (AudioContent) output)
+                .findFirst()
+                .ifPresent(audio -> saveAudio(audio, "lyria-full-knight-dragon.mp3"));
     }
 
     @Test
@@ -192,30 +199,31 @@ public class LyriaTest {
         System.out.println("Running testImageToMusicGeneration");
         try {
             // Downloading a sample image directly from the Generative AI cookbook examples
-            byte[] imageBytes = URI.create("https://storage.googleapis.com/generativeai-downloads/images/groceries.jpeg")
-                .toURL()
-                .openStream()
-                .readAllBytes();
+            byte[] imageBytes = URI
+                    .create("https://storage.googleapis.com/generativeai-downloads/images/groceries.jpeg")
+                    .toURL()
+                    .openStream()
+                    .readAllBytes();
 
             ModelInteractionParams request = ModelInteractionParams.builder()
-                .model("models/lyria-3-clip-preview")
-                .input(
-                    new TextContent("An epic song with opera voices about this quest. Deep synths and a speeding up tempo."),
-                    new ImageContent(imageBytes, "image/jpeg")
-                )
-                .responseModalities(
-                    Interaction.Modality.AUDIO,
-                    Interaction.Modality.TEXT)
-                .build();
+                    .model("models/lyria-3-clip-preview")
+                    .input(
+                            new TextContent(
+                                    "An epic song with opera voices about this quest. Deep synths and a speeding up tempo."),
+                            new ImageContent(imageBytes, "image/jpeg"))
+                    .responseModalities(
+                            Interaction.Modality.AUDIO,
+                            Interaction.Modality.TEXT)
+                    .build();
 
             Interaction interaction = client.create(request);
             printLyrics(interaction);
 
             getContents(interaction)
-                .filter(output -> output instanceof AudioContent)
-                .map(output -> (AudioContent) output)
-                .findFirst()
-                .ifPresent(audio -> saveAudio(audio, "lyria-image-groceries.mp3"));
+                    .filter(output -> output instanceof AudioContent)
+                    .map(output -> (AudioContent) output)
+                    .findFirst()
+                    .ifPresent(audio -> saveAudio(audio, "lyria-image-groceries.mp3"));
         } catch (IOException e) {
             fail("Failed to download image or generate music: " + e.getMessage());
         }

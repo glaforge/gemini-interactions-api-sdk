@@ -31,7 +31,9 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".*")
 public class ResearchAgentTest {
@@ -52,8 +54,8 @@ public class ResearchAgentTest {
     @Test
     public void testResearchPlannerExecutor() throws IOException, InterruptedException {
         String researchGoal = """
-            Best pecan pie recipes.
-            """;
+                Best pecan pie recipes.
+                """;
         System.out.println("Research Goal: " + researchGoal);
 
         System.out.println("\nResearching...");
@@ -61,7 +63,8 @@ public class ResearchAgentTest {
         AgentInteractionParams researchParams = AgentInteractionParams.builder()
                 .agent("deep-research-max-preview-04-2026")
                 // .agent("deep-research-pro-preview-12-2025")
-                .agentConfig(new DeepResearchAgentConfig("deep-research", ThinkingSummaries.AUTO, Visualization.AUTO, false))
+                .agentConfig(
+                        new DeepResearchAgentConfig("deep-research", ThinkingSummaries.AUTO, Visualization.AUTO, false))
                 .input(researchGoal)
                 .background(true)
                 .store(true)
@@ -90,31 +93,38 @@ public class ResearchAgentTest {
                     } else if (delta instanceof Events.GoogleSearchCallDelta searchCall) {
                         System.out.print("\n[Google Search Call: " + searchCall.arguments() + "]\n");
                     } else if (delta instanceof Events.GoogleSearchResultDelta searchResult) {
-                        System.out.print("\n[Google Search Result: " + (searchResult.result() != null ? searchResult.result().size() : 0) + " results]\n");
+                        System.out.print("\n[Google Search Result: "
+                                + (searchResult.result() != null ? searchResult.result().size() : 0) + " results]\n");
                     } else if (delta instanceof Events.UrlContextCallDelta urlCall) {
                         System.out.print("\n[URL Context Call: " + urlCall.arguments() + "]\n");
                     } else if (delta instanceof Events.UrlContextResultDelta urlResult) {
-                        System.out.print("\n[URL Context Result: " + (urlResult.result() != null ? urlResult.result().size() : 0) + " results]\n");
+                        System.out.print("\n[URL Context Result: "
+                                + (urlResult.result() != null ? urlResult.result().size() : 0) + " results]\n");
                     } else if (delta instanceof Events.CodeExecutionCallDelta codeCall) {
                         System.out.print("\n[Code Execution Call: " + codeCall.arguments() + "]\n");
                     } else if (delta instanceof Events.CodeExecutionResultDelta codeResult) {
                         System.out.print("\n[Code Execution Result: " + codeResult.result() + "]\n");
                     } else if (delta instanceof Events.FunctionCallDelta functionCall) {
-                        System.out.print("\n[Function Call: " + functionCall.name() + " with args " + functionCall.arguments() + "]\n");
+                        System.out.print("\n[Function Call: " + functionCall.name() + " with args "
+                                + functionCall.arguments() + "]\n");
                     } else if (delta instanceof Events.FunctionResultDelta functionResult) {
-                        System.out.print("\n[Function Result: " + functionResult.name() + " -> " + functionResult.result() + "]\n");
+                        System.out.print("\n[Function Result: " + functionResult.name() + " -> "
+                                + functionResult.result() + "]\n");
                     } else if (delta instanceof Events.FileSearchCallDelta fileCall) {
                         System.out.print("\n[File Search Call: " + fileCall.signature() + "]\n");
                     } else if (delta instanceof Events.FileSearchResultDelta fileResult) {
-                        System.out.print("\n[File Search Result: " + (fileResult.result() != null ? fileResult.result().size() : 0) + " results]\n");
+                        System.out.print("\n[File Search Result: "
+                                + (fileResult.result() != null ? fileResult.result().size() : 0) + " results]\n");
                     } else if (delta instanceof Events.McpServerToolCallDelta mcpCall) {
                         System.out.print("\n[MCP Tool Call: " + mcpCall.serverName() + "/" + mcpCall.name() + "]\n");
                     } else if (delta instanceof Events.McpServerToolResultDelta mcpResult) {
-                        System.out.print("\n[MCP Tool Result: " + mcpResult.serverName() + "/" + mcpResult.name() + "]\n");
+                        System.out.print(
+                                "\n[MCP Tool Result: " + mcpResult.serverName() + "/" + mcpResult.name() + "]\n");
                     } else if (delta instanceof Events.GoogleMapsCallDelta mapsCall) {
                         System.out.print("\n[Google Maps Call: " + mapsCall.arguments() + "]\n");
                     } else if (delta instanceof Events.GoogleMapsResultDelta mapsResult) {
-                        System.out.print("\n[Google Maps Result: " + (mapsResult.result() != null ? mapsResult.result().size() : 0) + " results]\n");
+                        System.out.print("\n[Google Maps Result: "
+                                + (mapsResult.result() != null ? mapsResult.result().size() : 0) + " results]\n");
                     } else if (delta instanceof Events.ImageDelta imageDelta) {
                         System.out.print("\n[Image Delta: " + imageDelta.mimeType() + "]\n");
                     } else if (delta instanceof Events.AudioDelta audioDelta) {
@@ -124,7 +134,9 @@ public class ResearchAgentTest {
                     } else if (delta instanceof Events.DocumentDelta documentDelta) {
                         System.out.print("\n[Document Delta: " + documentDelta.mimeType() + "]\n");
                     } else if (delta instanceof Events.TextAnnotationDelta textAnnotation) {
-                        System.out.print("\n[Text Annotation: " + (textAnnotation.annotations() != null ? textAnnotation.annotations().size() : 0) + " annotations]\n");
+                        System.out.print("\n[Text Annotation: "
+                                + (textAnnotation.annotations() != null ? textAnnotation.annotations().size() : 0)
+                                + " annotations]\n");
                     } else if (delta instanceof Events.UnknownDelta unknownDelta) {
                         System.out.print("\n[Unknown Delta: " + unknownDelta.raw() + "]\n");
                     } else {
@@ -138,23 +150,25 @@ public class ResearchAgentTest {
                     System.out.println("\n[Interaction Complete: " + capturedResearchId[0] + "]");
                     if (interactionCompleted.interaction().steps() != null) {
                         interactionCompleted.interaction().steps().stream()
-                            .filter(s -> s instanceof Step.ModelOutputStep)
-                            .flatMap(s -> ((Step.ModelOutputStep)s).content().stream())
-                            .filter(c -> c instanceof Content.TextContent)
-                            .forEach(c -> {
-                                Content.TextContent textContent = (Content.TextContent) c;
-                                System.out.println(textContent.text());
-                                researchTextBuilder.append(textContent.text());
-                            });
+                                .filter(s -> s instanceof Step.ModelOutputStep)
+                                .flatMap(s -> ((Step.ModelOutputStep) s).content().stream())
+                                .filter(c -> c instanceof Content.TextContent)
+                                .forEach(c -> {
+                                    Content.TextContent textContent = (Content.TextContent) c;
+                                    System.out.println(textContent.text());
+                                    researchTextBuilder.append(textContent.text());
+                                });
                     }
                 } else if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
-                    System.out.println("\n[Interaction Status Update: " + statusUpdate.interactionId() + " -> " + statusUpdate.status() + "]");
+                    System.out.println("\n[Interaction Status Update: " + statusUpdate.interactionId() + " -> "
+                            + statusUpdate.status() + "]");
                 } else if (event instanceof Events.StepStart contentStart) {
                     System.out.println("\n[Step Start: index " + contentStart.index() + "]");
                 } else if (event instanceof Events.StepStop contentStop) {
                     System.out.println("\n[Step Stop: index " + contentStop.index() + "]");
                 } else if (event instanceof Events.ErrorEvent errorEvent) {
-                    System.err.println("\n[Error Event: " + errorEvent.error().code() + " - " + errorEvent.error().message() + "]");
+                    System.err.println("\n[Error Event: " + errorEvent.error().code() + " - "
+                            + errorEvent.error().message() + "]");
                 } else {
                     System.out.println("\n[Other Event: " + event.getClass().getSimpleName() + "]");
                 }
@@ -167,7 +181,8 @@ public class ResearchAgentTest {
         if (researchTextBuilder.isEmpty() && capturedResearchId[0] != null) {
             System.out.println("\n[Stream completed but no report received. Polling interaction for final result...]");
             Interaction finalInteraction = client.get(capturedResearchId[0]);
-            while (finalInteraction.status() != Interaction.Status.COMPLETED && finalInteraction.status() != Interaction.Status.FAILED) {
+            while (finalInteraction.status() != Interaction.Status.COMPLETED
+                    && finalInteraction.status() != Interaction.Status.FAILED) {
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
@@ -177,13 +192,13 @@ public class ResearchAgentTest {
             }
             if (finalInteraction.steps() != null) {
                 finalInteraction.steps().stream()
-                    .filter(s -> s instanceof Step.ModelOutputStep)
-                    .flatMap(s -> ((Step.ModelOutputStep)s).content().stream())
-                    .filter(c -> c instanceof Content.TextContent)
-                    .forEach(c -> {
-                        Content.TextContent textContent = (Content.TextContent) c;
-                        researchTextBuilder.append(textContent.text());
-                    });
+                        .filter(s -> s instanceof Step.ModelOutputStep)
+                        .flatMap(s -> ((Step.ModelOutputStep) s).content().stream())
+                        .filter(c -> c instanceof Content.TextContent)
+                        .forEach(c -> {
+                            Content.TextContent textContent = (Content.TextContent) c;
+                            researchTextBuilder.append(textContent.text());
+                        });
             }
         }
 

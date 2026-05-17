@@ -25,13 +25,19 @@ import io.github.glaforge.gemini.interactions.model.Step;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import javax.sound.sampled.*;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class SpeechGenerationTest {
@@ -39,15 +45,15 @@ public class SpeechGenerationTest {
     @Test
     public void testSpeechGeneration() {
         GeminiInteractionsClient client = GeminiInteractionsClient.builder()
-            .apiKey(System.getenv("GEMINI_API_KEY"))
-            .build();
+                .apiKey(System.getenv("GEMINI_API_KEY"))
+                .build();
 
         ModelInteractionParams request = ModelInteractionParams.builder()
-            .model("gemini-2.5-flash-preview-tts")
-            .input("Say the following: WOOHOO This is so much fun!")
-            .responseModalities(Interaction.Modality.AUDIO)
-            .speechConfig(new SpeechConfig("kore", "en-us"))
-            .build();
+                .model("gemini-2.5-flash-preview-tts")
+                .input("Say the following: WOOHOO This is so much fun!")
+                .responseModalities(Interaction.Modality.AUDIO)
+                .speechConfig(new SpeechConfig("kore", "en-us"))
+                .build();
 
         Interaction interaction = client.create(request);
 
@@ -55,41 +61,41 @@ public class SpeechGenerationTest {
         assertNotNull(interaction.steps());
 
         boolean hasAudio = interaction.steps().stream()
-            .filter(step -> step instanceof Step.ModelOutputStep)
-            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
-            .anyMatch(output -> output instanceof AudioContent);
+                .filter(step -> step instanceof Step.ModelOutputStep)
+                .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
+                .anyMatch(output -> output instanceof AudioContent);
 
         assertTrue(hasAudio, "Response should contain audio content");
 
         interaction.steps().stream()
-            .filter(step -> step instanceof Step.ModelOutputStep)
-            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
-            .filter(output -> output instanceof AudioContent)
-            .map(output -> (AudioContent) output)
-            .forEach(audio -> {
-                assertNotNull(audio.data());
-                assertTrue(audio.data().length > 0);
-                assertEquals("audio", audio.type());
-                System.out.println("Received audio data of length: " + audio.data().length);
+                .filter(step -> step instanceof Step.ModelOutputStep)
+                .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
+                .filter(output -> output instanceof AudioContent)
+                .map(output -> (AudioContent) output)
+                .forEach(audio -> {
+                    assertNotNull(audio.data());
+                    assertTrue(audio.data().length > 0);
+                    assertEquals("audio", audio.type());
+                    System.out.println("Received audio data of length: " + audio.data().length);
 
-                try {
-                    Path targetPath = Paths.get("target", "generated-audio.wav");
-                    Files.createDirectories(targetPath.getParent());
+                    try {
+                        Path targetPath = Paths.get("target", "generated-audio.wav");
+                        Files.createDirectories(targetPath.getParent());
 
-                    // Audio format: 24kHz, 16-bit, Mono, Signed, Little Endian
-                    AudioFormat format = new AudioFormat(24000, 16, 1, true, false);
-                    byte[] audioData = audio.data();
-                    try (AudioInputStream audioInputStream = new AudioInputStream(
-                        new ByteArrayInputStream(audioData),
-                        format,
-                        audioData.length / format.getFrameSize())) {
-                        AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, targetPath.toFile());
+                        // Audio format: 24kHz, 16-bit, Mono, Signed, Little Endian
+                        AudioFormat format = new AudioFormat(24000, 16, 1, true, false);
+                        byte[] audioData = audio.data();
+                        try (AudioInputStream audioInputStream = new AudioInputStream(
+                                new ByteArrayInputStream(audioData),
+                                format,
+                                audioData.length / format.getFrameSize())) {
+                            AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, targetPath.toFile());
+                        }
+
+                        System.out.println("Saved audio to: " + targetPath.toAbsolutePath());
+                    } catch (IOException e) {
+                        fail("Failed to save audio file: " + e.getMessage());
                     }
-
-                    System.out.println("Saved audio to: " + targetPath.toAbsolutePath());
-                } catch (IOException e) {
-                    fail("Failed to save audio file: " + e.getMessage());
-                }
-            });
+                });
     }
 }

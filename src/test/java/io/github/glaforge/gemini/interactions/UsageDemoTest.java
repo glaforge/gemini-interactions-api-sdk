@@ -17,11 +17,13 @@
 package io.github.glaforge.gemini.interactions;
 
 import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
-import io.github.glaforge.gemini.interactions.model.Content.*;
-import io.github.glaforge.gemini.interactions.model.Interaction.*;
+import io.github.glaforge.gemini.interactions.model.Config.ThinkingLevel;
+import io.github.glaforge.gemini.interactions.model.Config.ThinkingSummaries;
+import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+import io.github.glaforge.gemini.interactions.model.Interaction.Turn;
 import io.github.glaforge.gemini.interactions.model.Interaction.Role;
 import io.github.glaforge.gemini.interactions.model.Tool.Function;
-import io.github.glaforge.gemini.interactions.model.Config.*;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import java.util.List;
 import java.util.Map;

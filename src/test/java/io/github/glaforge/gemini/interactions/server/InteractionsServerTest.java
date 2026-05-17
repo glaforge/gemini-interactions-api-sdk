@@ -18,9 +18,15 @@ package io.github.glaforge.gemini.interactions.server;
 
 import com.sun.net.httpserver.HttpServer;
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
-import io.github.glaforge.gemini.interactions.model.Events;
+import io.github.glaforge.gemini.interactions.model.ListWebhooksResponse;
+import io.github.glaforge.gemini.interactions.model.PingWebhookResponse;
+import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
+import io.github.glaforge.gemini.interactions.model.RotateSigningSecretResponse;
+import io.github.glaforge.gemini.interactions.model.Webhook;
+import io.github.glaforge.gemini.interactions.model.WebhookUpdate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -126,6 +132,41 @@ class InteractionsServerTest {
                     )
                 );
             }
+
+            @Override
+            public Webhook createWebhook(Webhook webhook) {
+                return new Webhook("wh-1", webhook.name(), webhook.uri(), webhook.subscribedEvents(), Webhook.State.ENABLED, "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", Collections.emptyList(), "secret-123");
+            }
+
+            @Override
+            public Webhook getWebhook(String id) {
+                return new Webhook(id, "test", "http://test", Collections.emptyList(), Webhook.State.ENABLED, "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", Collections.emptyList(), null);
+            }
+
+            @Override
+            public ListWebhooksResponse listWebhooks(Integer pageSize, String pageToken) {
+                return new ListWebhooksResponse(Collections.singletonList(getWebhook("wh-1")), "next-token");
+            }
+
+            @Override
+            public Webhook updateWebhook(String id, WebhookUpdate update) {
+                return new Webhook(id, update.name(), update.uri(), update.subscribedEvents(), update.state(), "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", Collections.emptyList(), null);
+            }
+
+            @Override
+            public void deleteWebhook(String id) {
+                // no-op
+            }
+
+            @Override
+            public PingWebhookResponse pingWebhook(String id) {
+                return new PingWebhookResponse();
+            }
+
+            @Override
+            public RotateSigningSecretResponse rotateSigningSecret(String id, RotateSigningSecretRequest request) {
+                return new RotateSigningSecretResponse("new-secret-123");
+            }
         });
         server.start();
 
@@ -178,5 +219,52 @@ class InteractionsServerTest {
         assertNotNull(eventsStream);
         long count = eventsStream.count();
         assertEquals(2, count);
+    }
+
+    @Test
+    void testCreateWebhook() {
+        Webhook webhook = new Webhook(null, "Test Hook", "http://test", Collections.emptyList(), null, null, null, null, null);
+        Webhook result = client.createWebhook(webhook);
+        assertEquals("wh-1", result.id());
+        assertEquals("secret-123", result.newSigningSecret());
+    }
+
+    @Test
+    void testGetWebhook() {
+        Webhook result = client.getWebhook("wh-1");
+        assertEquals("wh-1", result.id());
+    }
+
+    @Test
+    void testListWebhooks() {
+        ListWebhooksResponse result = client.listWebhooks(10, null);
+        assertEquals(1, result.webhooks().size());
+        assertEquals("wh-1", result.webhooks().get(0).id());
+        assertEquals("next-token", result.nextPageToken());
+    }
+
+    @Test
+    void testUpdateWebhook() {
+        WebhookUpdate update = new WebhookUpdate("Updated Name", null, null, null);
+        Webhook result = client.updateWebhook("wh-1", update);
+        assertEquals("wh-1", result.id());
+        assertEquals("Updated Name", result.name());
+    }
+
+    @Test
+    void testDeleteWebhook() {
+        client.deleteWebhook("wh-1"); // Should not throw
+    }
+
+    @Test
+    void testPingWebhook() {
+        PingWebhookResponse result = client.pingWebhook("wh-1");
+        assertNotNull(result);
+    }
+
+    @Test
+    void testRotateSigningSecret() {
+        RotateSigningSecretResponse result = client.rotateSigningSecret("wh-1", new RotateSigningSecretRequest(RotateSigningSecretRequest.RevocationBehavior.REVOKE_PREVIOUS_SECRETS_AFTER_H24));
+        assertEquals("new-secret-123", result.secret());
     }
 }

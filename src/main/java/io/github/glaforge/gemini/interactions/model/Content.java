@@ -37,14 +37,16 @@ import java.util.List;
     @JsonSubTypes.Type(value = Content.ImageContent.class, name = "image"),
     @JsonSubTypes.Type(value = Content.AudioContent.class, name = "audio"),
     @JsonSubTypes.Type(value = Content.DocumentContent.class, name = "document"),
-    @JsonSubTypes.Type(value = Content.VideoContent.class, name = "video")
+    @JsonSubTypes.Type(value = Content.VideoContent.class, name = "video"),
+    @JsonSubTypes.Type(value = Content.ThoughtContent.class, name = "thought")
 })
 public sealed interface Content permits
     Content.TextContent,
     Content.ImageContent,
     Content.AudioContent,
     Content.DocumentContent,
-    Content.VideoContent {
+    Content.VideoContent,
+    Content.ThoughtContent {
 
     /**
      * Returns the type of content.
@@ -61,8 +63,9 @@ public sealed interface Content permits
         @JsonProperty("low") LOW,
         /** Medium resolution. */
         @JsonProperty("medium") MEDIUM,
-        /** High resolution. */
-        @JsonProperty("high") HIGH
+        @JsonProperty("high") HIGH,
+        /** Ultra high resolution. */
+        @JsonProperty("ultra_high") ULTRA_HIGH
     }
 
     /**
@@ -292,4 +295,28 @@ public sealed interface Content permits
         @JsonProperty("mime_type") String mimeType,
         Resolution resolution
     ) implements Content {}
+
+    /**
+     * Content containing a thought.
+     *
+     * @param type      The type of content (must be "thought").
+     * @param signature The thought signature.
+     * @param summary   The thought summary.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ThoughtContent(
+        String type,
+        String signature,
+        List<Content> summary
+    ) implements Content {
+        /**
+         * Creates a new ThoughtContent with default type "thought".
+         *
+         * @param signature The thought signature.
+         * @param summary   The thought summary.
+         */
+        public ThoughtContent(String signature, List<Content> summary) {
+            this("thought", signature, summary);
+        }
+    }
 }

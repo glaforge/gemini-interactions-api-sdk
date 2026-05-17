@@ -17,8 +17,14 @@
 package io.github.glaforge.gemini.schema;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import static io.github.glaforge.gemini.schema.GSchema.*;
+import static io.github.glaforge.gemini.schema.GSchema.arr;
+import static io.github.glaforge.gemini.schema.GSchema.bool;
+import static io.github.glaforge.gemini.schema.GSchema.integer;
+import static io.github.glaforge.gemini.schema.GSchema.num;
+import static io.github.glaforge.gemini.schema.GSchema.obj;
+import static io.github.glaforge.gemini.schema.GSchema.str;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GSchemaTest {
 

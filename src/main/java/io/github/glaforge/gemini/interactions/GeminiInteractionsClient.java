@@ -23,6 +23,12 @@ import tools.jackson.databind.json.JsonMapper;
 import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.ListWebhooksResponse;
+import io.github.glaforge.gemini.interactions.model.PingWebhookResponse;
+import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
+import io.github.glaforge.gemini.interactions.model.RotateSigningSecretResponse;
+import io.github.glaforge.gemini.interactions.model.Webhook;
+import io.github.glaforge.gemini.interactions.model.WebhookUpdate;
 
 import java.io.IOException;
 import java.net.URI;
@@ -256,6 +262,221 @@ public class GeminiInteractionsClient {
             throw new GeminiInteractionsException(e);
         }
     }
+
+    // --- Webhook Operations ---
+
+    /**
+     * Creates a new webhook.
+     *
+     * @param webhook The webhook to create.
+     * @return The created Webhook.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Webhook createWebhook(Webhook webhook) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(webhook);
+            String url = String.format("%s/%s/webhooks", baseUrl, version);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Webhook.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Retrieves a webhook by ID.
+     *
+     * @param id The webhook ID.
+     * @return The Webhook.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Webhook getWebhook(String id) {
+        try {
+            String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Webhook.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Lists webhooks.
+     *
+     * @param pageSize  The maximum number of webhooks to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @return The ListWebhooksResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListWebhooksResponse listWebhooks(Integer pageSize, String pageToken) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/webhooks", baseUrl, version));
+            boolean hasParam = false;
+            if (pageSize != null) {
+                urlBuilder.append("?page_size=").append(pageSize);
+                hasParam = true;
+            }
+            if (pageToken != null && !pageToken.isEmpty()) {
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+            }
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(urlBuilder.toString()))
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), ListWebhooksResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Updates a webhook.
+     *
+     * @param id     The webhook ID.
+     * @param update The webhook update payload.
+     * @return The updated Webhook.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Webhook updateWebhook(String id, WebhookUpdate update) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(update);
+            String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Webhook.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Deletes a webhook by ID.
+     *
+     * @param id The webhook ID.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void deleteWebhook(String id) {
+        try {
+            String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .DELETE()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Pings a webhook to verify it is working.
+     *
+     * @param id The webhook ID.
+     * @return The PingWebhookResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public PingWebhookResponse pingWebhook(String id) {
+        try {
+            String requestBody = "{}";
+            String url = String.format("%s/%s/webhooks/%s:ping", baseUrl, version, id);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), PingWebhookResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Rotates the signing secret for a webhook.
+     *
+     * @param id      The webhook ID.
+     * @param request The rotation request payload.
+     * @return The RotateSigningSecretResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public RotateSigningSecretResponse rotateSigningSecret(String id, RotateSigningSecretRequest request) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(request);
+            String url = String.format("%s/%s/webhooks/%s:rotateSigningSecret", baseUrl, version, id);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), RotateSigningSecretResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
 
     private void checkError(HttpResponse<String> response) {
          if (response.statusCode() >= 400) {

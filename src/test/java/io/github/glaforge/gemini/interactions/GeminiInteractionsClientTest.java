@@ -29,7 +29,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GeminiInteractionsClientTest {
 
@@ -42,9 +45,10 @@ public class GeminiInteractionsClientTest {
         mockWebServer.start();
 
         client = GeminiInteractionsClient.builder()
-            .apiKey("test-api-key")
-            .baseUrl(mockWebServer.url("/").toString().replaceAll("/$", "")) // Remove trailing slash as client appends paths
-            .build();
+                .apiKey("test-api-key")
+                .baseUrl(mockWebServer.url("/").toString().replaceAll("/$", "")) // Remove trailing slash as client
+                                                                                 // appends paths
+                .build();
 
     }
 
@@ -57,33 +61,33 @@ public class GeminiInteractionsClientTest {
     void testCreateInteraction() throws Exception {
         // Mock response
         String interactionJson = """
-            {
-              "id": "interaction-123",
-              "model": "gemini-2.5-flash",
-              "status": "completed",
-              "steps": [
                 {
-                  "type": "model_output",
-                  "id": "step-1",
-                  "content": [
+                  "id": "interaction-123",
+                  "model": "gemini-2.5-flash",
+                  "status": "completed",
+                  "steps": [
                     {
-                      "type": "text",
-                      "text": "Hello world"
+                      "type": "model_output",
+                      "id": "step-1",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Hello world"
+                        }
+                      ]
                     }
                   ]
                 }
-              ]
-            }
-            """;
+                """;
         mockWebServer.enqueue(new MockResponse()
-            .setBody(interactionJson)
-            .addHeader("Content-Type", "application/json"));
+                .setBody(interactionJson)
+                .addHeader("Content-Type", "application/json"));
 
         // Create request
         var params = InteractionParams.ModelInteractionParams.builder()
-            .model("gemini-2.5-flash")
-            .input("Hi")
-            .build();
+                .model("gemini-2.5-flash")
+                .input("Hi")
+                .build();
 
         // Execute
         Interaction interaction = client.create(params);
@@ -111,15 +115,15 @@ public class GeminiInteractionsClientTest {
     void testGetInteraction() throws Exception {
         // Mock response
         String interactionJson = """
-            {
-              "id": "interaction-456",
-              "model": "gemini-2.5-flash",
-              "status": "in_progress"
-            }
-            """;
+                {
+                  "id": "interaction-456",
+                  "model": "gemini-2.5-flash",
+                  "status": "in_progress"
+                }
+                """;
         mockWebServer.enqueue(new MockResponse()
-            .setBody(interactionJson)
-            .addHeader("Content-Type", "application/json"));
+                .setBody(interactionJson)
+                .addHeader("Content-Type", "application/json"));
 
         // Execute
         Interaction interaction = client.get("interaction-456");
@@ -140,15 +144,15 @@ public class GeminiInteractionsClientTest {
     void testCancelInteraction() throws Exception {
         // Mock response
         String interactionJson = """
-            {
-              "id": "interaction-789",
-              "model": "gemini-2.5-flash",
-              "status": "cancelled"
-            }
-            """;
+                {
+                  "id": "interaction-789",
+                  "model": "gemini-2.5-flash",
+                  "status": "cancelled"
+                }
+                """;
         mockWebServer.enqueue(new MockResponse()
-            .setBody(interactionJson)
-            .addHeader("Content-Type", "application/json"));
+                .setBody(interactionJson)
+                .addHeader("Content-Type", "application/json"));
 
         // Execute
         Interaction interaction = client.cancel("interaction-789");
@@ -169,8 +173,8 @@ public class GeminiInteractionsClientTest {
     void testDeleteInteraction() throws Exception {
         // Mock response
         mockWebServer.enqueue(new MockResponse()
-            .setResponseCode(200)
-            .setBody("{}"));
+                .setResponseCode(200)
+                .setBody("{}"));
 
         // Execute
         client.delete("interaction-000");
@@ -186,8 +190,8 @@ public class GeminiInteractionsClientTest {
     void testErrorHandling() {
         // Mock response
         mockWebServer.enqueue(new MockResponse()
-            .setResponseCode(404)
-            .setBody("{\"error\": \"Not Found\"}"));
+                .setResponseCode(404)
+                .setBody("{\"error\": \"Not Found\"}"));
 
         // Execute and Verify
         GeminiInteractionsException exception = assertThrows(GeminiInteractionsException.class, () -> {
@@ -202,8 +206,8 @@ public class GeminiInteractionsClientTest {
     void testBuilderValidation() {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             GeminiInteractionsClient.builder()
-                .baseUrl("http://localhost")
-                .build();
+                    .baseUrl("http://localhost")
+                    .build();
         });
 
         assertEquals("API Key must be provided", exception.getMessage());

@@ -42,6 +42,7 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Events.StepStart.class, name = "step.start"),
     @JsonSubTypes.Type(value = Events.StepDelta.class, name = "step.delta"),
     @JsonSubTypes.Type(value = Events.StepStop.class, name = "step.stop"),
+    @JsonSubTypes.Type(value = Events.ContentDelta.class, name = "content.delta"),
     @JsonSubTypes.Type(value = Events.ErrorEvent.class, name = "error")
 })
 public sealed interface Events permits
@@ -51,6 +52,7 @@ public sealed interface Events permits
     Events.StepStart,
     Events.StepDelta,
     Events.StepStop,
+    Events.ContentDelta,
     Events.ErrorEvent {
 
     /**
@@ -75,6 +77,9 @@ public sealed interface Events permits
         /** Step generation has stopped. */
         @JsonProperty("step.stop")
         STEP_STOP("step.stop"),
+        /** Content delta has been received. */
+        @JsonProperty("content.delta")
+        CONTENT_DELTA("content.delta"),
         /** An error occurred. */
         @JsonProperty("error")
         ERROR("error");
@@ -223,6 +228,22 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record StepDelta(
+        @JsonProperty("event_type") EventType eventType,
+        @JsonProperty("event_id") String eventId,
+        Integer index,
+        Delta delta
+    ) implements Events {}
+
+    /**
+     * Event indicating a delta update for content.
+     *
+     * @param eventType The type of event ("content.delta").
+     * @param eventId   The unique identifier for the event.
+     * @param index     The index of the content block.
+     * @param delta     The delta update.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ContentDelta(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,

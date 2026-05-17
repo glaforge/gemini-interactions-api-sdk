@@ -12,7 +12,13 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import java.util.Base64;
 
-import javax.sound.sampled.*;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -20,7 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class Gemini31SpeechGenerationTest {
@@ -28,35 +34,35 @@ public class Gemini31SpeechGenerationTest {
     @Test
     public void testSpeechGenerationWithTagsAndContext() throws Exception {
         GeminiInteractionsClient client = GeminiInteractionsClient.builder()
-            .apiKey(System.getenv("GEMINI_API_KEY"))
-            .build();
+                .apiKey(System.getenv("GEMINI_API_KEY"))
+                .build();
 
         String prompt = """
-            # AUDIO PROFILE: Jaz R.
-            ## THE SCENE: The London Studio
-            It is 10:00 PM in a glass-walled studio overlooking the moonlit London skyline, but inside, it is blindingly bright. The red "ON AIR" tally light is blazing. Jaz is standing up, not sitting, bouncing on the balls of their heels to the rhythm of a thumping backing track. Their hands fly across the faders on a massive mixing desk. It is a chaotic, caffeine-fueled cockpit designed to wake up an entire nation.
+                # AUDIO PROFILE: Jaz R.
+                ## THE SCENE: The London Studio
+                It is 10:00 PM in a glass-walled studio overlooking the moonlit London skyline, but inside, it is blindingly bright. The red "ON AIR" tally light is blazing. Jaz is standing up, not sitting, bouncing on the balls of their heels to the rhythm of a thumping backing track. Their hands fly across the faders on a massive mixing desk. It is a chaotic, caffeine-fueled cockpit designed to wake up an entire nation.
 
-            ### DIRECTOR'S NOTES
-            Style:
-            * The "Vocal Smile": You must hear the grin in the audio. The soft palate is always raised to keep the tone bright, sunny, and explicitly inviting.
-            * Dynamics: High projection without shouting. Punchy consonants and elongated vowels on excitement words.
-            Accent: Jaz is a DJ from Brixton, London
-            Pace: Speaks at an energetic pace, keeping up with the fast music. Speaks with a "bouncing" cadence. High-speed delivery with fluid transitions—no dead air, no gaps.
+                ### DIRECTOR'S NOTES
+                Style:
+                * The "Vocal Smile": You must hear the grin in the audio. The soft palate is always raised to keep the tone bright, sunny, and explicitly inviting.
+                * Dynamics: High projection without shouting. Punchy consonants and elongated vowels on excitement words.
+                Accent: Jaz is a DJ from Brixton, London
+                Pace: Speaks at an energetic pace, keeping up with the fast music. Speaks with a "bouncing" cadence. High-speed delivery with fluid transitions—no dead air, no gaps.
 
-            ### SAMPLE CONTEXT
-            Jaz is the industry standard for Top 40 radio, high-octane event promos, or any script that requires a charismatic Estuary accent and 11/10 infectious energy.
+                ### SAMPLE CONTEXT
+                Jaz is the industry standard for Top 40 radio, high-octane event promos, or any script that requires a charismatic Estuary accent and 11/10 infectious energy.
 
-            #### TRANSCRIPT
-            [excitedly] Yes, massive vibes in the studio! You are locked in and it is absolutely popping off in London right now. If you're stuck on the tube, or just sat there pretending to work... stop it. Seriously, I see you. [shouting] Turn this up! We've got the project roadmap landing in three, two... let's go!
-            """;
+                #### TRANSCRIPT
+                [excitedly] Yes, massive vibes in the studio! You are locked in and it is absolutely popping off in London right now. If you're stuck on the tube, or just sat there pretending to work... stop it. Seriously, I see you. [shouting] Turn this up! We've got the project roadmap landing in three, two... let's go!
+                """;
 
         ModelInteractionParams request = ModelInteractionParams.builder()
-            .model("gemini-3.1-flash-tts-preview")
-            .input(prompt)
-            .responseModalities(Interaction.Modality.AUDIO)
-            .speechConfig(new SpeechConfig("Algenib", "en-GB"))
-            .stream(true)
-            .build();
+                .model("gemini-3.1-flash-tts-preview")
+                .input(prompt)
+                .responseModalities(Interaction.Modality.AUDIO)
+                .speechConfig(new SpeechConfig("Algenib", "en-GB"))
+                .stream(true)
+                .build();
 
         try (Stream<Events> eventStream = client.stream(request)) {
             // Audio format: 24kHz, 16-bit, Mono, Signed, Little Endian
@@ -64,7 +70,7 @@ public class Gemini31SpeechGenerationTest {
             DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
 
             try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info);
-                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
                 line.open(format);
                 line.start();
                 System.out.println("Streaming audio playback in real-time...");
@@ -114,9 +120,9 @@ public class Gemini31SpeechGenerationTest {
                     byte[] fullAudioData = outputStream.toByteArray();
 
                     try (AudioInputStream audioInputStream = new AudioInputStream(
-                        new ByteArrayInputStream(fullAudioData),
-                        format,
-                        fullAudioData.length / format.getFrameSize())) {
+                            new ByteArrayInputStream(fullAudioData),
+                            format,
+                            fullAudioData.length / format.getFrameSize())) {
                         AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, targetPath.toFile());
                     }
                     System.out.println("Saved audio stream to: " + targetPath.toAbsolutePath());

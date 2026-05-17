@@ -9,24 +9,29 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class GemmaTest {
 
     private final GeminiInteractionsClient client = GeminiInteractionsClient.builder()
-        .apiKey(System.getenv("GEMINI_API_KEY"))
-        .build();
+            .apiKey(System.getenv("GEMINI_API_KEY"))
+            .build();
 
     @ParameterizedTest
-    @ValueSource(strings = {"models/gemma-4-26b-a4b-it", "models/gemma-4-31b-it"})
+    @ValueSource(strings = { "models/gemma-4-26b-a4b-it", "models/gemma-4-31b-it" })
     public void testGemmaModels(String modelName) {
         System.out.println("Running test for model: " + modelName);
         ModelInteractionParams request = ModelInteractionParams.builder()
-            .model(modelName)
-            .input("What is the capital of France? Answer in one word.")
-            .responseModalities(Interaction.Modality.TEXT)
-            .build();
+                .model(modelName)
+                .input("What is the capital of France? Answer in one word.")
+                .responseModalities(Interaction.Modality.TEXT)
+                .build();
 
         Interaction interaction = client.create(request);
 
@@ -35,28 +40,28 @@ public class GemmaTest {
         assertTrue(interaction.steps().stream().anyMatch(step -> step instanceof Step.ModelOutputStep));
 
         interaction.steps().stream()
-            .filter(step -> step instanceof Step.ModelOutputStep)
-            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
-            .filter(output -> output instanceof TextContent)
-            .map(output -> (TextContent) output)
-            .findFirst()
-            .ifPresent(textContent -> {
-                System.out.println(modelName + " answer: " + textContent.text());
-                assertTrue(textContent.text().contains("Paris"), "The response should contain 'Paris'");
-            });
+                .filter(step -> step instanceof Step.ModelOutputStep)
+                .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
+                .filter(output -> output instanceof TextContent)
+                .map(output -> (TextContent) output)
+                .findFirst()
+                .ifPresent(textContent -> {
+                    System.out.println(modelName + " answer: " + textContent.text());
+                    assertTrue(textContent.text().contains("Paris"), "The response should contain 'Paris'");
+                });
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"models/gemma-4-26b-a4b-it", "models/gemma-4-31b-it"})
+    @ValueSource(strings = { "models/gemma-4-26b-a4b-it", "models/gemma-4-31b-it" })
     public void testGemmaModelsWithGoogleSearch(String modelName) {
         System.out.println("Running search test for model: " + modelName);
 
         ModelInteractionParams request = ModelInteractionParams.builder()
-            .model(modelName)
-            .input("Who is the actress who invented the MemPalace agent memory project?")
-            .tools(new Tool.GoogleSearch())
-            .responseModalities(Interaction.Modality.TEXT)
-            .build();
+                .model(modelName)
+                .input("Who is the actress who invented the MemPalace agent memory project?")
+                .tools(new Tool.GoogleSearch())
+                .responseModalities(Interaction.Modality.TEXT)
+                .build();
 
         Interaction interaction = client.create(request);
 
@@ -65,17 +70,18 @@ public class GemmaTest {
         assertTrue(interaction.steps().stream().anyMatch(step -> step instanceof Step.ModelOutputStep));
 
         interaction.steps().stream()
-            .filter(step -> step instanceof Step.ModelOutputStep)
-            .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
-            .filter(output -> output instanceof TextContent)
-            .map(output -> (TextContent) output)
-            .findFirst()
-            .ifPresent(textContent -> {
-                System.out.println(modelName + " answer (with search): " + textContent.text());
-                String answerLower = textContent.text().toLowerCase();
-                assertTrue(answerLower.contains("milla"), "The response should contain 'Milla'");
-                assertTrue(answerLower.contains("jovovich") || answerLower.contains("jovovitch"), "The response should contain 'Jovovich'");
-            });
+                .filter(step -> step instanceof Step.ModelOutputStep)
+                .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
+                .filter(output -> output instanceof TextContent)
+                .map(output -> (TextContent) output)
+                .findFirst()
+                .ifPresent(textContent -> {
+                    System.out.println(modelName + " answer (with search): " + textContent.text());
+                    String answerLower = textContent.text().toLowerCase();
+                    assertTrue(answerLower.contains("milla"), "The response should contain 'Milla'");
+                    assertTrue(answerLower.contains("jovovich") || answerLower.contains("jovovitch"),
+                            "The response should contain 'Jovovich'");
+                });
     }
 
 }
