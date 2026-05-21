@@ -18,9 +18,11 @@ package io.github.glaforge.gemini.interactions.server;
 
 import com.sun.net.httpserver.HttpServer;
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+import io.github.glaforge.gemini.interactions.model.Agent;
 import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.ListAgentsResponse;
 import io.github.glaforge.gemini.interactions.model.ListWebhooksResponse;
 import io.github.glaforge.gemini.interactions.model.PingWebhookResponse;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
@@ -167,6 +169,38 @@ class InteractionsServerTest {
             public RotateSigningSecretResponse rotateSigningSecret(String id, RotateSigningSecretRequest request) {
                 return new RotateSigningSecretResponse("new-secret-123");
             }
+
+            @Override
+            public Agent createAgent(Agent agent) {
+                return Agent.builder()
+                    .id(agent.id())
+                    .description(agent.description())
+                    .baseAgent(agent.baseAgent())
+                    .systemInstruction(agent.systemInstruction())
+                    .build();
+            }
+
+            @Override
+            public Agent getAgent(String id) {
+                return Agent.builder()
+                    .id(id)
+                    .description("Test Description")
+                    .baseAgent("antigravity-preview-05-2026")
+                    .build();
+            }
+
+            @Override
+            public ListAgentsResponse listAgents(Integer pageSize, String pageToken) {
+                return new ListAgentsResponse(
+                    Collections.singletonList(getAgent("agent-123")),
+                    "next-token-123"
+                );
+            }
+
+            @Override
+            public void deleteAgent(String id) {
+                // no-op
+            }
         });
         server.start();
 
@@ -266,5 +300,41 @@ class InteractionsServerTest {
     void testRotateSigningSecret() {
         RotateSigningSecretResponse result = client.rotateSigningSecret("wh-1", new RotateSigningSecretRequest(RotateSigningSecretRequest.RevocationBehavior.REVOKE_PREVIOUS_SECRETS_AFTER_H24));
         assertEquals("new-secret-123", result.secret());
+    }
+
+    @Test
+    void testCreateAgent() {
+        Agent agent = Agent.builder()
+            .id("test-agent")
+            .description("A test agent")
+            .baseAgent("antigravity-preview-05-2026")
+            .systemInstruction("Be helpful")
+            .build();
+        Agent result = client.createAgent(agent);
+        assertEquals("test-agent", result.id());
+        assertEquals("A test agent", result.description());
+        assertEquals("antigravity-preview-05-2026", result.baseAgent());
+        assertEquals("Be helpful", result.systemInstruction());
+    }
+
+    @Test
+    void testGetAgent() {
+        Agent result = client.getAgent("test-agent");
+        assertEquals("test-agent", result.id());
+        assertEquals("Test Description", result.description());
+        assertEquals("antigravity-preview-05-2026", result.baseAgent());
+    }
+
+    @Test
+    void testListAgents() {
+        ListAgentsResponse result = client.listAgents(10, "start-token");
+        assertEquals(1, result.agents().size());
+        assertEquals("agent-123", result.agents().get(0).id());
+        assertEquals("next-token-123", result.nextPageToken());
+    }
+
+    @Test
+    void testDeleteAgent() {
+        client.deleteAgent("test-agent"); // Should not throw
     }
 }

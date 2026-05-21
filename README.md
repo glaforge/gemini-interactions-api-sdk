@@ -268,6 +268,101 @@ while (interaction.status() != Status.COMPLETED) {
 System.out.println(interaction.steps());
 ```
 
+### Custom Agents (CRUD & Remote Sandboxing)
+
+The SDK provides first-class support for creating, managing, and running **Custom Agents** in secure remote or local sandboxed environments.
+
+#### 1. Defining and Provisioning a Custom Agent
+You can easily provision custom agents configured with system instructions, specific base models/agents, mounted sources, custom tools, and fine-grained network egress rules:
+
+```java
+import io.github.glaforge.gemini.interactions.model.*;
+import java.util.List;
+
+Agent customAgent = Agent.builder()
+    .id("my-concise-coder-agent")
+    .description("A custom agent built for secure coding tasks.")
+    .baseAgent("antigravity-preview-05-2026")
+    .baseEnvironment("remote") // Run inside a secure, remote Linux sandbox
+    .systemInstruction("You are a helpful coding assistant. Always respond concisely.")
+    .tools(List.of(
+        new AgentTool.GoogleSearch(), // Enable grounded search
+        new AgentTool.CodeExecution() // Enable secure code execution in the sandbox
+    ))
+    .environmentConfig(EnvironmentConfig.builder()
+        .network(EnvironmentNetworkEgressAllowlist.builder()
+            .allowlist(List.of(
+                new AllowlistEntry("github.com", List.of("*:443")) // Safely allow GitHub traffic
+            ))
+            .build()
+        )
+        .build()
+    )
+    .build();
+
+// Create the custom agent
+Agent provisioned = client.createAgent(customAgent);
+```
+
+#### 2. Running an Interaction with the Custom Agent
+To run interactions against your custom agent, use `AgentInteractionParams` specifying your agent's unique ID:
+
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+
+AgentInteractionParams params = AgentInteractionParams.builder()
+    .agent("my-concise-coder-agent")
+    .input("Explain the difference between HSL and RGB color systems.")
+    .environment("remote") // Run in remote sandboxed workspace
+    .build();
+
+Interaction interaction = client.create(params);
+
+// Poll remote sandbox until completion
+while (interaction.status() != Interaction.Status.COMPLETED) {
+    Thread.sleep(2000);
+    interaction = client.get(interaction.id());
+}
+
+System.out.println(interaction.steps());
+```
+
+#### 3. Listing, Retrieving, and Deleting Agents
+The SDK supports standard management CRUD endpoints:
+
+```java
+// List agents with pagination
+ListAgentsResponse listResponse = client.listAgents(10, null);
+listResponse.agents().forEach(System.out::println);
+
+// Retrieve agent details
+Agent retrieved = client.getAgent("my-concise-coder-agent");
+
+// Delete custom agent
+client.deleteAgent("my-concise-coder-agent");
+```
+
+#### 4. Server-Side Handling (InteractionsHandler)
+If you are exposing interactions endpoints or webhooks using `InteractionsHandler`, you can seamlessly plug in agent management support. Simply extend the handler and override the default concrete agent methods:
+
+```java
+import io.github.glaforge.gemini.interactions.server.InteractionsHandler;
+
+public class MyInteractionsServer extends InteractionsHandler {
+    @Override
+    public Agent createAgent(Agent agent) {
+        // Expose custom agent creation logic (e.g. database persistence)
+        return agent;
+    }
+
+    @Override
+    public Agent getAgent(String id) {
+        // Expose agent retrieval logic
+        return fetchAgentFromDB(id);
+    }
+}
+```
+
 ### Function Calling
 ```java
 import io.github.glaforge.gemini.interactions.model.Content;

@@ -40,6 +40,7 @@ public final class ModelOption {
     public static final String GEMINI_3_1_FLASH_LITE = "gemini-3.1-flash-lite";
     public static final String GEMINI_3_1_FLASH_LITE_PREVIEW = "gemini-3.1-flash-lite-preview";
     public static final String GEMINI_3_1_FLASH_TTS_PREVIEW = "gemini-3.1-flash-tts-preview";
+    public static final String GEMINI_3_5_FLASH = "gemini-3.5-flash";
     public static final String LYRIA_3_CLIP_PREVIEW = "lyria-3-clip-preview";
     public static final String LYRIA_3_PRO_PREVIEW = "lyria-3-pro-preview";
 }

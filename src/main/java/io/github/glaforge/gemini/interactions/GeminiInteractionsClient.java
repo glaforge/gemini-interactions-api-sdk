@@ -26,6 +26,8 @@ import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.ListWebhooksResponse;
 import io.github.glaforge.gemini.interactions.model.PingWebhookResponse;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
+import io.github.glaforge.gemini.interactions.model.Agent;
+import io.github.glaforge.gemini.interactions.model.ListAgentsResponse;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretResponse;
 import io.github.glaforge.gemini.interactions.model.Webhook;
 import io.github.glaforge.gemini.interactions.model.WebhookUpdate;
@@ -472,6 +474,128 @@ public class GeminiInteractionsClient {
             checkError(response);
 
             return objectMapper.readValue(response.body(), RotateSigningSecretResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    // --- Agent Operations ---
+
+    /**
+     * Creates a new custom Agent.
+     *
+     * @param agent The agent definition to create.
+     * @return The created Agent.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Agent createAgent(Agent agent) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(agent);
+            String url = String.format("%s/%s/agents", baseUrl, version);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Agent.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Retrieves a custom Agent by ID.
+     *
+     * @param id The agent ID.
+     * @return The Agent.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Agent getAgent(String id) {
+        try {
+            String url = String.format("%s/%s/agents/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Agent.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Lists custom agents.
+     *
+     * @param pageSize  The maximum number of agents to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @return The ListAgentsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListAgentsResponse listAgents(Integer pageSize, String pageToken) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/agents", baseUrl, version));
+            boolean hasParam = false;
+            if (pageSize != null) {
+                urlBuilder.append("?page_size=").append(pageSize);
+                hasParam = true;
+            }
+            if (pageToken != null && !pageToken.isEmpty()) {
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+            }
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(urlBuilder.toString()))
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), ListAgentsResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Deletes a custom Agent by ID.
+     *
+     * @param id The agent ID.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void deleteAgent(String id) {
+        try {
+            String url = String.format("%s/%s/agents/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .DELETE()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
         }

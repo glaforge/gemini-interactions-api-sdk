@@ -21,9 +21,11 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import io.github.glaforge.gemini.interactions.model.Agent;
 import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.ListAgentsResponse;
 import io.github.glaforge.gemini.interactions.model.ListWebhooksResponse;
 import io.github.glaforge.gemini.interactions.model.PingWebhookResponse;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
@@ -65,6 +67,8 @@ public abstract class InteractionsHandler implements HttpHandler {
     private static final Pattern PING_WEBHOOK_PATTERN = Pattern.compile(".*/webhooks/([^/]+):ping$");
     // /v1beta/webhooks/{id}:rotateSigningSecret
     private static final Pattern ROTATE_SECRET_PATTERN = Pattern.compile(".*/webhooks/([^/]+):rotateSigningSecret$");
+    // /v1beta/agents/{id}
+    private static final Pattern AGENT_ID_PATTERN = Pattern.compile(".*/agents/([^/]+)$");
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -136,6 +140,31 @@ public abstract class InteractionsHandler implements HttpHandler {
                 Matcher rotateMatcher = ROTATE_SECRET_PATTERN.matcher(path);
                 if (rotateMatcher.matches() && method.equalsIgnoreCase("POST")) {
                     handleRotateSigningSecret(exchange, rotateMatcher.group(1));
+                    return;
+                }
+
+                // Agents routing
+                if (path.endsWith("/agents")) {
+                    if (method.equalsIgnoreCase("POST")) {
+                        handleCreateAgent(exchange);
+                    } else if (method.equalsIgnoreCase("GET")) {
+                        handleListAgents(exchange);
+                    } else {
+                        sendResponse(exchange, 405, "Method Not Allowed");
+                    }
+                    return;
+                }
+
+                Matcher agentIdMatcher = AGENT_ID_PATTERN.matcher(path);
+                if (agentIdMatcher.matches()) {
+                    String id = agentIdMatcher.group(1);
+                    if (method.equalsIgnoreCase("GET")) {
+                        handleGetAgent(exchange, id);
+                    } else if (method.equalsIgnoreCase("DELETE")) {
+                        handleDeleteAgent(exchange, id);
+                    } else {
+                        sendResponse(exchange, 405, "Method Not Allowed");
+                    }
                     return;
                 }
 
@@ -321,6 +350,62 @@ public abstract class InteractionsHandler implements HttpHandler {
         }
     }
 
+    private void handleCreateAgent(HttpExchange exchange) throws IOException {
+        try {
+            Agent agent = objectMapper.readValue(exchange.getRequestBody(), Agent.class);
+            Agent created = createAgent(agent);
+            sendResponse(exchange, 200, created);
+        } catch (Exception e) {
+            sendResponse(exchange, 400, "Invalid Request: " + e.getMessage());
+        }
+    }
+
+    private void handleListAgents(HttpExchange exchange) throws IOException {
+        try {
+            String query = exchange.getRequestURI().getQuery();
+            Integer pageSize = null;
+            String pageToken = null;
+            if (query != null) {
+                for (String param : query.split("&")) {
+                    String[] pair = param.split("=");
+                    if (pair.length > 1) {
+                        if (pair[0].equals("page_size")) {
+                            pageSize = Integer.parseInt(pair[1]);
+                        } else if (pair[0].equals("page_token")) {
+                            pageToken = pair[1];
+                        }
+                    }
+                }
+            }
+            ListAgentsResponse response = listAgents(pageSize, pageToken);
+            sendResponse(exchange, 200, response);
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
+    private void handleGetAgent(HttpExchange exchange, String id) throws IOException {
+        try {
+            Agent agent = getAgent(id);
+            if (agent != null) {
+                sendResponse(exchange, 200, agent);
+            } else {
+                sendResponse(exchange, 404, "Agent not found");
+            }
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
+    private void handleDeleteAgent(HttpExchange exchange, String id) throws IOException {
+        try {
+            deleteAgent(id);
+            exchange.sendResponseHeaders(204, -1);
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
     private void sendResponse(HttpExchange exchange, int statusCode, Object body) throws IOException {
         String jsonResponse = "";
         if (body instanceof String) {
@@ -447,6 +532,44 @@ public abstract class InteractionsHandler implements HttpHandler {
      * @return The RotateSigningSecretResponse.
      */
     public RotateSigningSecretResponse rotateSigningSecret(String id, RotateSigningSecretRequest request) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    // --- Agent methods ---
+
+    /**
+     * Creates a new custom Agent.
+     * @param agent The agent to create.
+     * @return The created Agent.
+     */
+    public Agent createAgent(Agent agent) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Retrieves a custom Agent by ID.
+     * @param id The agent ID.
+     * @return The Agent, or null if not found.
+     */
+    public Agent getAgent(String id) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Lists custom Agents.
+     * @param pageSize  The maximum number of agents to return.
+     * @param pageToken A page token.
+     * @return The ListAgentsResponse.
+     */
+    public ListAgentsResponse listAgents(Integer pageSize, String pageToken) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Deletes a custom Agent by ID.
+     * @param id The agent ID.
+     */
+    public void deleteAgent(String id) {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

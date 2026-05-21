@@ -376,6 +376,8 @@ public class InteractionParams {
     public record AgentInteractionParams(
         String agent,
         Object input,
+        @tools.jackson.databind.annotation.JsonDeserialize(using = io.github.glaforge.gemini.interactions.model.deserializer.BaseEnvironmentDeserializer.class)
+        Object environment,
         @JsonProperty("agent_config") Config.AgentConfig agentConfig,
         @JsonProperty("generation_config") Config.GenerationConfig generationConfig,
         List<Tool> tools,
@@ -400,6 +402,7 @@ public class InteractionParams {
             public Builder() {}
             private String agent;
             private Object input;
+            private Object environment;
             private Config.AgentConfig agentConfig;
             private Config.GenerationConfig generationConfig;
             private List<Tool> tools;
@@ -474,6 +477,14 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder inputTurns(List<Interaction.Turn> turns) { this.input = turns; return this; }
+
+            /**
+             * Sets the environment.
+             *
+             * @param environment The environment.
+             * @return This builder.
+             */
+            public Builder environment(Object environment) { this.environment = environment; return this; }
 
             /**
              * Sets the agent configuration.
@@ -655,7 +666,7 @@ public class InteractionParams {
                         );
                     }
                 }
-                return new AgentInteractionParams(agent, input, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier);
+                return new AgentInteractionParams(agent, input, environment, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier);
             }
         }
     }

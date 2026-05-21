@@ -16,9 +16,11 @@
 
 package io.github.glaforge.gemini.interactions;
 
+import io.github.glaforge.gemini.interactions.model.Agent;
 import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.ListAgentsResponse;
 import io.github.glaforge.gemini.interactions.model.Step;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -184,6 +186,104 @@ public class GeminiInteractionsClientTest {
         assertEquals("DELETE", recordedRequest.getMethod());
         assertEquals("/v1beta/interactions/interaction-000", recordedRequest.getPath());
         assertEquals("test-api-key", recordedRequest.getHeader("x-goog-api-key"));
+    }
+
+    @Test
+    void testCreateAgent() throws Exception {
+        String agentJson = """
+                {
+                  "id": "agent-xyz",
+                  "description": "Helper agent",
+                  "base_agent": "gemini-3.5-flash",
+                  "base_environment": "default"
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(agentJson)
+                .addHeader("Content-Type", "application/json"));
+
+        var agentInput = Agent.builder()
+                .id("agent-xyz")
+                .description("Helper agent")
+                .baseAgent("gemini-3.5-flash")
+                .baseEnvironment("default")
+                .build();
+
+        Agent created = client.createAgent(agentInput);
+        assertNotNull(created);
+        assertEquals("agent-xyz", created.id());
+        assertEquals("Helper agent", created.description());
+        assertEquals("gemini-3.5-flash", created.baseAgent());
+        assertEquals("default", created.baseEnvironment());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/v1beta/agents", recordedRequest.getPath());
+        assertEquals("test-api-key", recordedRequest.getHeader("x-goog-api-key"));
+    }
+
+    @Test
+    void testGetAgent() throws Exception {
+        String agentJson = """
+                {
+                  "id": "agent-123",
+                  "description": "Helper agent",
+                  "base_agent": "gemini-3.5-flash",
+                  "base_environment": "default"
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(agentJson)
+                .addHeader("Content-Type", "application/json"));
+
+        Agent agent = client.getAgent("agent-123");
+        assertNotNull(agent);
+        assertEquals("agent-123", agent.id());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("GET", recordedRequest.getMethod());
+        assertEquals("/v1beta/agents/agent-123", recordedRequest.getPath());
+    }
+
+    @Test
+    void testListAgents() throws Exception {
+        String listJson = """
+                {
+                  "agents": [
+                    {
+                      "id": "agent-1",
+                      "base_agent": "gemini-3.5-flash",
+                      "base_environment": "default"
+                    }
+                  ],
+                  "nextPageToken": "token-1"
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(listJson)
+                .addHeader("Content-Type", "application/json"));
+
+        ListAgentsResponse response = client.listAgents(10, "token-start");
+        assertNotNull(response);
+        assertEquals(1, response.agents().size());
+        assertEquals("token-1", response.nextPageToken());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("GET", recordedRequest.getMethod());
+        assertEquals("/v1beta/agents?page_size=10&page_token=token-start", recordedRequest.getPath());
+    }
+
+    @Test
+    void testDeleteAgent() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}"));
+
+        client.deleteAgent("agent-to-delete");
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("DELETE", recordedRequest.getMethod());
+        assertEquals("/v1beta/agents/agent-to-delete", recordedRequest.getPath());
     }
 
     @Test
