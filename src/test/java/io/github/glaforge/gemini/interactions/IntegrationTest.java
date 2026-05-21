@@ -24,12 +24,14 @@ import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Step;
+import io.github.glaforge.gemini.interactions.model.Events;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -163,7 +165,8 @@ public class IntegrationTest {
                 System.out.println("Agent created successfully on attempt " + (i + 1));
                 break;
             } catch (GeminiInteractionsException e) {
-                System.out.println("Attempt " + (i + 1) + " failed: " + e.getMessage() + " (status: " + e.getStatusCode() + ")");
+                System.out.println(
+                        "Attempt " + (i + 1) + " failed: " + e.getMessage() + " (status: " + e.getStatusCode() + ")");
                 if (e.getStatusCode() == 504 || e.getStatusCode() == 503) {
                     // Try to check if it was created anyway
                     Thread.sleep(5000);
@@ -185,8 +188,10 @@ public class IntegrationTest {
         }
 
         if (!createdSuccessfully) {
-            System.out.println("Backend Custom Agent CRUD is currently experiencing high server-side latency or service unavailability.");
-            System.out.println("Falling back to using pre-existing custom agent 'custom-agent-persistence-test' to verify remote sandbox execution.");
+            System.out.println(
+                    "Backend Custom Agent CRUD is currently experiencing high server-side latency or service unavailability.");
+            System.out.println(
+                    "Falling back to using pre-existing custom agent 'custom-agent-persistence-test' to verify remote sandbox execution.");
             agentId = "custom-agent-persistence-test";
         } else {
             System.out.println("Created Agent response: " + created);
@@ -236,5 +241,39 @@ public class IntegrationTest {
                 }
             }
         }
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
+    public void testDefaultAgentStreaming() throws IOException, InterruptedException {
+        GeminiInteractionsClient client = GeminiInteractionsClient.builder()
+                .apiKey(System.getenv("GEMINI_API_KEY"))
+                .build();
+
+        InteractionParams.AgentInteractionParams params = InteractionParams.AgentInteractionParams.builder()
+                .agent("antigravity-preview-05-2026")
+                .input("Say hello in exactly 3 words.")
+                .environment("remote")
+                .stream(true)
+                .build();
+
+        System.out.println("Invoking default remote agent via SDK streaming...");
+        StringBuilder textAccumulator = new StringBuilder();
+        try (Stream<Events> eventStream = client.stream(params)) {
+            eventStream.forEach(event -> {
+                System.out.println("Received event: " + event.getClass().getSimpleName() + " -> " + event);
+                if (event instanceof Events.StepDelta delta) {
+                    if (delta.delta() instanceof Events.TextDelta textPart) {
+                        textAccumulator.append(textPart.text());
+                        System.out.print(textPart.text());
+                    }
+                }
+            });
+            System.out.println();
+        }
+
+        String finalResponse = textAccumulator.toString().trim();
+        System.out.println("Accumulated text response: " + finalResponse);
+        org.junit.jupiter.api.Assertions.assertTrue(finalResponse.length() > 0, "Agent should have responded with some text");
     }
 }
