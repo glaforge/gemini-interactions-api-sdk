@@ -42,7 +42,9 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Events.StepStart.class, name = "step.start"),
     @JsonSubTypes.Type(value = Events.StepDelta.class, name = "step.delta"),
     @JsonSubTypes.Type(value = Events.StepStop.class, name = "step.stop"),
+    @JsonSubTypes.Type(value = Events.ContentStart.class, name = "content.start"),
     @JsonSubTypes.Type(value = Events.ContentDelta.class, name = "content.delta"),
+    @JsonSubTypes.Type(value = Events.ContentStop.class, name = "content.stop"),
     @JsonSubTypes.Type(value = Events.ErrorEvent.class, name = "error")
 })
 public sealed interface Events permits
@@ -52,7 +54,9 @@ public sealed interface Events permits
     Events.StepStart,
     Events.StepDelta,
     Events.StepStop,
+    Events.ContentStart,
     Events.ContentDelta,
+    Events.ContentStop,
     Events.ErrorEvent {
 
     /**
@@ -77,9 +81,15 @@ public sealed interface Events permits
         /** Step generation has stopped. */
         @JsonProperty("step.stop")
         STEP_STOP("step.stop"),
+        /** Content generation has started. */
+        @JsonProperty("content.start")
+        CONTENT_START("content.start"),
         /** Content delta has been received. */
         @JsonProperty("content.delta")
         CONTENT_DELTA("content.delta"),
+        /** Content generation has stopped. */
+        @JsonProperty("content.stop")
+        CONTENT_STOP("content.stop"),
         /** An error occurred. */
         @JsonProperty("error")
         ERROR("error");
@@ -251,6 +261,36 @@ public sealed interface Events permits
     ) implements Events {}
 
     /**
+     * Event indicating the start of content.
+     *
+     * @param eventType The type of event ("content.start").
+     * @param eventId   The unique identifier for the event.
+     * @param index     The index of the content block.
+     * @param content   The content that is starting.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ContentStart(
+        @JsonProperty("event_type") EventType eventType,
+        @JsonProperty("event_id") String eventId,
+        Integer index,
+        Content content
+    ) implements Events {}
+
+    /**
+     * Event indicating the end of content.
+     *
+     * @param eventType The type of event ("content.stop").
+     * @param eventId   The unique identifier for the event.
+     * @param index     The index of the content block.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ContentStop(
+        @JsonProperty("event_type") EventType eventType,
+        @JsonProperty("event_id") String eventId,
+        Integer index
+    ) implements Events {}
+
+    /**
      * Represents a delta update for a content part.
      */
     /**
@@ -302,7 +342,7 @@ public sealed interface Events permits
         /** Google Maps result delta. */
         @JsonProperty("google_maps_result") GOOGLE_MAPS_RESULT("google_maps_result"),
         /** Text annotation delta. */
-        @JsonProperty("text_annotation") TEXT_ANNOTATION("text_annotation");
+        @JsonProperty("text_annotation_delta") TEXT_ANNOTATION_DELTA("text_annotation_delta");
 
         private final String jsonValue;
 
@@ -357,7 +397,7 @@ public sealed interface Events permits
         @JsonSubTypes.Type(value = FileSearchResultDelta.class, name = "file_search_result"),
         @JsonSubTypes.Type(value = GoogleMapsCallDelta.class, name = "google_maps_call"),
         @JsonSubTypes.Type(value = GoogleMapsResultDelta.class, name = "google_maps_result"),
-        @JsonSubTypes.Type(value = TextAnnotationDelta.class, name = "text_annotation")
+        @JsonSubTypes.Type(value = TextAnnotationDelta.class, name = "text_annotation_delta")
     })
     sealed interface Delta permits
         TextDelta, ImageDelta, AudioDelta, DocumentDelta, VideoDelta,

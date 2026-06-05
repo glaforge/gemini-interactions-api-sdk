@@ -88,7 +88,8 @@ public record Interaction(
         @JsonProperty("total_tool_use_tokens") Integer totalToolUseTokens,
         @JsonProperty("tool_use_tokens_by_modality") List<ModalityTokens> toolUseTokensByModality,
         @JsonProperty("total_thought_tokens") Integer totalThoughtTokens,
-        @JsonProperty("total_tokens") Integer totalTokens
+        @JsonProperty("total_tokens") Integer totalTokens,
+        @JsonProperty("grounding_tool_count") List<GroundingToolCount> groundingToolCount
     ) {}
 
     /**
@@ -101,6 +102,18 @@ public record Interaction(
     public record ModalityTokens(
         Modality modality,
         Integer tokens
+    ) {}
+
+    /**
+     * Grounding tool count.
+     *
+     * @param count The number of grounding tool counts.
+     * @param type  The grounding tool type associated with the count.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record GroundingToolCount(
+        Integer count,
+        String type
     ) {}
 
     /**

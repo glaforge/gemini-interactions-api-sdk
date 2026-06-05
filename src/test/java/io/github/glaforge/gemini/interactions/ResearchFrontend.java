@@ -35,9 +35,19 @@ public class ResearchFrontend {
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
     public static void main(String[] args) {
+        int port = 8080;
+        String portEnv = System.getenv("PORT");
+        if (portEnv != null && !portEnv.isBlank()) {
+            try {
+                port = Integer.parseInt(portEnv);
+            } catch (NumberFormatException e) {
+                // fall back to default
+            }
+        }
+
         String apiKey = System.getenv("GEMINI_API_KEY");
         if (apiKey == null) {
-            Server.builder(() -> Jt.error("GEMINI_API_KEY environment variable not set").use(), 8080).build().start();
+            Server.builder(() -> Jt.error("GEMINI_API_KEY environment variable not set").use(), port).build().start();
             return;
         }
 
@@ -82,7 +92,7 @@ public class ResearchFrontend {
                 Jt.info("Preparing topics...").icon(":hourglass:").use(topicsContainer);
 
                 ModelInteractionParams planParams = ModelInteractionParams.builder()
-                        .model("gemini-3-flash-preview")
+                        .model("gemini-3.5-flash")
                         .input(String.format("""
                                 Find a list of topics to research on the following subject:
                                 %s
@@ -162,10 +172,10 @@ public class ResearchFrontend {
                         reportBuilder.append(textPart.text());
                         Jt.markdown(transformCitations(reportBuilder.toString())).use(reportPlaceholder);
                     } else if (delta.delta() instanceof ImageDelta imagePart) {
-                        Jt.imageFromBase64(imagePart.data());
+                        Jt.imageFromBase64(imagePart.data()).use(reportPlaceholder);
                     }
                 } else {
-                    //System.out.printf("%nEVENT: %s\n", event);
+                    // System.out.printf("%nEVENT: %s\n", event);
                 }
             });
 
@@ -174,7 +184,7 @@ public class ResearchFrontend {
 
             // compute/fetch summary
             ModelInteractionParams summaryParams = ModelInteractionParams.builder()
-                    .model("gemini-3-pro-preview")
+                    .model("gemini-3.5-flash")
                     .input(String.format("""
                             Create a concise summary of the research below.
                             Go straight with the summary, don't introduce the summary
@@ -206,7 +216,7 @@ public class ResearchFrontend {
             var imageBytes = getInfographicData(infographicInteraction);
 
             Jt.image(imageBytes).use(infographicPlaceholder);
-        }, 8080).build().start();
+        }, port).build().start();
     }
 
     private static List<String> getTopics(Interaction interaction) {

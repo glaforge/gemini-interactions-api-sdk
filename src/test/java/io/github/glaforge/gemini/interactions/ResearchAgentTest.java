@@ -81,67 +81,9 @@ public class ResearchAgentTest {
         try (var eventStream = client.stream(researchParams)) {
             eventStream.forEach(event -> {
                 if (event instanceof Events.StepDelta deltaEvent) {
-                    var delta = deltaEvent.delta();
-                    if (delta instanceof Events.TextDelta textDelta) {
-                        System.out.print(textDelta.text());
-                        System.out.flush();
-                        researchTextBuilder.append(textDelta.text());
-                    } else if (delta instanceof Events.ThoughtSummaryDelta thoughtDelta) {
-                        System.out.print("\n[Thinking...] " + thoughtDelta.content() + "\n");
-                    } else if (delta instanceof Events.ThoughtSignatureDelta signatureDelta) {
-                        System.out.print("\n[Thought Signature: " + signatureDelta.signature() + "]\n");
-                    } else if (delta instanceof Events.GoogleSearchCallDelta searchCall) {
-                        System.out.print("\n[Google Search Call: " + searchCall.arguments() + "]\n");
-                    } else if (delta instanceof Events.GoogleSearchResultDelta searchResult) {
-                        System.out.print("\n[Google Search Result: "
-                                + (searchResult.result() != null ? searchResult.result().size() : 0) + " results]\n");
-                    } else if (delta instanceof Events.UrlContextCallDelta urlCall) {
-                        System.out.print("\n[URL Context Call: " + urlCall.arguments() + "]\n");
-                    } else if (delta instanceof Events.UrlContextResultDelta urlResult) {
-                        System.out.print("\n[URL Context Result: "
-                                + (urlResult.result() != null ? urlResult.result().size() : 0) + " results]\n");
-                    } else if (delta instanceof Events.CodeExecutionCallDelta codeCall) {
-                        System.out.print("\n[Code Execution Call: " + codeCall.arguments() + "]\n");
-                    } else if (delta instanceof Events.CodeExecutionResultDelta codeResult) {
-                        System.out.print("\n[Code Execution Result: " + codeResult.result() + "]\n");
-                    } else if (delta instanceof Events.FunctionCallDelta functionCall) {
-                        System.out.print("\n[Function Call: " + functionCall.name() + " with args "
-                                + functionCall.arguments() + "]\n");
-                    } else if (delta instanceof Events.FunctionResultDelta functionResult) {
-                        System.out.print("\n[Function Result: " + functionResult.name() + " -> "
-                                + functionResult.result() + "]\n");
-                    } else if (delta instanceof Events.FileSearchCallDelta fileCall) {
-                        System.out.print("\n[File Search Call: " + fileCall.signature() + "]\n");
-                    } else if (delta instanceof Events.FileSearchResultDelta fileResult) {
-                        System.out.print("\n[File Search Result: "
-                                + (fileResult.result() != null ? fileResult.result().size() : 0) + " results]\n");
-                    } else if (delta instanceof Events.McpServerToolCallDelta mcpCall) {
-                        System.out.print("\n[MCP Tool Call: " + mcpCall.serverName() + "/" + mcpCall.name() + "]\n");
-                    } else if (delta instanceof Events.McpServerToolResultDelta mcpResult) {
-                        System.out.print(
-                                "\n[MCP Tool Result: " + mcpResult.serverName() + "/" + mcpResult.name() + "]\n");
-                    } else if (delta instanceof Events.GoogleMapsCallDelta mapsCall) {
-                        System.out.print("\n[Google Maps Call: " + mapsCall.arguments() + "]\n");
-                    } else if (delta instanceof Events.GoogleMapsResultDelta mapsResult) {
-                        System.out.print("\n[Google Maps Result: "
-                                + (mapsResult.result() != null ? mapsResult.result().size() : 0) + " results]\n");
-                    } else if (delta instanceof Events.ImageDelta imageDelta) {
-                        System.out.print("\n[Image Delta: " + imageDelta.mimeType() + "]\n");
-                    } else if (delta instanceof Events.AudioDelta audioDelta) {
-                        System.out.print("\n[Audio Delta: " + audioDelta.mimeType() + "]\n");
-                    } else if (delta instanceof Events.VideoDelta videoDelta) {
-                        System.out.print("\n[Video Delta: " + videoDelta.mimeType() + "]\n");
-                    } else if (delta instanceof Events.DocumentDelta documentDelta) {
-                        System.out.print("\n[Document Delta: " + documentDelta.mimeType() + "]\n");
-                    } else if (delta instanceof Events.TextAnnotationDelta textAnnotation) {
-                        System.out.print("\n[Text Annotation: "
-                                + (textAnnotation.annotations() != null ? textAnnotation.annotations().size() : 0)
-                                + " annotations]\n");
-                    } else if (delta instanceof Events.UnknownDelta unknownDelta) {
-                        System.out.print("\n[Unknown Delta: " + unknownDelta.raw() + "]\n");
-                    } else {
-                        System.out.print("\n[Other Delta: " + delta.getClass().getSimpleName() + "]\n");
-                    }
+                    handleDelta(deltaEvent.delta(), researchTextBuilder);
+                } else if (event instanceof Events.ContentDelta contentDeltaEvent) {
+                    handleDelta(contentDeltaEvent.delta(), researchTextBuilder);
                 } else if (event instanceof Events.InteractionCreated interactionCreated) {
                     System.out.println("\n[Interaction Start: " + interactionCreated.interaction().id() + "]");
                 } else if (event instanceof Events.InteractionCompleted interactionCompleted) {
@@ -162,10 +104,14 @@ public class ResearchAgentTest {
                 } else if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
                     System.out.println("\n[Interaction Status Update: " + statusUpdate.interactionId() + " -> "
                             + statusUpdate.status() + "]");
-                } else if (event instanceof Events.StepStart contentStart) {
-                    System.out.println("\n[Step Start: index " + contentStart.index() + "]");
-                } else if (event instanceof Events.StepStop contentStop) {
-                    System.out.println("\n[Step Stop: index " + contentStop.index() + "]");
+                } else if (event instanceof Events.StepStart stepStart) {
+                    System.out.println("\n[Step Start: index " + stepStart.index() + "]");
+                } else if (event instanceof Events.StepStop stepStop) {
+                    System.out.println("\n[Step Stop: index " + stepStop.index() + "]");
+                } else if (event instanceof Events.ContentStart contentStart) {
+                    System.out.println("\n[Content Start: index " + contentStart.index() + "]");
+                } else if (event instanceof Events.ContentStop contentStop) {
+                    System.out.println("\n[Content Stop: index " + contentStop.index() + "]");
                 } else if (event instanceof Events.ErrorEvent errorEvent) {
                     System.err.println("\n[Error Event: " + errorEvent.error().code() + " - "
                             + errorEvent.error().message() + "]");
@@ -209,5 +155,70 @@ public class ResearchAgentTest {
         assertNotNull(researchText, "Research text should not be null");
         assertFalse(researchText.isEmpty(), "Research text should not be empty");
 
+    }
+
+    private void handleDelta(Events.Delta delta, StringBuilder researchTextBuilder) {
+        if (delta instanceof Events.TextDelta textDelta) {
+            System.out.print(textDelta.text());
+            System.out.flush();
+            researchTextBuilder.append(textDelta.text());
+        } else if (delta instanceof Events.ThoughtSummaryDelta thoughtDelta) {
+            System.out.print("\n[Thinking...] " + thoughtDelta.content() + "\n");
+        } else if (delta instanceof Events.ThoughtSignatureDelta signatureDelta) {
+            System.out.print("\n[Thought Signature: " + signatureDelta.signature() + "]\n");
+        } else if (delta instanceof Events.GoogleSearchCallDelta searchCall) {
+            System.out.print("\n[Google Search Call: " + searchCall.arguments() + "]\n");
+        } else if (delta instanceof Events.GoogleSearchResultDelta searchResult) {
+            System.out.print("\n[Google Search Result: "
+                    + (searchResult.result() != null ? searchResult.result().size() : 0) + " results]\n");
+        } else if (delta instanceof Events.UrlContextCallDelta urlCall) {
+            System.out.print("\n[URL Context Call: " + urlCall.arguments() + "]\n");
+        } else if (delta instanceof Events.UrlContextResultDelta urlResult) {
+            System.out.print("\n[URL Context Result: "
+                    + (urlResult.result() != null ? urlResult.result().size() : 0) + " results]\n");
+        } else if (delta instanceof Events.CodeExecutionCallDelta codeCall) {
+            System.out.print("\n[Code Execution Call: " + codeCall.arguments() + "]\n");
+        } else if (delta instanceof Events.CodeExecutionResultDelta codeResult) {
+            System.out.print("\n[Code Execution Result: " + codeResult.result() + "]\n");
+        } else if (delta instanceof Events.FunctionCallDelta functionCall) {
+            System.out.print("\n[Function Call: " + functionCall.name() + " with args "
+                    + functionCall.arguments() + "]\n");
+        } else if (delta instanceof Events.FunctionResultDelta functionResult) {
+            System.out.print("\n[Function Result: " + functionResult.name() + " -> "
+                    + functionResult.result() + "]\n");
+        } else if (delta instanceof Events.ArgumentsDelta argumentsDelta) {
+            System.out.print("\n[Arguments Delta: " + argumentsDelta.arguments() + "]\n");
+        } else if (delta instanceof Events.FileSearchCallDelta fileCall) {
+            System.out.print("\n[File Search Call: " + fileCall.signature() + "]\n");
+        } else if (delta instanceof Events.FileSearchResultDelta fileResult) {
+            System.out.print("\n[File Search Result: "
+                    + (fileResult.result() != null ? fileResult.result().size() : 0) + " results]\n");
+        } else if (delta instanceof Events.McpServerToolCallDelta mcpCall) {
+            System.out.print("\n[MCP Tool Call: " + mcpCall.serverName() + "/" + mcpCall.name() + "]\n");
+        } else if (delta instanceof Events.McpServerToolResultDelta mcpResult) {
+            System.out.print(
+                    "\n[MCP Tool Result: " + mcpResult.serverName() + "/" + mcpResult.name() + "]\n");
+        } else if (delta instanceof Events.GoogleMapsCallDelta mapsCall) {
+            System.out.print("\n[Google Maps Call: " + mapsCall.arguments() + "]\n");
+        } else if (delta instanceof Events.GoogleMapsResultDelta mapsResult) {
+            System.out.print("\n[Google Maps Result: "
+                    + (mapsResult.result() != null ? mapsResult.result().size() : 0) + " results]\n");
+        } else if (delta instanceof Events.ImageDelta imageDelta) {
+            System.out.print("\n[Image Delta: " + imageDelta.mimeType() + "]\n");
+        } else if (delta instanceof Events.AudioDelta audioDelta) {
+            System.out.print("\n[Audio Delta: " + audioDelta.mimeType() + "]\n");
+        } else if (delta instanceof Events.VideoDelta videoDelta) {
+            System.out.print("\n[Video Delta: " + videoDelta.mimeType() + "]\n");
+        } else if (delta instanceof Events.DocumentDelta documentDelta) {
+            System.out.print("\n[Document Delta: " + documentDelta.mimeType() + "]\n");
+        } else if (delta instanceof Events.TextAnnotationDelta textAnnotation) {
+            System.out.print("\n[Text Annotation: "
+                    + (textAnnotation.annotations() != null ? textAnnotation.annotations().size() : 0)
+                    + " annotations]\n");
+        } else if (delta instanceof Events.UnknownDelta unknownDelta) {
+            System.out.print("\n[Unknown Delta: " + unknownDelta.raw() + "]\n");
+        } else {
+            System.out.print("\n[Other Delta: " + delta.getClass().getSimpleName() + "]\n");
+        }
     }
 }
