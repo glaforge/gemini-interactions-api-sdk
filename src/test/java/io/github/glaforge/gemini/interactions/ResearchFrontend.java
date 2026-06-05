@@ -15,6 +15,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import io.github.glaforge.gemini.interactions.model.Config.DeepResearchAgentConfig;
 import io.github.glaforge.gemini.interactions.model.Config.ThinkingSummaries;
+import io.github.glaforge.gemini.interactions.model.Config.Visualization;
 import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Events;
@@ -152,7 +153,11 @@ public class ResearchFrontend {
                             """, subject, topicsList))
                     .background(true)
                     .stream(true)
-                    .agentConfig(new DeepResearchAgentConfig(ThinkingSummaries.AUTO))
+                    .agentConfig(DeepResearchAgentConfig.builder()
+                            .thinkingSummaries(ThinkingSummaries.AUTO)
+                            .visualization(Visualization.AUTO)
+                            .collaborativePlanning(false)
+                            .build())
                     .store(true)
                     .build();
 
