@@ -1,5 +1,6 @@
 package io.github.glaforge.gemini.interactions;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -221,7 +222,9 @@ public class ResearchFrontend {
             var imageBytes = getInfographicData(infographicInteraction);
 
             Jt.image(imageBytes).use(infographicPlaceholder);
-        }, port).build().start();
+        }, port)
+        .disconnectedSessionTTL(Duration.ofMinutes(25))
+        .build().start();
     }
 
     private static List<String> getTopics(Interaction interaction) {
