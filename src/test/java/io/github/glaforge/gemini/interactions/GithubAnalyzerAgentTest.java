@@ -25,6 +25,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import java.io.IOException;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".*")
@@ -51,22 +53,23 @@ public class GithubAnalyzerAgentTest {
         // 1. Create a custom Agent configuration
         Agent customAgent = Agent.builder()
                 .id(agentId)
-                .description("An agent that clones public GitHub repositories, analyzes the codebase structure, and explains its architecture.")
+                .description("""
+                        An agent that clones public GitHub repositories,
+                        analyzes the codebase structure, and explains its architecture.
+                        """)
                 .baseAgent("antigravity-preview-05-2026")
                 .baseEnvironment(new EnvironmentConfig(
                         new EnvironmentNetworkEgressAllowlist(List.of(
-                                new AllowlistEntry("github.com")
-                        )),
-                        List.of()
-                ))
-                .systemInstruction(
-                        "You are an expert software architect. Clone the specified repository, analyze its primary directories and code files, " +
-                        "and provide a detailed, technical explanation of its components, architecture, and behavior."
-                )
+                                new AllowlistEntry("github.com"))),
+                        List.of()))
+                .systemInstruction("""
+                        You are an expert software architect.
+                        Clone the specified repository, analyze its primary directories and code files,
+                        and provide a detailed, technical explanation of its components, architecture, and behavior.
+                        """)
                 .tools(List.of(
                         new AgentTool.CodeExecution(),
-                        new AgentTool.GoogleSearch()
-                ))
+                        new AgentTool.GoogleSearch()))
                 .build();
 
         System.out.println("Creating Custom GitHub Analyzer Agent: " + agentId);
@@ -78,7 +81,14 @@ public class GithubAnalyzerAgentTest {
             // 2. Initiate the interaction with the custom agent
             AgentInteractionParams runParams = AgentInteractionParams.builder()
                     .agent(agentId)
-                    .input("Clone the repository https://github.com/glaforge/gemini-interactions-api-sdk and explain its main classes.")
+                    .input("""
+                            Clone the repository https://github.com/glaforge/gemini-interactions-api-sdk,
+                            analyze its main classes, and write a detailed architecture report.
+                            You MUST physically write this report to a file named 'report.md' in the current working directory
+                            (using `open("report.md", "w")` in Python, NOT `/report.md` or any absolute path).
+                            Make sure to NOT use a leading slash in the file path, so that it is saved in the current directory.
+                            Do not just claim you wrote it; execute code to write the report to the file.
+                            """)
                     .environment("remote")
                     .build();
 
@@ -90,9 +100,9 @@ public class GithubAnalyzerAgentTest {
             int maxPolls = 60;
             int polls = 0;
             while (interaction.status() != Interaction.Status.COMPLETED &&
-                   interaction.status() != Interaction.Status.FAILED &&
-                   interaction.status() != Interaction.Status.CANCELLED &&
-                   polls < maxPolls) {
+                    interaction.status() != Interaction.Status.FAILED &&
+                    interaction.status() != Interaction.Status.CANCELLED &&
+                    polls < maxPolls) {
                 System.out.println("Waiting for agent... Current status: " + interaction.status());
                 Thread.sleep(3000);
                 interaction = client.get(interaction.id());
@@ -100,6 +110,14 @@ public class GithubAnalyzerAgentTest {
             }
 
             System.out.println("Final interaction status: " + interaction.status());
+            assertEquals(Interaction.Status.COMPLETED, interaction.status());
+            System.out.println("Interaction ID: " + interaction.id());
+            System.out.println("Interaction Environment ID: " + interaction.environmentId());
+
+            System.out.println("\n--- All Interaction Steps ---");
+            for (Step step : interaction.steps()) {
+                System.out.println("Step Type: " + step.getClass().getSimpleName() + " -> " + step);
+            }
 
             StringBuilder outputText = new StringBuilder();
             interaction.steps().stream()
@@ -108,12 +126,21 @@ public class GithubAnalyzerAgentTest {
                     .filter(content -> content instanceof Content.TextContent)
                     .forEach(content -> {
                         Content.TextContent text = (Content.TextContent) content;
-                        System.out.println(text.text());
                         outputText.append(text.text());
                     });
 
             assertTrue(outputText.length() > 0, "Agent should have outputted architectural analysis");
             System.out.println("\n--- Analysis Output ---\n" + outputText);
+
+            // 4. Download and verify the generated file
+            System.out.println("Downloading agent environment...");
+            try (AgentEnvironment env = client.getEnvironment(interaction.environmentId()).refresh()) {
+                System.out.println("Files in environment: " + env.listFiles());
+                assertTrue(env.fileExists("report.md"), "report.md should have been generated by the agent");
+                String report = env.readTextFile("report.md");
+                assertFalse(report.isEmpty(), "report.md should not be empty");
+                System.out.println("Successfully downloaded report.md. Content length: " + report.length());
+            }
 
         } finally {
             if (createdSuccessfully) {

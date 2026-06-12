@@ -54,8 +54,137 @@ public class Config {
         @JsonProperty("thinking_level") ThinkingLevel thinkingLevel,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("max_output_tokens") Integer maxOutputTokens,
-        @JsonProperty("speech_config") List<SpeechConfig> speechConfig
-    ) {}
+        @JsonProperty("speech_config") List<SpeechConfig> speechConfig,
+        @JsonProperty("presence_penalty") Double presencePenalty,
+        @JsonProperty("frequency_penalty") Double frequencyPenalty
+    ) {
+        /**
+         * Returns a new builder for GenerationConfig.
+         * @return a new builder for GenerationConfig.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link GenerationConfig}. */
+        public static class Builder {
+            private Double temperature;
+            private Double topP;
+            private Integer seed;
+            private List<String> stopSequences;
+            private Tool.ToolChoiceConfig toolChoice;
+            private ThinkingLevel thinkingLevel;
+            private ThinkingSummaries thinkingSummaries;
+            private Integer maxOutputTokens;
+            private List<SpeechConfig> speechConfig;
+            private Double presencePenalty;
+            private Double frequencyPenalty;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the temperature.
+             *
+             * @param temperature The temperature.
+             * @return This builder.
+             */
+            public Builder temperature(Double temperature) { this.temperature = temperature; return this; }
+
+            /**
+             * Sets top_p.
+             *
+             * @param topP The top_p value.
+             * @return This builder.
+             */
+            public Builder topP(Double topP) { this.topP = topP; return this; }
+
+            /**
+             * Sets the seed.
+             *
+             * @param seed The seed.
+             * @return This builder.
+             */
+            public Builder seed(Integer seed) { this.seed = seed; return this; }
+
+            /**
+             * Sets the stop sequences.
+             *
+             * @param stopSequences The stop sequences.
+             * @return This builder.
+             */
+            public Builder stopSequences(List<String> stopSequences) { this.stopSequences = stopSequences; return this; }
+
+            /**
+             * Sets the tool choice.
+             *
+             * @param toolChoice The tool choice.
+             * @return This builder.
+             */
+            public Builder toolChoice(Tool.ToolChoiceConfig toolChoice) { this.toolChoice = toolChoice; return this; }
+
+            /**
+             * Sets the thinking level.
+             *
+             * @param thinkingLevel The thinking level.
+             * @return This builder.
+             */
+            public Builder thinkingLevel(ThinkingLevel thinkingLevel) { this.thinkingLevel = thinkingLevel; return this; }
+
+            /**
+             * Sets the thinking summaries.
+             *
+             * @param thinkingSummaries The thinking summaries.
+             * @return This builder.
+             */
+            public Builder thinkingSummaries(ThinkingSummaries thinkingSummaries) { this.thinkingSummaries = thinkingSummaries; return this; }
+
+            /**
+             * Sets max output tokens.
+             *
+             * @param maxOutputTokens Max output tokens.
+             * @return This builder.
+             */
+            public Builder maxOutputTokens(Integer maxOutputTokens) { this.maxOutputTokens = maxOutputTokens; return this; }
+
+            /**
+             * Sets the speech config.
+             *
+             * @param speechConfig The speech config.
+             * @return This builder.
+             */
+            public Builder speechConfig(List<SpeechConfig> speechConfig) { this.speechConfig = speechConfig; return this; }
+
+            /**
+             * Sets presence penalty.
+             *
+             * @param presencePenalty Presence penalty.
+             * @return This builder.
+             */
+            public Builder presencePenalty(Double presencePenalty) { this.presencePenalty = presencePenalty; return this; }
+
+            /**
+             * Sets frequency penalty.
+             *
+             * @param frequencyPenalty Frequency penalty.
+             * @return This builder.
+             */
+            public Builder frequencyPenalty(Double frequencyPenalty) { this.frequencyPenalty = frequencyPenalty; return this; }
+
+            /**
+             * Builds the GenerationConfig.
+             *
+             * @return The GenerationConfig.
+             */
+            public GenerationConfig build() {
+                return new GenerationConfig(
+                    temperature, topP, seed, stopSequences, toolChoice,
+                    thinkingLevel, thinkingSummaries, maxOutputTokens, speechConfig,
+                    presencePenalty, frequencyPenalty
+                );
+            }
+        }
+    }
 
     /**
      * Level of thinking to use for the model.
@@ -293,11 +422,12 @@ public class Config {
         String type,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("visualization") Visualization visualization,
-        @JsonProperty("collaborative_planning") Boolean collaborativePlanning
+        @JsonProperty("collaborative_planning") Boolean collaborativePlanning,
+        @JsonProperty("enable_bigquery_tool") Boolean enableBigqueryTool
     ) implements AgentConfig {
         /** Creates a new DeepResearchAgentConfig with default type and no summaries. */
         public DeepResearchAgentConfig() {
-            this("deep-research", null, null, null);
+            this("deep-research", null, null, null, null);
         }
         /**
          * Creates a new DeepResearchAgentConfig with default type.
@@ -305,8 +435,10 @@ public class Config {
          * @param thinkingSummaries The thinking summaries configuration.
          */
         public DeepResearchAgentConfig(ThinkingSummaries thinkingSummaries) {
-            this("deep-research", thinkingSummaries, null, null);
+            this("deep-research", thinkingSummaries, null, null, null);
         }
+
+
 
         /**
          * Returns a new builder for deep research agent config.
@@ -320,6 +452,7 @@ public class Config {
             private ThinkingSummaries thinkingSummaries;
             private Visualization visualization;
             private Boolean collaborativePlanning;
+            private Boolean enableBigqueryTool;
 
             /** Creates a new Builder. */
             public Builder() {}
@@ -349,12 +482,20 @@ public class Config {
             public Builder collaborativePlanning(Boolean collaborativePlanning) { this.collaborativePlanning = collaborativePlanning; return this; }
 
             /**
+             * Sets the enable BigQuery tool flag.
+             *
+             * @param enableBigqueryTool Whether the BigQuery tool is enabled.
+             * @return This builder.
+             */
+            public Builder enableBigqueryTool(Boolean enableBigqueryTool) { this.enableBigqueryTool = enableBigqueryTool; return this; }
+
+            /**
              * Builds the DeepResearchAgentConfig.
              *
              * @return The DeepResearchAgentConfig.
              */
             public DeepResearchAgentConfig build() {
-                return new DeepResearchAgentConfig(type, thinkingSummaries, visualization, collaborativePlanning);
+                return new DeepResearchAgentConfig(type, thinkingSummaries, visualization, collaborativePlanning, enableBigqueryTool);
             }
         }
     }

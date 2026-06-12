@@ -56,6 +56,30 @@ Step.ModelOutputStep step = (Step.ModelOutputStep) response.steps().get(0);
 System.out.println(step.content().get(0));
 ```
 
+### Configuration (GenerationConfig)
+
+You can customize the model's generation behavior using the fluent `GenerationConfig` builder:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+
+GenerationConfig config = GenerationConfig.builder()
+    .temperature(0.7)
+    .topP(0.9)
+    .maxOutputTokens(1024)
+    .build();
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("Write a short story about a brave knight.")
+    .generationConfig(config)
+    .build();
+
+Interaction response = client.create(request);
+```
+
 ### Streaming Response
 ```java
 import io.github.glaforge.gemini.interactions.model.Events.StepDelta;
@@ -478,6 +502,29 @@ Interaction interaction = client.create(request);
 // 3. Handle Result
 Step.ModelOutputStep step = (Step.ModelOutputStep) interaction.steps().getLast();
 System.out.println(step.content().getLast());
+```
+
+### Built-in Tools (Retrieval)
+
+The SDK provides support for Retrieval tools like Google Search and Vertex AI Search using the fluent `Retrieval` builder:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Tool.Retrieval;
+import io.github.glaforge.gemini.interactions.model.Tool.GoogleSearchRetrieval;
+import io.github.glaforge.gemini.interactions.model.Tool.DynamicRetrievalConfig;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+
+Retrieval retrievalTool = Retrieval.builder()
+    .googleSearchRetrieval(new GoogleSearchRetrieval(
+        new DynamicRetrievalConfig("unspecified", 0.7)
+    ))
+    .build();
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-2.5-pro")
+    .input("What are the latest advancements in quantum computing?")
+    .tools(retrievalTool)
+    .build();
 ```
 
 ### JSON Output (Structured Output)

@@ -48,8 +48,12 @@ public record Interaction(
     Status status,
     List<Step> steps,
     Usage usage,
-    @JsonProperty("previous_interaction_id") String previousInteractionId
+    @JsonProperty("previous_interaction_id") String previousInteractionId,
+    @JsonProperty("environment_id") String environmentId,
+    @JsonProperty("cached_content") String cachedContent
 ) {
+
+
 
     /**
      * Represents a single turn in an interaction.

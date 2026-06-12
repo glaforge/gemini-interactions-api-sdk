@@ -69,6 +69,8 @@ public abstract class InteractionsHandler implements HttpHandler {
     private static final Pattern ROTATE_SECRET_PATTERN = Pattern.compile(".*/webhooks/([^/]+):rotateSigningSecret$");
     // /v1beta/agents/{id}
     private static final Pattern AGENT_ID_PATTERN = Pattern.compile(".*/agents/([^/]+)$");
+    // /v1beta/files/environment-{id}:download
+    private static final Pattern ENVIRONMENT_DOWNLOAD_PATTERN = Pattern.compile(".*/files/environment-([^/:]+):download$");
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -85,6 +87,12 @@ public abstract class InteractionsHandler implements HttpHandler {
                     handleCreate(exchange);
                 }
             } else {
+                Matcher downloadMatcher = ENVIRONMENT_DOWNLOAD_PATTERN.matcher(path);
+                if (downloadMatcher.matches() && method.equalsIgnoreCase("GET")) {
+                    handleDownloadEnvironment(exchange, downloadMatcher.group(1));
+                    return;
+                }
+
                 Matcher cancelMatcher = CANCEL_PATTERN.matcher(path);
                 if (cancelMatcher.matches() && method.equalsIgnoreCase("POST")) {
                     handleCancel(exchange, cancelMatcher.group(1));
@@ -570,6 +578,32 @@ public abstract class InteractionsHandler implements HttpHandler {
      * @param id The agent ID.
      */
     public void deleteAgent(String id) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    private void handleDownloadEnvironment(HttpExchange exchange, String id) throws IOException {
+        try {
+            byte[] tarContent = downloadEnvironment(id);
+            if (tarContent != null) {
+                exchange.getResponseHeaders().set("Content-Type", "application/x-tar");
+                exchange.sendResponseHeaders(200, tarContent.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(tarContent);
+                }
+            } else {
+                sendResponse(exchange, 404, "Environment not found");
+            }
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Downloads the sandbox environment for a given interaction.
+     * @param id The interaction ID.
+     * @return The environment TAR content.
+     */
+    public byte[] downloadEnvironment(String id) {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

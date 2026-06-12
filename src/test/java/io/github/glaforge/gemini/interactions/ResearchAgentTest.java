@@ -64,7 +64,11 @@ public class ResearchAgentTest {
                 .agent("deep-research-max-preview-04-2026")
                 // .agent("deep-research-pro-preview-12-2025")
                 .agentConfig(
-                        new DeepResearchAgentConfig("deep-research", ThinkingSummaries.AUTO, Visualization.AUTO, false))
+                        DeepResearchAgentConfig.builder()
+                                .thinkingSummaries(ThinkingSummaries.AUTO)
+                                .visualization(Visualization.AUTO)
+                                .collaborativePlanning(false)
+                                .build())
                 .input(researchGoal)
                 .background(true)
                 .store(true)

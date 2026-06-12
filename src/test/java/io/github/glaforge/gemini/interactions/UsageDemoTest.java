@@ -94,17 +94,14 @@ public class UsageDemoTest {
             assertNotNull(toolRequest);
 
             // 6. Config
-            GenerationConfig config = new GenerationConfig(
-                0.7, // temp
-                0.95, // topP
-                null, // seed
-                List.of("STOP"),
-                null, // tool_choice
-                ThinkingLevel.LOW, // thinking_level
-                ThinkingSummaries.AUTO, // thinking_summaries
-                1000,
-                null // speech
-            );
+            GenerationConfig config = GenerationConfig.builder()
+                .temperature(0.7)
+                .topP(0.95)
+                .stopSequences(List.of("STOP"))
+                .thinkingLevel(ThinkingLevel.LOW)
+                .thinkingSummaries(ThinkingSummaries.AUTO)
+                .maxOutputTokens(1000)
+                .build();
             assertNotNull(config);
 
 

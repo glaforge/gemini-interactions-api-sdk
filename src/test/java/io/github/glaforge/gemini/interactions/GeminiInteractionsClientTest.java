@@ -256,7 +256,7 @@ public class GeminiInteractionsClientTest {
                       "base_environment": "default"
                     }
                   ],
-                  "nextPageToken": "token-1"
+                  "next_page_token": "token-1"
                 }
                 """;
         mockWebServer.enqueue(new MockResponse()

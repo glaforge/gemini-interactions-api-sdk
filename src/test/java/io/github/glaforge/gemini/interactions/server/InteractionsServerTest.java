@@ -74,6 +74,8 @@ class InteractionsServerTest {
                     Interaction.Status.COMPLETED,
                     Collections.emptyList(),
                     null,
+                    null,
+                    null,
                     null
                 );
             }
@@ -90,6 +92,8 @@ class InteractionsServerTest {
                     Interaction.Role.MODEL,
                     Interaction.Status.COMPLETED,
                     Collections.emptyList(),
+                    null,
+                    null,
                     null,
                     null
                 );
@@ -113,6 +117,8 @@ class InteractionsServerTest {
                     Interaction.Status.CANCELLED,
                     Collections.emptyList(),
                     null,
+                    null,
+                    null,
                     null
                 );
             }
@@ -124,13 +130,15 @@ class InteractionsServerTest {
                     new Events.InteractionCreated(
                         Events.EventType.INTERACTION_CREATED,
                         "evt-1",
-                        new Interaction("interaction-123", "gemini-pro", null, "interaction", Instant.parse("2025-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"), Interaction.Role.MODEL, Interaction.Status.IN_PROGRESS, Collections.emptyList(), null, null)
+                        new Interaction("interaction-123", "gemini-pro", null, "interaction", Instant.parse("2025-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"), Interaction.Role.MODEL, Interaction.Status.IN_PROGRESS, Collections.emptyList(), null, null, null, null),
+                        null
                     ),
                     new Events.StepDelta(
                         Events.EventType.STEP_DELTA,
                         "evt-2",
                         0,
-                        new Events.TextDelta(Events.DeltaType.TEXT, "Hello world", null)
+                        new Events.TextDelta(Events.DeltaType.TEXT, "Hello world", null),
+                        null
                     )
                 );
             }

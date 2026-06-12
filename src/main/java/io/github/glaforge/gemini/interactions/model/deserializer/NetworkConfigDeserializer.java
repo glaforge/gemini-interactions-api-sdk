@@ -24,15 +24,15 @@ import tools.jackson.databind.ValueDeserializer;
 import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllowlist;
 
 /**
- * Custom Jackson deserializer to handle network configuration which can be either
- * a string ("disabled") or a network egress allowlist object.
+ * Custom Jackson deserializer to handle network configuration which can be
+ * either a string ("disabled") or a network egress allowlist object.
  */
 public class NetworkConfigDeserializer extends ValueDeserializer<Object> {
 
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_STRING) {
-            return p.getText();
+            return p.getString();
         }
         return p.readValueAs(EnvironmentNetworkEgressAllowlist.class);
     }

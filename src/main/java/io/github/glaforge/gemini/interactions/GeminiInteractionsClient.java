@@ -76,7 +76,7 @@ public class GeminiInteractionsClient {
         this.baseUrl = builder.baseUrl;
         this.version = builder.version;
         this.apiKey = builder.apiKey;
-        this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newHttpClient();
+        this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
         this.objectMapper = JsonMapper.builder()
             .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
             .build();
@@ -599,6 +599,53 @@ public class GeminiInteractionsClient {
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
         }
+    }
+
+    /**
+     * Downloads the environment workspace snapshot for a given interaction ID as an InputStream containing the TAR archive.
+     *
+     * @param interactionId The interaction ID.
+     * @return An InputStream containing the TAR archive.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public java.io.InputStream downloadEnvironment(String interactionId) {
+        try {
+            String url = String.format("%s/%s/files/environment-%s:download?alt=media", baseUrl, version, interactionId);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("x-goog-api-key", apiKey)
+                .header("Api-Revision", "2026-05-20")
+                .GET()
+                .build();
+
+            HttpResponse<java.io.InputStream> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofInputStream());
+
+            if (response.statusCode() >= 300) {
+                try (java.io.InputStream errorStream = response.body()) {
+                    String errorBody = new String(errorStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                    throw new GeminiInteractionsException("API Request failed to download environment", response.statusCode(), errorBody);
+                }
+            }
+
+            return response.body();
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Gets the stateful {@link AgentEnvironment} for the given interaction.
+     * <p>
+     * Note: This method returns a new environment wrapper. You must call {@link AgentEnvironment#refresh()}
+     * on the returned environment to download its contents.
+     * </p>
+     *
+     * @param interactionId The interaction ID.
+     * @return A stateful AgentEnvironment manager.
+     */
+    public AgentEnvironment getEnvironment(String interactionId) {
+        return new AgentEnvironment(interactionId, this);
     }
 
 

@@ -85,8 +85,11 @@ public class InteractionParams {
         @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
         @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
-        @JsonProperty("service_tier") ServiceTier serviceTier
+        @JsonProperty("service_tier") ServiceTier serviceTier,
+        @JsonProperty("cached_content") String cachedContent
     ) implements Request {
+
+
         /**
          * Returns a new builder for model interaction parameters.
          * @return a new builder for model interaction parameters.
@@ -109,6 +112,7 @@ public class InteractionParams {
             private String previousInteractionId;
             private ServiceTier serviceTier;
             private List<Config.SpeechConfig> speechConfigs;
+            private String cachedContent;
 
             /**
              * Sets the model.
@@ -309,6 +313,13 @@ public class InteractionParams {
              */
             public Builder serviceTier(ServiceTier serviceTier) { this.serviceTier = serviceTier; return this; }
 
+            /**
+             * Sets the cached content format identifier.
+             *
+             * @param cachedContent The cached content formatted path.
+             * @return This builder.
+             */
+            public Builder cachedContent(String cachedContent) { this.cachedContent = cachedContent; return this; }
 
             /**
              * Sets the speech config.
@@ -335,7 +346,7 @@ public class InteractionParams {
                 Config.GenerationConfig finalConfig = generationConfig;
                 if (speechConfigs != null) {
                     if (finalConfig == null) {
-                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs);
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, null, null);
                     } else {
                         finalConfig = new Config.GenerationConfig(
                             finalConfig.temperature(),
@@ -346,11 +357,13 @@ public class InteractionParams {
                             finalConfig.thinkingLevel(),
                             finalConfig.thinkingSummaries(),
                             finalConfig.maxOutputTokens(),
-                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig()
+                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig(),
+                            finalConfig.presencePenalty(),
+                            finalConfig.frequencyPenalty()
                         );
                     }
                 }
-                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier);
+                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, cachedContent);
             }
         }
     }
@@ -651,7 +664,7 @@ public class InteractionParams {
                 Config.GenerationConfig finalConfig = generationConfig;
                 if (speechConfigs != null) {
                     if (finalConfig == null) {
-                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs);
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, null, null);
                     } else {
                         finalConfig = new Config.GenerationConfig(
                             finalConfig.temperature(),
@@ -662,7 +675,9 @@ public class InteractionParams {
                             finalConfig.thinkingLevel(),
                             finalConfig.thinkingSummaries(),
                             finalConfig.maxOutputTokens(),
-                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig()
+                            speechConfigs != null ? speechConfigs : finalConfig.speechConfig(),
+                            finalConfig.presencePenalty(),
+                            finalConfig.frequencyPenalty()
                         );
                     }
                 }

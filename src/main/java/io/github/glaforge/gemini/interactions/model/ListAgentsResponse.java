@@ -29,5 +29,5 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ListAgentsResponse(
     List<Agent> agents,
-    @JsonProperty("nextPageToken") String nextPageToken
+    @JsonProperty("next_page_token") String nextPageToken
 ) {}

@@ -189,7 +189,7 @@ class AgentTest {
                   "base_environment": "default"
                 }
               ],
-              "nextPageToken": "token-xyz"
+              "next_page_token": "token-xyz"
             }
             """;
 

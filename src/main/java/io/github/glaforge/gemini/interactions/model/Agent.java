@@ -98,12 +98,23 @@ public record Agent(
         }
 
         /**
-         * Sets base environment config or predefined name.
+         * Sets the predefined base environment name.
          *
-         * @param baseEnvironment The environment.
+         * @param baseEnvironment Predefined base environment name (e.g. "default").
          * @return This builder.
          */
-        public Builder baseEnvironment(Object baseEnvironment) {
+        public Builder baseEnvironment(String baseEnvironment) {
+            this.baseEnvironment = baseEnvironment;
+            return this;
+        }
+
+        /**
+         * Sets custom base environment configuration.
+         *
+         * @param baseEnvironment Custom base environment configuration.
+         * @return This builder.
+         */
+        public Builder baseEnvironment(EnvironmentConfig baseEnvironment) {
             this.baseEnvironment = baseEnvironment;
             return this;
         }

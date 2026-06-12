@@ -139,7 +139,8 @@ public sealed interface Events permits
     record InteractionCreated(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
-        Interaction interaction
+        Interaction interaction,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -153,7 +154,8 @@ public sealed interface Events permits
     record InteractionCompleted(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
-        Interaction interaction
+        Interaction interaction,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -169,7 +171,8 @@ public sealed interface Events permits
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         @JsonProperty("interaction_id") String interactionId,
-        String status
+        String status,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -185,7 +188,8 @@ public sealed interface Events permits
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
-        Step step
+        Step step,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -199,7 +203,8 @@ public sealed interface Events permits
     record StepStop(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
-        Integer index
+        Integer index,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -213,7 +218,8 @@ public sealed interface Events permits
     record ErrorEvent(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
-        Error error
+        Error error,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -229,6 +235,16 @@ public sealed interface Events permits
     ) {}
 
     /**
+     * Metadata for stream events.
+     *
+     * @param totalUsage Token usage details.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record StreamMetadata(
+        @JsonProperty("total_usage") Interaction.Usage totalUsage
+    ) {}
+
+    /**
      * Event indicating a delta update for a step.
      *
      * @param eventType The type of event ("step.delta").
@@ -241,7 +257,8 @@ public sealed interface Events permits
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
-        Delta delta
+        Delta delta,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -257,7 +274,8 @@ public sealed interface Events permits
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
-        Delta delta
+        Delta delta,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -273,7 +291,8 @@ public sealed interface Events permits
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
-        Content content
+        Content content,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**
@@ -287,7 +306,8 @@ public sealed interface Events permits
     record ContentStop(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
-        Integer index
+        Integer index,
+        StreamMetadata metadata
     ) implements Events {}
 
     /**

@@ -237,26 +237,226 @@ public sealed interface Tool permits
     ) {}
 
     /**
-     * Tool definition for Retrieval (Vertex AI Search).
+     * Configuration for Exa AI Search.
      *
-     * @param type                 The type of tool (must be "retrieval").
-     * @param retrievalTypes       The types of file retrieval to enable.
-     * @param vertexAiSearchConfig Configuration for Vertex AI Search.
+     * @param apiKey       The API key for Exa AI Search.
+     * @param customConfig Custom configs for Exa AI Search.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ExaAISearchConfig(
+        @JsonProperty("api_key") String apiKey,
+        @JsonProperty("custom_config") Map<String, Object> customConfig
+    ) {}
+
+    /**
+     * Configuration for Parallel AI Search.
+     *
+     * @param apiKey       The API key for Parallel AI Search.
+     * @param customConfig Custom configs for Parallel AI Search.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ParallelAISearchConfig(
+        @JsonProperty("api_key") String apiKey,
+        @JsonProperty("custom_config") Map<String, Object> customConfig
+    ) {}
+
+    /**
+     * The definition of the Rag resource.
+     *
+     * @param ragCorpus   RagCorpora resource name.
+     * @param ragFileIds  rag_file_id list.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record RagResource(
+        @JsonProperty("rag_corpus") String ragCorpus,
+        @JsonProperty("rag_file_ids") List<String> ragFileIds
+    ) {}
+
+    /**
+     * Config for Hybrid Search.
+     *
+     * @param alpha Alpha value controls the weight between dense and sparse vector search results.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record HybridSearch(
+        Float alpha
+    ) {}
+
+    /**
+     * Config for filters.
+     *
+     * @param vectorDistanceThreshold Only returns contexts with vector distance smaller than threshold.
+     * @param vectorSimilarityThreshold Only returns contexts with vector similarity larger than threshold.
+     * @param metadataFilter String for metadata filtering.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Filter(
+        @JsonProperty("vector_distance_threshold") Double vectorDistanceThreshold,
+        @JsonProperty("vector_similarity_threshold") Double vectorSimilarityThreshold,
+        @JsonProperty("metadata_filter") String metadataFilter
+    ) {}
+
+    /**
+     * Config for ranking and reranking.
+     *
+     * @param rankingConfig The ranking config type (e.g. "rank_service").
+     * @param modelName The model name of the rank service.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Ranking(
+        @JsonProperty("ranking_config") String rankingConfig,
+        @JsonProperty("model_name") String modelName
+    ) {}
+
+    /**
+     * Specifies the context retrieval config.
+     *
+     * @param topK The number of contexts to retrieve.
+     * @param hybridSearch Config for Hybrid Search.
+     * @param filter Config for filters.
+     * @param ranking Config for ranking and reranking.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record RagRetrievalConfig(
+        @JsonProperty("top_k") Integer topK,
+        @JsonProperty("hybrid_search") HybridSearch hybridSearch,
+        Filter filter,
+        Ranking ranking
+    ) {}
+
+    /**
+     * Use to specify configuration for RAG Store.
+     *
+     * @param ragResources The representation of the rag source.
+     * @param similarityTopK Number of top k results to return.
+     * @param vectorDistanceThreshold Only return results with vector distance smaller than threshold.
+     * @param ragRetrievalConfig The retrieval config for the Rag query.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record RagStoreConfig(
+        @JsonProperty("rag_resources") List<RagResource> ragResources,
+        @Deprecated @JsonProperty("similarity_top_k") Integer similarityTopK,
+        @Deprecated @JsonProperty("vector_distance_threshold") Double vectorDistanceThreshold,
+        @JsonProperty("rag_retrieval_config") RagRetrievalConfig ragRetrievalConfig
+    ) {}
+
+    /**
+     * Tool definition for Retrieval.
+     *
+     * @param type                     The type of tool (must be "retrieval").
+     * @param retrievalTypes           The types of file retrieval to enable.
+     * @param vertexAiSearchConfig     Configuration for Vertex AI Search.
+     * @param exaAiSearchConfig        Configuration for Exa AI Search.
+     * @param parallelAiSearchConfig   Configuration for Parallel AI Search.
+     * @param ragStoreConfig           Configuration for RAG Store.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Retrieval(
         String type,
         @JsonProperty("retrieval_types") List<String> retrievalTypes,
-        @JsonProperty("vertex_ai_search_config") VertexAISearchConfig vertexAiSearchConfig
+        @JsonProperty("vertex_ai_search_config") VertexAISearchConfig vertexAiSearchConfig,
+        @JsonProperty("exa_ai_search_config") ExaAISearchConfig exaAiSearchConfig,
+        @JsonProperty("parallel_ai_search_config") ParallelAISearchConfig parallelAiSearchConfig,
+        @JsonProperty("rag_store_config") RagStoreConfig ragStoreConfig
     ) implements Tool {
         /**
          * Creates a new Retrieval tool with default type "retrieval".
          *
-         * @param retrievalTypes       The retrieval types.
-         * @param vertexAiSearchConfig The vertex AI search config.
+         * @param retrievalTypes           The retrieval types.
+         * @param vertexAiSearchConfig     The vertex AI search config.
+         * @param exaAiSearchConfig        The Exa AI search config.
+         * @param parallelAiSearchConfig   The Parallel AI search config.
+         * @param ragStoreConfig           The RAG store config.
          */
-        public Retrieval(List<String> retrievalTypes, VertexAISearchConfig vertexAiSearchConfig) {
-            this("retrieval", retrievalTypes, vertexAiSearchConfig);
+        public Retrieval(
+            List<String> retrievalTypes,
+            VertexAISearchConfig vertexAiSearchConfig,
+            ExaAISearchConfig exaAiSearchConfig,
+            ParallelAISearchConfig parallelAiSearchConfig,
+            RagStoreConfig ragStoreConfig
+        ) {
+            this("retrieval", retrievalTypes, vertexAiSearchConfig, exaAiSearchConfig, parallelAiSearchConfig, ragStoreConfig);
+        }
+
+        /**
+         * Returns a new builder for Retrieval.
+         * @return a new builder for Retrieval.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link Retrieval}. */
+        public static class Builder {
+            private String type = "retrieval";
+            private List<String> retrievalTypes;
+            private VertexAISearchConfig vertexAiSearchConfig;
+            private ExaAISearchConfig exaAiSearchConfig;
+            private ParallelAISearchConfig parallelAiSearchConfig;
+            private RagStoreConfig ragStoreConfig;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the type.
+             *
+             * @param type The type.
+             * @return This builder.
+             */
+            public Builder type(String type) { this.type = type; return this; }
+
+            /**
+             * Sets the retrieval types.
+             *
+             * @param retrievalTypes The retrieval types.
+             * @return This builder.
+             */
+            public Builder retrievalTypes(List<String> retrievalTypes) { this.retrievalTypes = retrievalTypes; return this; }
+
+            /**
+             * Sets Vertex AI Search config.
+             *
+             * @param vertexAiSearchConfig Vertex AI Search config.
+             * @return This builder.
+             */
+            public Builder vertexAiSearchConfig(VertexAISearchConfig vertexAiSearchConfig) { this.vertexAiSearchConfig = vertexAiSearchConfig; return this; }
+
+            /**
+             * Sets Exa AI Search config.
+             *
+             * @param exaAiSearchConfig Exa AI Search config.
+             * @return This builder.
+             */
+            public Builder exaAiSearchConfig(ExaAISearchConfig exaAiSearchConfig) { this.exaAiSearchConfig = exaAiSearchConfig; return this; }
+
+            /**
+             * Sets Parallel AI Search config.
+             *
+             * @param parallelAiSearchConfig Parallel AI Search config.
+             * @return This builder.
+             */
+            public Builder parallelAiSearchConfig(ParallelAISearchConfig parallelAiSearchConfig) { this.parallelAiSearchConfig = parallelAiSearchConfig; return this; }
+
+            /**
+             * Sets RAG Store config.
+             *
+             * @param ragStoreConfig RAG Store config.
+             * @return This builder.
+             */
+            public Builder ragStoreConfig(RagStoreConfig ragStoreConfig) { this.ragStoreConfig = ragStoreConfig; return this; }
+
+            /**
+             * Builds the Retrieval tool.
+             *
+             * @return The Retrieval tool.
+             */
+            public Retrieval build() {
+                return new Retrieval(
+                    type, retrievalTypes, vertexAiSearchConfig, exaAiSearchConfig,
+                    parallelAiSearchConfig, ragStoreConfig
+                );
+            }
         }
     }
 

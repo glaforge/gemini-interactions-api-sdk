@@ -24,15 +24,16 @@ import tools.jackson.databind.ValueDeserializer;
 import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
 
 /**
- * Custom Jackson deserializer to handle base environment configuration which can be either
- * a string (predefined environment name) or a custom environment configuration object.
+ * Custom Jackson deserializer to handle base environment configuration which
+ * can be either a string (predefined environment name) or a custom environment
+ * configuration object.
  */
 public class BaseEnvironmentDeserializer extends ValueDeserializer<Object> {
 
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_STRING) {
-            return p.getText();
+            return p.getString();
         }
         return p.readValueAs(EnvironmentConfig.class);
     }
