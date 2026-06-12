@@ -351,7 +351,28 @@ while (interaction.status() != Interaction.Status.COMPLETED) {
 System.out.println(interaction.steps());
 ```
 
-#### 3. Listing, Retrieving, and Deleting Agents
+#### 3. Reading Files from an Agent's Environment
+After an interaction completes, you can inspect the agent's remote environment and read or download files it generated:
+
+```java
+import io.github.glaforge.gemini.interactions.AgentEnvironment;
+import java.nio.file.Path;
+
+// Get a stateful environment manager and pull the latest workspace files
+try (AgentEnvironment env = client.getEnvironment(interaction.id()).refresh()) {
+    // Check if the agent created a specific file
+    if (env.fileExists("output.json")) {
+        // Read file contents directly into a string
+        String content = env.readTextFile("output.json");
+        System.out.println(content);
+        
+        // Or download a binary file to your local system
+        env.downloadFile("chart.png", Path.of("/local/path/chart.png"));
+    }
+}
+```
+
+#### 4. Listing, Retrieving, and Deleting Agents
 The SDK supports standard management CRUD endpoints:
 
 ```java
@@ -366,7 +387,7 @@ Agent retrieved = client.getAgent("my-concise-coder-agent");
 client.deleteAgent("my-concise-coder-agent");
 ```
 
-#### 4. Server-Side Handling (InteractionsHandler)
+#### 5. Server-Side Handling (InteractionsHandler)
 If you are exposing interactions endpoints or webhooks using `InteractionsHandler`, you can seamlessly plug in agent management support. Simply extend the handler and override the default concrete agent methods:
 
 ```java
