@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
-public class DeepResearchTest {
+public class DeepResearchIT {
     @Test
     void testDeepResearch() throws IOException, InterruptedException {
         GeminiInteractionsClient client = GeminiInteractionsClient.builder()

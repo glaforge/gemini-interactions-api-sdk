@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".*")
-public class GithubAnalyzerAgentTest {
+public class GithubAnalyzerAgentIT {
 
     private static GeminiInteractionsClient client;
 
