@@ -39,6 +39,7 @@ These agents can be equipped with complex tools (Google Search, Code Execution, 
 ## Key Documents
 - `UPDATING_SDK.md` — Instructions for keeping the SDK implementation in sync with the remote Gemini Interactions API contract via its OpenAPI JSON definition (`openapi.json`). Read this before adding or modifying API models.
 - `researcher-deployment.md` — Step-by-step guide to building and deploying the `ResearchFrontend` demo to Google Cloud Run.
+- `RELEASE.md` — Release process using JReleaser and GitHub Actions to publish to Maven Central. See `README.md` for additional context on versioning and usage.
 
 ## Code Patterns
 
