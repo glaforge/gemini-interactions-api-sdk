@@ -33,15 +33,26 @@ implementation("io.github.glaforge:gemini-interactions-api-sdk:0.11.0")
 
 ## 2. Client Initialization
 
+### Option A: Google AI Studio (Default)
 Ensure you have the `GEMINI_API_KEY` environment variable set. You can initialize the client using the builder:
 
 ```java
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
-import io.github.glaforge.gemini.interactions.model.*;
-import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 
 GeminiInteractionsClient client = GeminiInteractionsClient.builder()
     .apiKey(System.getenv("GEMINI_API_KEY"))
+    .build();
+```
+
+### Option B: Google Cloud Vertex AI
+Ensure you are authenticated with Google Cloud Application Default Credentials (`gcloud auth application-default login`). Provide your Google Cloud Project ID and optionally the region:
+
+```java
+import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+
+GeminiInteractionsClient client = GeminiInteractionsClient.builder()
+    .project("your-google-cloud-project-id")
+    .location("global") // Defaults to "global"
     .build();
 ```
 

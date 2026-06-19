@@ -51,13 +51,25 @@ This will automatically install the skill into the `.agents/skills/gemini-intera
 ## Usage
 
 ### Initialization
+
+#### Option A: Google AI Studio (Default)
 ```java
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
-import io.github.glaforge.gemini.interactions.model.*;
-import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 
 GeminiInteractionsClient client = GeminiInteractionsClient.builder()
     .apiKey(System.getenv("GEMINI_API_KEY"))
+    .build();
+```
+
+#### Option B: Google Cloud Vertex AI
+```java
+import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+
+// When using Vertex AI, the SDK automatically uses Google Cloud Application Default Credentials (ADC)
+// and dynamically constructs the appropriate enterprise endpoints.
+GeminiInteractionsClient client = GeminiInteractionsClient.builder()
+    .project("your-google-cloud-project-id")
+    .location("global") // Defaults to "global", can also be specific regions
     .build();
 ```
 
