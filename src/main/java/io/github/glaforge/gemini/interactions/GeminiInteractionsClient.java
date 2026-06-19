@@ -17,6 +17,7 @@
 package io.github.glaforge.gemini.interactions;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.auth.oauth2.GoogleCredentials;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -69,6 +70,9 @@ public class GeminiInteractionsClient {
     private final String baseUrl;
     private final String version;
     private final String apiKey;
+    private final String project;
+    private final String location;
+    private final GoogleCredentials credentials;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
@@ -76,10 +80,41 @@ public class GeminiInteractionsClient {
         this.baseUrl = builder.baseUrl;
         this.version = builder.version;
         this.apiKey = builder.apiKey;
+        this.project = builder.project;
+        this.location = builder.location;
+        this.credentials = builder.credentials;
         this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
         this.objectMapper = JsonMapper.builder()
             .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
             .build();
+    }
+
+    private String buildUrl(String resourcePath) {
+        if (project != null) {
+            String host = baseUrl != null && !baseUrl.equals(DEFAULT_BASE_URL) ? baseUrl : (location.equals("global") ? "https://aiplatform.googleapis.com" : String.format("https://%s-aiplatform.googleapis.com", location));
+            return String.format("%s/%s/projects/%s/locations/%s/%s", host, version, project, location, resourcePath);
+        } else {
+            String host = baseUrl != null ? baseUrl : DEFAULT_BASE_URL;
+            return String.format("%s/%s/%s", host, version, resourcePath);
+        }
+    }
+
+    private HttpRequest.Builder newRequestBuilder(String url) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("Api-Revision", "2026-05-20");
+
+        if (project != null) {
+            try {
+                credentials.refreshIfExpired();
+                builder.header("Authorization", "Bearer " + credentials.getAccessToken().getTokenValue());
+            } catch (IOException e) {
+                throw new GeminiInteractionsException("Failed to refresh Google Cloud credentials", e);
+            }
+        } else {
+            builder.header("x-goog-api-key", apiKey);
+        }
+        return builder;
     }
 
     /**
@@ -102,13 +137,10 @@ public class GeminiInteractionsClient {
     public Interaction create(InteractionParams.Request request) {
         try {
             String requestBody = objectMapper.writeValueAsString(request);
-            String url = String.format("%s/%s/interactions", baseUrl, version);
+            String url = buildUrl("interactions");
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -132,13 +164,10 @@ public class GeminiInteractionsClient {
     public Stream<Events> stream(InteractionParams.Request request) {
         try {
             String requestBody = objectMapper.writeValueAsString(request);
-            String url = String.format("%s/%s/interactions?alt=sse", baseUrl, version);
+            String url = buildUrl("interactions?alt=sse");
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -193,10 +222,7 @@ public class GeminiInteractionsClient {
                 url += "?include_input=true";
             }
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
                 .build();
 
@@ -221,10 +247,7 @@ public class GeminiInteractionsClient {
         try {
             String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
                 .build();
 
@@ -248,10 +271,7 @@ public class GeminiInteractionsClient {
         try {
             String url = String.format("%s/%s/interactions/%s/cancel", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
 
@@ -277,13 +297,10 @@ public class GeminiInteractionsClient {
     public Webhook createWebhook(Webhook webhook) {
         try {
             String requestBody = objectMapper.writeValueAsString(webhook);
-            String url = String.format("%s/%s/webhooks", baseUrl, version);
+            String url = buildUrl("webhooks");
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -308,10 +325,7 @@ public class GeminiInteractionsClient {
         try {
             String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
                 .build();
 
@@ -335,7 +349,7 @@ public class GeminiInteractionsClient {
      */
     public ListWebhooksResponse listWebhooks(Integer pageSize, String pageToken) {
         try {
-            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/webhooks", baseUrl, version));
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("webhooks"));
             boolean hasParam = false;
             if (pageSize != null) {
                 urlBuilder.append("?page_size=").append(pageSize);
@@ -345,10 +359,7 @@ public class GeminiInteractionsClient {
                 urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
             }
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(urlBuilder.toString()))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
                 .GET()
                 .build();
 
@@ -375,11 +386,8 @@ public class GeminiInteractionsClient {
             String requestBody = objectMapper.writeValueAsString(update);
             String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -403,10 +411,7 @@ public class GeminiInteractionsClient {
         try {
             String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
                 .build();
 
@@ -430,11 +435,8 @@ public class GeminiInteractionsClient {
             String requestBody = "{}";
             String url = String.format("%s/%s/webhooks/%s:ping", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -461,11 +463,8 @@ public class GeminiInteractionsClient {
             String requestBody = objectMapper.writeValueAsString(request);
             String url = String.format("%s/%s/webhooks/%s:rotateSigningSecret", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -491,13 +490,10 @@ public class GeminiInteractionsClient {
     public Agent createAgent(Agent agent) {
         try {
             String requestBody = objectMapper.writeValueAsString(agent);
-            String url = String.format("%s/%s/agents", baseUrl, version);
+            String url = buildUrl("agents");
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -522,10 +518,7 @@ public class GeminiInteractionsClient {
         try {
             String url = String.format("%s/%s/agents/%s", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
                 .build();
 
@@ -549,7 +542,7 @@ public class GeminiInteractionsClient {
      */
     public ListAgentsResponse listAgents(Integer pageSize, String pageToken) {
         try {
-            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/agents", baseUrl, version));
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("agents"));
             boolean hasParam = false;
             if (pageSize != null) {
                 urlBuilder.append("?page_size=").append(pageSize);
@@ -559,10 +552,7 @@ public class GeminiInteractionsClient {
                 urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
             }
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(urlBuilder.toString()))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
                 .GET()
                 .build();
 
@@ -586,10 +576,7 @@ public class GeminiInteractionsClient {
         try {
             String url = String.format("%s/%s/agents/%s", baseUrl, version, id);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
                 .build();
 
@@ -612,10 +599,7 @@ public class GeminiInteractionsClient {
         try {
             String url = String.format("%s/%s/files/environment-%s:download?alt=media", baseUrl, version, interactionId);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("x-goog-api-key", apiKey)
-                .header("Api-Revision", "2026-05-20")
+            HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
                 .build();
 
@@ -662,8 +646,11 @@ public class GeminiInteractionsClient {
         /** Creates a new Builder. */
         public Builder() {}
         private String baseUrl = DEFAULT_BASE_URL;
-        private String version = DEFAULT_VERSION;
+        private String version = null;
         private String apiKey;
+        private String project;
+        private String location = "global";
+        private GoogleCredentials credentials;
         private HttpClient httpClient;
 
         /**
@@ -700,6 +687,39 @@ public class GeminiInteractionsClient {
         }
 
         /**
+         * Sets the Google Cloud Project ID (for Vertex AI).
+         *
+         * @param project The Project ID.
+         * @return This builder.
+         */
+        public Builder project(String project) {
+            this.project = project;
+            return this;
+        }
+
+        /**
+         * Sets the Google Cloud Location (for Vertex AI).
+         *
+         * @param location The Location (e.g., "global", "europe-west1").
+         * @return This builder.
+         */
+        public Builder location(String location) {
+            this.location = location;
+            return this;
+        }
+
+        /**
+         * Sets the Google Cloud Credentials (for Vertex AI).
+         *
+         * @param credentials The GoogleCredentials.
+         * @return This builder.
+         */
+        public Builder credentials(GoogleCredentials credentials) {
+            this.credentials = credentials;
+            return this;
+        }
+
+        /**
          * Sets the HTTP client.
          *
          * @param httpClient The HTTP client.
@@ -717,8 +737,18 @@ public class GeminiInteractionsClient {
          * @throws IllegalStateException If the API key is not provided.
          */
         public GeminiInteractionsClient build() {
-            if (apiKey == null) {
-                throw new IllegalStateException("API Key must be provided");
+            if (apiKey == null && project == null) {
+                throw new IllegalStateException("Either API Key or Project must be provided");
+            }
+            if (project != null && credentials == null) {
+                try {
+                    this.credentials = GoogleCredentials.getApplicationDefault();
+                } catch (IOException e) {
+                    throw new IllegalStateException("Failed to load Google Application Default Credentials", e);
+                }
+            }
+            if (version == null) {
+                version = project != null ? "v1beta1" : "v1beta";
             }
             return new GeminiInteractionsClient(this);
         }

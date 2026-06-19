@@ -310,6 +310,6 @@ public class GeminiInteractionsClientTest {
                     .build();
         });
 
-        assertEquals("API Key must be provided", exception.getMessage());
+        assertEquals("Either API Key or Project must be provided", exception.getMessage());
     }
 }
