@@ -57,4 +57,4 @@ jobs:
           cache: maven
 
       - name: Build
-        run: ./mvnw -ntp -B verify
+        run: ./mvnw -ntp -B test
