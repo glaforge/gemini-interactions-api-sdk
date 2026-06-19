@@ -27,9 +27,26 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>0.10.0</version>
+    <version>0.11.0</version>
 </dependency>
 ```
+
+> [!NOTE]
+> Check [Maven Central](https://central.sonatype.com/artifact/io.github.glaforge/gemini-interactions-api-sdk) to find the latest available version of the SDK.
+
+## AI Agent Skill
+[![skills.sh](https://skills.sh/b/glaforge/gemini-interactions-api-sdk)](https://skills.sh/glaforge/gemini-interactions-api-sdk)
+
+This project provides an officially maintained [Agent Skill](skills/gemini-interactions-java-api/SKILL.md) to help your AI coding assistants write code using the SDK.
+If you use an agentic IDE or AI coding assistant that supports the [Agent Skills specification](https://agentskills.io/home), it should automatically discover and use this skill when you are working with the SDK in your projects. 
+
+You can also install this skill across your projects globally using the [Vercel skills CLI](https://skills.sh/):
+
+```bash
+npx skills add glaforge/gemini-interactions-api-sdk
+```
+
+This will automatically install the skill into the `.agents/skills/gemini-interactions-java-api` directory at the root of your workspace, allowing compatible AI coding assistants to load it instantly.
 
 ## Usage
 
