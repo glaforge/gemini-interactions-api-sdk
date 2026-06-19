@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class VertexAIIntegrationIT {
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
     public void testVertexAIEndpoint() throws IOException, InterruptedException {
         // 1. Initialize Client with Google Cloud Project (Vertex AI mode)
         GeminiInteractionsClient client = GeminiInteractionsClient.builder()
