@@ -73,6 +73,9 @@ GeminiInteractionsClient client = GeminiInteractionsClient.builder()
     .build();
 ```
 
+> [!NOTE]
+> Currently, standard Gemini models are not supported directly on Google Cloud via the Gemini Interactions API endpoint. However, you can generate an API key from your Google Cloud Project and use it with the usual API key approach (Option A) to interact with Gemini models.
+
 ### Simple Text Interaction
 ```java
 ModelInteractionParams request = ModelInteractionParams.builder()
