@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Gemini API",
-    "description": "The Gemini Interactions API is an experimental API that allows developers to build generative AI applications using Gemini models. Gemini is our most capable model, built from the ground up to be multimodal. It can generalize and seamlessly understand, operate across, and combine different types of information including language, images, audio, video, and code. You can use the Gemini API for use cases like reasoning across text and images, content generation, dialogue agents, summarization and classification systems, and more.",
+    "description": "The Gemini Interactions API that allows developers to build generative AI applications using Gemini models. Gemini is our most capable model, built from the ground up to be multimodal. It can generalize and seamlessly understand, operate across, and combine different types of information including language, images, audio, video, and code. You can use the Gemini API for use cases like reasoning across text and images, content generation, dialogue agents, summarization and classification systems, and more.",
     "version": "v1beta",
     "x-google-revision": "0"
   },
@@ -14,15 +14,9 @@
   ],
   "paths": {
     "/{api_version}/agents": {
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/api_version"
-        }
-      ],
       "post": {
         "operationId": "CreateAgent",
         "description": "Creates a new Agent (Typed version for SDK).",
-        "security": [],
         "parameters": [],
         "requestBody": {
           "description": "The request body.",
@@ -32,7 +26,8 @@
                 "$ref": "#/components/schemas/Agent"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "default": {
@@ -130,12 +125,20 @@
             "label": "fork_from_env",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Step 1: Set up the environment interactively.\nconst interaction = await ai.interactions.create({\n    agent: 'antigravity-preview-05-2026',\n    input: 'Write a basic Hello World template to /workspace/template.py.',\n    environment: 'remote',\n});\n\n// Step 2: Fork that environment into a named agent.\nconst agentId = `my-data-analyst-${crypto.randomUUID().slice(0, 8)}`;\nconst agent = await ai.agents.create({\n    id: agentId,\n    base_agent: 'antigravity-preview-05-2026',\n    system_instruction: 'You are a data analyst. Use the template at /workspace/template.py for all reports.',\n    base_environment: interaction.environment_id,\n});\nconsole.log(`Forked agent: ${agent.id}`);\n\n// [cleanup]\nif (agent.id) await ai.agents.delete(agent.id);\n// [/cleanup]\n"
           }
+        ],
+        "x-speakeasy-group": "agents",
+        "x-speakeasy-name-override": "create",
+        "x-speakeasy-exports": [
+          {
+            "group": "agents",
+            "name": "AgentCreateParams",
+            "representation": "input"
+          }
         ]
       },
       "get": {
         "operationId": "ListAgents",
         "description": "Lists all Agents.",
-        "security": [],
         "parameters": [
           {
             "name": "page_size",
@@ -206,27 +209,27 @@
             "label": "list",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst agents = await ai.agents.list();\nfor (const agent of (agents.agents ?? [])) {\n    console.log(agent.id);\n}\n"
           }
+        ],
+        "x-speakeasy-group": "agents",
+        "x-speakeasy-name-override": "list",
+        "x-speakeasy-exports": [
+          {
+            "group": "agents",
+            "name": "AgentListParams",
+            "representation": "input"
+          }
         ]
-      }
-    },
-    "/{api_version}/agents/{id}": {
+      },
       "parameters": [
         {
           "$ref": "#/components/parameters/api_version"
-        },
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
-      ],
+      ]
+    },
+    "/{api_version}/agents/{id}": {
       "get": {
         "operationId": "GetAgent",
         "description": "Gets a specific Agent.",
-        "security": [],
         "parameters": [
           {
             "name": "id",
@@ -283,12 +286,20 @@
             "label": "get",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Create an agent so we have a valid ID to retrieve.\nconst agentId = `test-agent-${crypto.randomUUID().slice(0, 8)}`;\nawait ai.agents.create({\n    id: agentId,\n    base_agent: 'waverunner',\n    description: 'A test agent.',\n    base_environment: 'remote',\n});\n\nconst agent = await ai.agents.get(agentId);\nif (!agent.id) {\n    throw new Error('Agent retrieval failed: ID is undefined');\n}\nconsole.log(agent.id);\n\n// [cleanup]\nawait ai.agents.delete(agent.id);\n// [/cleanup]\n"
           }
+        ],
+        "x-speakeasy-group": "agents",
+        "x-speakeasy-name-override": "get",
+        "x-speakeasy-exports": [
+          {
+            "group": "agents",
+            "name": "AgentGetParams",
+            "representation": "input"
+          }
         ]
       },
       "delete": {
         "operationId": "DeleteAgent",
         "description": "Deletes an Agent.",
-        "security": [],
         "parameters": [
           {
             "name": "id",
@@ -333,8 +344,30 @@
             "label": "delete",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Create an agent so we have a valid ID to delete.\nconst agentId = `delete-test-${crypto.randomUUID().slice(0, 8)}`;\nawait ai.agents.create({\n    id: agentId,\n    base_agent: 'waverunner',\n    description: 'Temporary agent for deletion.',\n    base_environment: 'remote',\n});\n\nawait ai.agents.delete(agentId);\nconsole.log('Agent deleted successfully.');\n"
           }
+        ],
+        "x-speakeasy-group": "agents",
+        "x-speakeasy-name-override": "delete",
+        "x-speakeasy-exports": [
+          {
+            "group": "agents",
+            "name": "AgentDeleteParams",
+            "representation": "input"
+          }
         ]
-      }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "/{api_version}/interactions": {
       "parameters": [
@@ -345,12 +378,6 @@
       "post": {
         "operationId": "CreateInteraction",
         "description": "Creates a new interaction.",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/api_version"
-          }
-        ],
         "requestBody": {
           "description": "The request body.",
           "required": true,
@@ -359,10 +386,10 @@
               "schema": {
                 "oneOf": [
                   {
-                    "$ref": "#/components/schemas/CreateAgentInteractionParams"
+                    "$ref": "#/components/schemas/CreateModelInteractionParams"
                   },
                   {
-                    "$ref": "#/components/schemas/CreateModelInteractionParams"
+                    "$ref": "#/components/schemas/CreateAgentInteractionParams"
                   }
                 ]
               }
@@ -636,15 +663,42 @@
                     }
                   }
                 }
+              },
+              "text/event-stream": {
+                "x-speakeasy-sse-sentinel": "[DONE]",
+                "schema": {
+                  "$ref": "#/components/schemas/InteractionSseStreamEvent"
+                }
               }
             }
           },
-          "default": {
+          "4XX": {
             "description": "Error creating interaction",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Error creating interaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
                   "properties": {
                     "error": {
                       "$ref": "#/components/schemas/Error"
@@ -656,6 +710,11 @@
           }
         },
         "summary": "Creating an interaction",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/api_version"
+          }
+        ],
         "x-codeSamples": [
           {
             "lang": "sh",
@@ -792,14 +851,101 @@
             "label": "custom_agent",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Step 1: Create a custom agent.\nconst agentId = `code-reviewer-${crypto.randomUUID().slice(0, 8)}`;\nawait ai.agents.create({\n    id: agentId,\n    base_agent: 'antigravity-preview-05-2026',\n    system_instruction: 'You are a senior code reviewer. Check every file for bugs, style issues, and security vulnerabilities.',\n    base_environment: {\n        type: 'remote',\n        sources: [{\n            type: 'repository',\n            source: 'https://github.com/octocat/Spoon-Knife',\n            target: '/workspace/repo',\n        }],\n    },\n});\n\n// Step 2: Use the custom agent.\nconst result = await ai.interactions.create({\n    agent: agentId,\n    input: 'Review the latest changes in /workspace/repo/src and file a summary.',\n    environment: 'remote',\n});\nconsole.log(result.output_text);\n\n// [cleanup]\nawait ai.agents.delete(agentId);\n// [/cleanup]\n"
           }
+        ],
+        "x-speakeasy-group": "interactions",
+        "x-speakeasy-name-override": "create",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionCreateParams",
+            "representation": "input"
+          }
         ]
       }
     },
     "/{api_version}/interactions/{id}": {
       "get": {
-        "operationId": "getInteractionById",
+        "responses": {
+          "200": {
+            "description": "Successful retrieval of the interaction.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Interaction"
+                },
+                "examples": {
+                  "get": {
+                    "summary": "Get Interaction",
+                    "value": {
+                      "id": "v1_ChdPU0F4YWFtNkFwS2kxZThQZ05lbXdROBIXT1NBeGFhbTZBcEtpMWU4UGdOZW13UTg",
+                      "model": "gemini-3.5-flash",
+                      "status": "completed",
+                      "object": "interaction",
+                      "created": "2025-11-26T12:25:15Z",
+                      "updated": "2025-11-26T12:25:15Z",
+                      "steps": [
+                        {
+                          "type": "model_output",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "I'm doing great, thank you for asking! How can I help you today?"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "text/event-stream": {
+                "x-speakeasy-sse-sentinel": "[DONE]",
+                "schema": {
+                  "$ref": "#/components/schemas/InteractionSseStreamEvent"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Error getting interaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Error getting interaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Retrieving an interaction",
         "description": "Retrieves the full details of a single interaction based on its `Interaction.id`.",
-        "security": [],
+        "operationId": "getInteractionById",
         "parameters": [
           {
             "$ref": "#/components/parameters/api_version"
@@ -841,58 +987,6 @@
             "description": "If set to true, the generated content will be streamed incrementally."
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Successful retrieval of the interaction.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Interaction"
-                },
-                "examples": {
-                  "get": {
-                    "summary": "Get Interaction",
-                    "value": {
-                      "id": "v1_ChdPU0F4YWFtNkFwS2kxZThQZ05lbXdROBIXT1NBeGFhbTZBcEtpMWU4UGdOZW13UTg",
-                      "model": "gemini-3.5-flash",
-                      "status": "completed",
-                      "object": "interaction",
-                      "created": "2025-11-26T12:25:15Z",
-                      "updated": "2025-11-26T12:25:15Z",
-                      "steps": [
-                        {
-                          "type": "model_output",
-                          "content": [
-                            {
-                              "type": "text",
-                              "text": "I'm doing great, thank you for asking! How can I help you today?"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error getting interaction",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "$ref": "#/components/schemas/Error"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Retrieving an interaction",
         "x-codeSamples": [
           {
             "lang": "sh",
@@ -909,13 +1003,22 @@
             "label": "get",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst created = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    input: 'Say hello.'\n});\n// [/setup]\n\nconst interaction = await ai.interactions.get(created.id);\nconsole.log(interaction.status);\n"
           }
+        ],
+        "x-speakeasy-group": "interactions",
+        "x-speakeasy-name-override": "get",
+        "x-speakeasy-sse-overload": true,
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionGetParams",
+            "representation": "input"
+          }
         ]
       },
       "delete": {
         "operationId": "deleteInteraction",
         "description": "Deletes the interaction by id.",
         "summary": "Deleting an interaction",
-        "security": [],
         "parameters": [
           {
             "$ref": "#/components/parameters/api_version"
@@ -932,27 +1035,35 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful deletion of the interaction.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                },
-                "examples": {
-                  "delete": {
-                    "summary": "Delete Interaction",
-                    "value": {}
-                  }
-                }
-              }
-            }
+            "description": "Successful deletion of the interaction."
           },
-          "default": {
+          "4XX": {
             "description": "Error deleting interaction",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Error deleting interaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
                   "properties": {
                     "error": {
                       "$ref": "#/components/schemas/Error"
@@ -979,28 +1090,20 @@
             "label": "delete",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst created = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    input: 'Hello',\n});\n// [/setup]\n\nawait ai.interactions.delete(created.id);\nconsole.log('Interaction deleted successfully.');\n"
           }
+        ],
+        "x-speakeasy-group": "interactions",
+        "x-speakeasy-name-override": "delete",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionDeleteParams",
+            "representation": "input"
+          }
         ]
       }
     },
     "/{api_version}/interactions/{id}/cancel": {
       "post": {
-        "operationId": "cancelInteractionById",
-        "description": "Cancels an interaction by id. This only applies to background interactions that are still running.",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/api_version"
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "description": "The unique identifier of the interaction to cancel.",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful cancellation of the interaction.",
@@ -1025,12 +1128,33 @@
               }
             }
           },
-          "default": {
+          "4XX": {
             "description": "Error cancelling interaction",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Error cancelling interaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
                   "properties": {
                     "error": {
                       "$ref": "#/components/schemas/Error"
@@ -1042,6 +1166,22 @@
           }
         },
         "summary": "Canceling an interaction",
+        "description": "Cancels an interaction by id. This only applies to background interactions that are still running.",
+        "operationId": "cancelInteractionById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/api_version"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The unique identifier of the interaction to cancel.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "x-codeSamples": [
           {
             "lang": "sh",
@@ -1058,133 +1198,22 @@
             "label": "cancel",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Start a background interaction so it stays in-progress.\nconst created = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    input: 'Write a long essay about the history of computing.',\n    tools: [{ type: 'computer_use' }],\n    background: true,\n});\n\n// Cancel the in-progress interaction.\nconst interaction = await ai.interactions.cancel(created.id);\nconsole.log(interaction.status);\n"
           }
+        ],
+        "x-speakeasy-group": "interactions",
+        "x-speakeasy-name-override": "cancel",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionCancelParams",
+            "representation": "input"
+          }
         ]
       }
     },
-    "/{api_version}/interactions?agent": {
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/api_version"
-        }
-      ],
-      "post": {
-        "operationId": "CreateInteraction",
-        "description": "Creates a new interaction.",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/api_version"
-          }
-        ],
-        "requestBody": {
-          "description": "The request body.",
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAgentInteractionParams"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Interaction"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error creating interaction",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "$ref": "#/components/schemas/Error"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Creating an interaction",
-        "x-internal": true
-      }
-    },
-    "/{api_version}/interactions?model": {
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/api_version"
-        }
-      ],
-      "post": {
-        "operationId": "CreateInteraction",
-        "description": "Creates a new interaction.",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/api_version"
-          }
-        ],
-        "requestBody": {
-          "description": "The request body.",
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateModelInteractionParams"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Interaction"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error creating interaction",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "$ref": "#/components/schemas/Error"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Creating an interaction",
-        "x-internal": true
-      }
-    },
     "/{api_version}/webhooks": {
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/api_version"
-        }
-      ],
       "post": {
         "operationId": "CreateWebhook",
         "description": "Creates a new Webhook.",
-        "security": [],
         "parameters": [],
         "requestBody": {
           "description": "Required. The webhook to create.",
@@ -1194,7 +1223,8 @@
                 "$ref": "#/components/schemas/Webhook"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "default": {
@@ -1207,12 +1237,20 @@
               }
             }
           }
-        }
+        },
+        "x-speakeasy-group": "webhooks",
+        "x-speakeasy-name-override": "create",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookCreateParams",
+            "representation": "input"
+          }
+        ]
       },
       "get": {
         "operationId": "ListWebhooks",
         "description": "Lists all Webhooks.",
-        "security": [],
         "parameters": [
           {
             "name": "page_size",
@@ -1243,27 +1281,27 @@
               }
             }
           }
-        }
-      }
-    },
-    "/{api_version}/webhooks/{id}": {
+        },
+        "x-speakeasy-group": "webhooks",
+        "x-speakeasy-name-override": "list",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookListParams",
+            "representation": "input"
+          }
+        ]
+      },
       "parameters": [
         {
           "$ref": "#/components/parameters/api_version"
-        },
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
-      ],
+      ]
+    },
+    "/{api_version}/webhooks/{id}": {
       "get": {
         "operationId": "GetWebhook",
         "description": "Gets a specific Webhook.",
-        "security": [],
         "parameters": [
           {
             "name": "id",
@@ -1286,12 +1324,20 @@
               }
             }
           }
-        }
+        },
+        "x-speakeasy-group": "webhooks",
+        "x-speakeasy-name-override": "get",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookGetParams",
+            "representation": "input"
+          }
+        ]
       },
       "patch": {
         "operationId": "UpdateWebhook",
         "description": "Updates an existing Webhook.",
-        "security": [],
         "parameters": [
           {
             "name": "id",
@@ -1334,12 +1380,13 @@
               }
             }
           }
-        }
+        },
+        "x-speakeasy-group": "webhooks",
+        "x-speakeasy-name-override": "update"
       },
       "delete": {
         "operationId": "DeleteWebhook",
         "description": "Deletes a Webhook.",
-        "security": [],
         "parameters": [
           {
             "name": "id",
@@ -1362,10 +1409,17 @@
               }
             }
           }
-        }
-      }
-    },
-    "/{api_version}/webhooks/{id}:ping": {
+        },
+        "x-speakeasy-group": "webhooks",
+        "x-speakeasy-name-override": "delete",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookDeleteParams",
+            "representation": "input"
+          }
+        ]
+      },
       "parameters": [
         {
           "$ref": "#/components/parameters/api_version"
@@ -1378,11 +1432,12 @@
             "type": "string"
           }
         }
-      ],
+      ]
+    },
+    "/{api_version}/webhooks/{id}:ping": {
       "post": {
         "operationId": "PingWebhook",
         "description": "Sends a ping event to a Webhook.",
-        "security": [],
         "parameters": [
           {
             "name": "id",
@@ -1415,10 +1470,10 @@
               }
             }
           }
-        }
-      }
-    },
-    "/{api_version}/webhooks/{id}:rotateSigningSecret": {
+        },
+        "x-speakeasy-group": "webhooks",
+        "x-speakeasy-name-override": "ping"
+      },
       "parameters": [
         {
           "$ref": "#/components/parameters/api_version"
@@ -1431,11 +1486,12 @@
             "type": "string"
           }
         }
-      ],
+      ]
+    },
+    "/{api_version}/webhooks/{id}:rotateSigningSecret": {
       "post": {
         "operationId": "RotateSigningSecret",
         "description": "Generates a new signing secret for a Webhook.",
-        "security": [],
         "parameters": [
           {
             "name": "id",
@@ -1468,8 +1524,23 @@
               }
             }
           }
+        },
+        "x-speakeasy-group": "webhooks",
+        "x-speakeasy-name-override": "rotate_signing_secret"
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
         }
-      }
+      ]
     }
   },
   "components": {
@@ -1480,10 +1551,57 @@
         "schema": {
           "type": "string"
         },
-        "in": "path"
+        "in": "path",
+        "required": true
+      },
+      "google_genai_api_revision": {
+        "name": "Api-Revision",
+        "in": "header",
+        "schema": {
+          "type": "string"
+        },
+        "description": "API revision header to send with Google GenAI API requests.",
+        "x-speakeasy-name-override": "api_revision"
+      },
+      "google_genai_user_project": {
+        "name": "x-goog-user-project",
+        "in": "header",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Quota project header to send with Google GenAI API requests.",
+        "x-speakeasy-name-override": "user_project"
       }
     },
-    "securitySchemes": {},
+    "securitySchemes": {
+      "googleGenAIAuth": {
+        "type": "http",
+        "scheme": "custom",
+        "x-speakeasy-custom-security-scheme": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "apiKey": {
+                "type": "string",
+                "description": "Gemini API key sent as x-goog-api-key."
+              },
+              "accessToken": {
+                "type": "string",
+                "description": "OAuth access token sent as a bearer Authorization header."
+              },
+              "defaultHeaders": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Additional default headers to apply before request-specific headers and auth."
+              }
+            },
+            "required": []
+          }
+        }
+      }
+    },
     "schemas": {
       "Agent": {
         "description": "An agent definition for the CreateAgent API.\nThis message is the target for annotation-parser-based JSON parsing.\nNew format:\n  {\n    \"id\": \"customer-sentinel\",\n    \"base_agent\": \"\",\n    \"system_instruction\": \"...\",\n    \"base_environment\": { \"type\": \"remote\", \"sources\": [...] },\n    \"tools\": [ {\"type\": \"code_execution\"} ]\n  }",
@@ -1526,35 +1644,33 @@
               "propertyName": "type"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "agents",
+        "x-speakeasy-exports": [
+          {
+            "group": "agents",
+            "name": "Agent"
+          }
+        ]
       },
       "AgentOption": {
         "title": "Agent",
         "description": "The agent to interact with.",
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "description": "Gemini Deep Research Agent",
-            "const": "deep-research-preview-04-2026",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Gemini Deep Research Agent",
-            "const": "deep-research-pro-preview-12-2025",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Gemini Deep Research Max Agent",
-            "const": "deep-research-max-preview-04-2026",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Use the Antigravity managed agent to perform multi-step tasks that require reasoning, file operations, and tool use.",
-            "const": "antigravity-preview-05-2026",
-            "x-stainless-nominal": false
-          }
+        "x-speakeasy-model-namespace": "interactions",
+        "type": "string",
+        "enum": [
+          "deep-research-pro-preview-12-2025",
+          "deep-research-preview-04-2026",
+          "deep-research-max-preview-04-2026",
+          "antigravity-preview-05-2026"
+        ],
+        "x-speakeasy-unknown-values": "allow",
+        "x-speakeasy-enum-format": "union",
+        "x-speakeasy-enum-descriptions": [
+          "Gemini Deep Research Agent",
+          "Gemini Deep Research Agent",
+          "Gemini Deep Research Max Agent",
+          "Use the Antigravity managed agent to perform multi-step tasks that require reasoning, file operations, and tool use."
         ]
       },
       "AgentTool": {
@@ -1568,10 +1684,17 @@
             "$ref": "#/components/schemas/GoogleSearch"
           },
           {
-            "$ref": "#/components/schemas/McpServer"
+            "$ref": "#/components/schemas/UrlContext"
           },
           {
-            "$ref": "#/components/schemas/UrlContext"
+            "$ref": "#/components/schemas/McpServer"
+          }
+        ],
+        "x-speakeasy-model-namespace": "agents",
+        "x-speakeasy-exports": [
+          {
+            "group": "agents",
+            "name": "AgentTool"
           }
         ],
         "discriminator": {
@@ -1596,6 +1719,13 @@
               "none",
               "validated"
             ],
+            "x-speakeasy-model-namespace": "interactions",
+            "x-speakeasy-exports": [
+              {
+                "group": "interactions",
+                "name": "ToolChoiceType"
+              }
+            ],
             "description": "The mode of the tool choice."
           },
           "tools": {
@@ -1605,22 +1735,26 @@
               "type": "string"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "AllowedTools"
+          }
+        ]
       },
       "AllowlistEntry": {
-        "type": "object",
         "description": "A single domain allowlist rule with optional header injection.",
-        "required": [
-          "domain"
-        ],
+        "type": "object",
         "properties": {
           "domain": {
-            "type": "string",
-            "description": "Domain to allow outbound requests to. Supports wildcards (e.g. '*.googleapis.com'). Use '*' to allow all domains."
+            "description": "Domain to allow outbound requests to. Supports wildcards (e.g. '*.googleapis.com'). Use '*' to allow all domains.",
+            "type": "string"
           },
           "transform": {
-            "type": "array",
             "description": "Headers to inject on all outbound requests matching this domain. Each entry is a flat {header_name: header_value} object. The egress proxy injects these automatically.",
+            "type": "array",
             "items": {
               "type": "object",
               "additionalProperties": {
@@ -1629,20 +1763,31 @@
               "description": "A single header to inject, e.g. {'Authorization': 'Bearer token'} or {'x-goog-api-key': 'key'}."
             }
           }
-        }
+        },
+        "required": [
+          "domain"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Annotation": {
         "description": "Citation information for model-generated content.",
         "type": "object",
         "oneOf": [
           {
+            "$ref": "#/components/schemas/UrlCitation"
+          },
+          {
             "$ref": "#/components/schemas/FileCitation"
           },
           {
             "$ref": "#/components/schemas/PlaceCitation"
-          },
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
           {
-            "$ref": "#/components/schemas/UrlCitation"
+            "group": "interactions",
+            "name": "Annotation"
           }
         ],
         "discriminator": {
@@ -1661,7 +1806,8 @@
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "AudioContent": {
         "description": "An audio content block.",
@@ -1673,7 +1819,8 @@
           "data": {
             "description": "The audio content.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "uri": {
             "description": "The URI of the audio.",
@@ -1736,6 +1883,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "AudioContent"
+          }
         ]
       },
       "AudioDelta": {
@@ -1746,7 +1900,8 @@
           },
           "data": {
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "uri": {
             "type": "string"
@@ -1801,7 +1956,8 @@
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "AudioResponseFormat": {
         "description": "Configuration for audio output format.",
@@ -1866,6 +2022,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "AudioResponseFormat"
+          }
         ]
       },
       "CodeExecution": {
@@ -1895,7 +2058,8 @@
             "label": "code_execution",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    tools: [{ type: 'code_execution' }],\n    input: 'Calculate the first 10 Fibonacci numbers'\n});\nconsole.log(interaction.output_text);\n"
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "CodeExecutionCallArguments": {
         "description": "The arguments to pass to the code execution.",
@@ -1915,7 +2079,8 @@
             "description": "The code to be executed.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "CodeExecutionCallDelta": {
         "type": "object",
@@ -1929,13 +2094,15 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "arguments",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "CodeExecutionCallStep": {
         "description": "Code execution call step.",
@@ -1955,7 +2122,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -1975,6 +2143,13 @@
                 }
               }
             }
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "CodeExecutionCallStep"
           }
         ]
       },
@@ -1996,7 +2171,15 @@
             "description": "The code to be executed.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "CodeExecutionCallArguments",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "CodeExecutionCallArguments"
+          }
+        ]
       },
       "CodeExecutionResultDelta": {
         "type": "object",
@@ -2013,13 +2196,15 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "result",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "CodeExecutionResultStep": {
         "description": "Code execution result step.",
@@ -2043,7 +2228,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -2062,6 +2248,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "CodeExecutionResultStep"
+          }
         ]
       },
       "ComputerUse": {
@@ -2075,10 +2268,14 @@
             "description": "The environment being operated.",
             "type": "string",
             "x-google-enum-descriptions": [
-              "Operates in a web browser."
+              "Operates in a web browser.",
+              "Operates in a mobile environment.",
+              "Operates in a desktop environment."
             ],
             "enum": [
-              "browser"
+              "browser",
+              "mobile",
+              "desktop"
             ]
           },
           "excluded_predefined_functions": {
@@ -2087,6 +2284,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "enable_prompt_injection_detection": {
+            "description": "Whether enable the prompt injection detection check on computer-use\nrequest.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2108,12 +2309,19 @@
             "label": "computer_use",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-2.5-computer-use-preview-10-2025',\n    tools: [{ type: 'computer_use'}],\n    input: 'Find a flight to Tokyo'\n});\nconsole.log(interaction.output_text);\n"
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Content": {
         "description": "The content of the response.",
         "type": "object",
         "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextContent"
+          },
+          {
+            "$ref": "#/components/schemas/ImageContent"
+          },
           {
             "$ref": "#/components/schemas/AudioContent"
           },
@@ -2121,13 +2329,14 @@
             "$ref": "#/components/schemas/DocumentContent"
           },
           {
-            "$ref": "#/components/schemas/ImageContent"
-          },
-          {
-            "$ref": "#/components/schemas/TextContent"
-          },
-          {
             "$ref": "#/components/schemas/VideoContent"
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "Content"
           }
         ],
         "discriminator": {
@@ -2175,79 +2384,81 @@
               }
             }
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ContentDeltaData": {
         "description": "The delta content data for a content block.",
         "type": "object",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/AudioDelta"
-          },
-          {
-            "$ref": "#/components/schemas/CodeExecutionCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/CodeExecutionResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/DocumentDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FileSearchCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FileSearchResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FunctionCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FunctionResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMapsCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMapsResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleSearchCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleSearchResultDelta"
+            "$ref": "#/components/schemas/TextDelta"
           },
           {
             "$ref": "#/components/schemas/ImageDelta"
           },
           {
-            "$ref": "#/components/schemas/McpServerToolCallDelta"
+            "$ref": "#/components/schemas/AudioDelta"
           },
           {
-            "$ref": "#/components/schemas/McpServerToolResultDelta"
+            "$ref": "#/components/schemas/DocumentDelta"
           },
           {
-            "$ref": "#/components/schemas/TextAnnotationDelta"
-          },
-          {
-            "$ref": "#/components/schemas/TextDelta"
-          },
-          {
-            "$ref": "#/components/schemas/ThoughtSignatureDelta"
+            "$ref": "#/components/schemas/VideoDelta"
           },
           {
             "$ref": "#/components/schemas/ThoughtSummaryDelta"
           },
           {
+            "$ref": "#/components/schemas/ThoughtSignatureDelta"
+          },
+          {
+            "$ref": "#/components/schemas/FunctionCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/CodeExecutionCallDelta"
+          },
+          {
             "$ref": "#/components/schemas/UrlContextCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleSearchCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/McpServerToolCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/FileSearchCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleMapsCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/FunctionResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/CodeExecutionResultDelta"
           },
           {
             "$ref": "#/components/schemas/UrlContextResultDelta"
           },
           {
-            "$ref": "#/components/schemas/VideoDelta"
+            "$ref": "#/components/schemas/GoogleSearchResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/McpServerToolResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/FileSearchResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleMapsResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/TextAnnotationDelta"
           }
         ],
+        "x-speakeasy-model-namespace": "interactions",
         "discriminator": {
           "propertyName": "type"
         }
@@ -2292,7 +2503,8 @@
               }
             }
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ContentStop": {
         "type": "object",
@@ -2327,7 +2539,8 @@
               }
             }
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "CreateAgentInteractionParams": {
         "description": "Parameters for creating agent interactions",
@@ -2391,12 +2604,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "role": {
-            "description": "Output only. The role of the interaction.",
-            "readOnly": true,
-            "deprecated": true,
-            "type": "string"
-          },
           "system_instruction": {
             "description": "System instruction for the interaction.",
             "type": "string"
@@ -2407,11 +2614,6 @@
             "items": {
               "$ref": "#/components/schemas/Tool"
             }
-          },
-          "usage": {
-            "description": "Output only. Statistics on the interaction request's token usage.",
-            "readOnly": true,
-            "$ref": "#/components/schemas/Usage"
           },
           "response_modalities": {
             "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
@@ -2435,22 +2637,16 @@
             "type": "string"
           },
           "service_tier": {
-            "description": "The service tier for the interaction.",
-            "$ref": "#/components/schemas/ServiceTier"
+            "$ref": "#/components/schemas/ServiceTier",
+            "description": "The service tier for the interaction."
           },
           "webhook_config": {
-            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes.",
-            "$ref": "#/components/schemas/WebhookConfig"
-          },
-          "input": {
-            "$ref": "#/components/schemas/InteractionsInput"
+            "$ref": "#/components/schemas/WebhookConfig",
+            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
           },
           "response_format": {
             "description": "Enforces that the generated response is a JSON object that complies with the JSON schema specified in this field.",
             "oneOf": [
-              {
-                "$ref": "#/components/schemas/ResponseFormat"
-              },
               {
                 "type": "array",
                 "items": {
@@ -2461,45 +2657,60 @@
                     "type": "text",
                     "mime_type": "application/json"
                   }
-                ]
+                ],
+                "x-speakeasy-model-namespace": "interactions"
+              },
+              {
+                "$ref": "#/components/schemas/ResponseFormat"
               }
             ]
           },
           "environment": {
-            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID.",
             "oneOf": [
               {
-                "$ref": "#/components/schemas/EnvironmentConfig"
+                "type": "string"
               },
               {
-                "type": "string"
+                "$ref": "#/components/schemas/EnvironmentConfig"
               }
-            ]
+            ],
+            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
           },
           "agent_config": {
             "description": "Configuration parameters for the agent interaction.",
             "oneOf": [
               {
-                "$ref": "#/components/schemas/DeepResearchAgentConfig"
-              },
-              {
                 "$ref": "#/components/schemas/DynamicAgentConfig"
               },
               {
-                "$ref": "#/components/schemas/FindRequest"
-              },
-              {
-                "$ref": "#/components/schemas/FixRequest"
+                "$ref": "#/components/schemas/DeepResearchAgentConfig"
               }
             ],
             "discriminator": {
               "propertyName": "type"
             }
+          },
+          "input": {
+            "$ref": "#/components/schemas/InteractionsInput"
           }
         },
         "required": [
           "agent",
           "input"
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "CreateAgentInteraction",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "CreateAgentInteractionParamsNonStreaming",
+            "representation": "input"
+          },
+          {
+            "group": "interactions",
+            "name": "CreateAgentInteractionParamsStreaming",
+            "representation": "input"
+          }
         ]
       },
       "CreateModelInteractionParams": {
@@ -2564,12 +2775,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "role": {
-            "description": "Output only. The role of the interaction.",
-            "readOnly": true,
-            "deprecated": true,
-            "type": "string"
-          },
           "system_instruction": {
             "description": "System instruction for the interaction.",
             "type": "string"
@@ -2580,11 +2785,6 @@
             "items": {
               "$ref": "#/components/schemas/Tool"
             }
-          },
-          "usage": {
-            "description": "Output only. Statistics on the interaction request's token usage.",
-            "readOnly": true,
-            "$ref": "#/components/schemas/Usage"
           },
           "response_modalities": {
             "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
@@ -2608,22 +2808,16 @@
             "type": "string"
           },
           "service_tier": {
-            "description": "The service tier for the interaction.",
-            "$ref": "#/components/schemas/ServiceTier"
+            "$ref": "#/components/schemas/ServiceTier",
+            "description": "The service tier for the interaction."
           },
           "webhook_config": {
-            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes.",
-            "$ref": "#/components/schemas/WebhookConfig"
-          },
-          "input": {
-            "$ref": "#/components/schemas/InteractionsInput"
+            "$ref": "#/components/schemas/WebhookConfig",
+            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
           },
           "response_format": {
             "description": "Enforces that the generated response is a JSON object that complies with the JSON schema specified in this field.",
             "oneOf": [
-              {
-                "$ref": "#/components/schemas/ResponseFormat"
-              },
               {
                 "type": "array",
                 "items": {
@@ -2634,34 +2828,55 @@
                     "type": "text",
                     "mime_type": "application/json"
                   }
-                ]
+                ],
+                "x-speakeasy-model-namespace": "interactions"
+              },
+              {
+                "$ref": "#/components/schemas/ResponseFormat"
               }
             ]
           },
           "environment": {
-            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID.",
             "oneOf": [
               {
-                "$ref": "#/components/schemas/EnvironmentConfig"
+                "type": "string"
               },
               {
-                "type": "string"
+                "$ref": "#/components/schemas/EnvironmentConfig"
               }
-            ]
+            ],
+            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
           },
           "generation_config": {
+            "$ref": "#/components/schemas/GenerationConfig",
             "description": "Input only. Configuration parameters for the model interaction.",
-            "writeOnly": true,
-            "$ref": "#/components/schemas/GenerationConfig"
+            "writeOnly": true
           },
           "cached_content": {
             "description": "The name of the cached content used as context to serve the prediction.\nNote: only used in explicit caching, where users can have control over\ncaching (e.g. what content to cache) and enjoy guaranteed cost savings.\nFormat:\n`projects/{project}/locations/{location}/cachedContents/{cachedContent}`",
             "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/InteractionsInput"
           }
         },
         "required": [
           "input",
           "model"
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "CreateModelInteraction",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "CreateModelInteractionParamsNonStreaming",
+            "representation": "input"
+          },
+          {
+            "group": "interactions",
+            "name": "CreateModelInteractionParamsStreaming",
+            "representation": "input"
+          }
         ]
       },
       "DeepResearchAgentConfig": {
@@ -2698,11 +2913,19 @@
         },
         "required": [
           "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "DeepResearchAgentConfig"
+          }
         ]
       },
       "DeleteInteractionResponse": {
         "description": "Response for InteractionService.DeleteInteraction.",
-        "type": "object"
+        "type": "object",
+        "x-speakeasy-model-namespace": "interactions"
       },
       "DocumentContent": {
         "description": "A document content block.",
@@ -2714,7 +2937,8 @@
           "data": {
             "description": "The document content.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "uri": {
             "description": "The URI of the document.",
@@ -2747,6 +2971,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "DocumentContent"
+          }
         ]
       },
       "DocumentDelta": {
@@ -2757,7 +2988,8 @@
           },
           "data": {
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "uri": {
             "type": "string"
@@ -2776,7 +3008,8 @@
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "DynamicAgentConfig": {
         "description": "Configuration for dynamic agents.",
@@ -2791,15 +3024,36 @@
         },
         "required": [
           "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "DynamicAgentConfig"
+          }
         ]
       },
       "Empty": {
         "description": "A generic empty message that you can re-use to avoid defining duplicated\nempty messages in your APIs. A typical example is to use it as the request\nor the response type of an API method. For instance:\n\n    service Foo {\n      rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);\n    }",
         "type": "object",
-        "x-stainless-empty-object": true
+        "x-stainless-empty-object": true,
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionDeleteResponse"
+          },
+          {
+            "group": "agents",
+            "name": "AgentDeleteResponse"
+          },
+          {
+            "group": "webhooks",
+            "name": "WebhookDeleteResponse"
+          }
+        ]
       },
       "EnvironmentConfig": {
-        "description": "Configuration for a custom environment.",
         "type": "object",
         "properties": {
           "type": {
@@ -2832,6 +3086,7 @@
         "required": [
           "type"
         ],
+        "description": "Configuration for a custom environment.",
         "examples": [
           {
             "inline_sources": {
@@ -2909,9 +3164,18 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "Environment",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "Environment"
+          }
         ]
       },
       "EnvironmentNetworkEgressAllowlist": {
+        "description": "Outbound networking configuration for the sandbox. Accepts an object with an 'allowlist' array to restrict traffic, or the string 'disabled' to turn off all network access. Omit entirely to allow all outbound traffic with no header injection.",
         "oneOf": [
           {
             "title": "Allowlist",
@@ -2947,7 +3211,6 @@
             "example": "disabled"
           }
         ],
-        "description": "Outbound networking configuration for the sandbox. Accepts an object with an 'allowlist' array to restrict traffic, or the string 'disabled' to turn off all network access. Omit entirely to allow all outbound traffic with no header injection.",
         "example": {
           "allowlist": [
             {
@@ -2962,7 +3225,8 @@
               "domain": "*.googleapis.com"
             }
           ]
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Error": {
         "description": "Error message from an interaction.",
@@ -2976,7 +3240,8 @@
             "description": "A human-readable error message.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ErrorEvent": {
         "type": "object",
@@ -3012,6 +3277,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "ErrorEvent"
+          }
         ]
       },
       "ExaAISearchConfig": {
@@ -3032,7 +3304,8 @@
         },
         "required": [
           "api_key"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "FileCitation": {
         "description": "A file citation annotation.",
@@ -3082,21 +3355,14 @@
         },
         "required": [
           "type"
-        ]
-      },
-      "FileContent": {
-        "description": "Content of a single file in the codebase.",
-        "type": "object",
-        "properties": {
-          "path": {
-            "description": "The relative path of the file from the project root.",
-            "type": "string"
-          },
-          "content": {
-            "description": "The UTF-8 encoded text content of the file.",
-            "type": "string"
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "FileCitation"
           }
-        }
+        ]
       },
       "FileSearch": {
         "description": "A tool that can be used by the model to search files.",
@@ -3141,7 +3407,8 @@
             "label": "file_search",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Create a file search store so we have a valid one to use.\nconst store = await ai.fileSearchStores.create({});\nif (!store.name) {\n    throw new Error('Store creation failed: Name is undefined');\n}\n\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    tools: [{\n        type: 'file_search',\n        file_search_store_names: [store.name]\n    }],\n    input: 'What documents are available?'\n});\nconsole.log(interaction.output_text);\n\n// [cleanup]\nawait ai.fileSearchStores.delete({name: store.name});\n// [/cleanup]\n"
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "FileSearchCallDelta": {
         "type": "object",
@@ -3152,12 +3419,14 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "FileSearchCallStep": {
         "description": "File Search call step.",
@@ -3173,7 +3442,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -3190,11 +3460,19 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "FileSearchCallStep"
+          }
         ]
       },
       "FileSearchResult": {
         "description": "The result of the File Search.",
-        "type": "object"
+        "type": "object",
+        "x-speakeasy-model-namespace": "interactions"
       },
       "FileSearchResultDelta": {
         "type": "object",
@@ -3211,13 +3489,15 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "result",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "FileSearchResultStep": {
         "description": "File Search result step.",
@@ -3233,7 +3513,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -3249,6 +3530,13 @@
                 "call_id": "file_call_88192"
               }
             }
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "FileSearchResultStep"
           }
         ]
       },
@@ -3270,77 +3558,8 @@
             "description": "Optional. String for metadata filtering.",
             "type": "string"
           }
-        }
-      },
-      "FindRequest": {
-        "description": "Request parameters specific to FIND sessions, used for discovering\nvulnerabilities in a codebase.",
-        "type": "object",
-        "properties": {
-          "request": {
-            "const": "find_request"
-          },
-          "source_files": {
-            "description": "A list of source files to provide as context for the scan.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FileContent"
-            }
-          },
-          "finding_id": {
-            "description": "The identifier of a specific finding to verify. This is primarily used in\nVERIFY mode to focus the agent's execution-based validation on a single\nvulnerability.",
-            "type": "string"
-          },
-          "description": {
-            "description": "Additional context or custom instructions provided by the user to guide\nthe vulnerability analysis.",
-            "type": "string"
-          },
-          "session_id": {
-            "description": "Parameter for grouping multiple interactions that belong to\nthe same CodeMender session.",
-            "type": "string"
-          },
-          "session_config": {
-            "description": "Optional session-specific configurations to override default agent\nbehavior.",
-            "$ref": "#/components/schemas/SessionConfig"
-          }
         },
-        "required": [
-          "request"
-        ]
-      },
-      "FixRequest": {
-        "description": "Request parameters specific to FIX sessions, used for generating and\nvalidating security patches.",
-        "type": "object",
-        "properties": {
-          "request": {
-            "const": "fix_request"
-          },
-          "source_files": {
-            "description": "A list of source files providing context for the remediation. These files\nare typically the ones containing the identified vulnerability.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FileContent"
-            }
-          },
-          "finding_id": {
-            "description": "The identifier of the specific security finding to be remediated. This ID\nmaps to a previously discovered vulnerability.",
-            "type": "string"
-          },
-          "description": {
-            "description": "Additional context or custom instructions provided by the user to guide\nthe patch generation process.",
-            "type": "string"
-          },
-          "session_id": {
-            "description": "Parameter for grouping multiple interactions that belong to\nthe same CodeMender session.",
-            "type": "string"
-          },
-          "session_config": {
-            "description": "Optional session-specific configurations to override default agent\nbehavior.",
-            "$ref": "#/components/schemas/SessionConfig"
-          }
-        },
-        "required": [
-          "request"
-        ]
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Function": {
         "description": "A tool that can be used by the model.",
@@ -3380,6 +3599,13 @@
             "label": "function_calling",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    tools: [{\n        type: 'function',\n        name: 'get_weather',\n        description: 'Get the current weather in a given location',\n        parameters: {\n            type: 'object',\n            properties: {\n                location: {\n                    type: 'string',\n                    description: 'The city and state, e.g. San Francisco, CA'\n                }\n            },\n            required: ['location']\n        }\n    }],\n    input: 'What is the weather like in Boston?'\n});\nconsole.log(interaction.steps.at(-1));\n"
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "Function"
+          }
         ]
       },
       "FunctionCallDelta": {
@@ -3407,7 +3633,8 @@
           "id",
           "name",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "FunctionCallStep": {
         "description": "A function tool call step.",
@@ -3452,6 +3679,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "FunctionCallStep"
+          }
         ]
       },
       "FunctionResultDelta": {
@@ -3473,13 +3707,10 @@
           "result": {
             "oneOf": [
               {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/Content"
-                },
-                "title": "ContentList"
+                "type": "object"
               },
               {
+                "type": "array",
                 "items": {
                   "oneOf": [
                     {
@@ -3489,8 +3720,7 @@
                       "$ref": "#/components/schemas/TextContent"
                     }
                   ]
-                },
-                "type": "array"
+                }
               },
               {
                 "type": "string"
@@ -3502,7 +3732,8 @@
           "call_id",
           "result",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "FunctionResultStep": {
         "description": "Result of a function tool call.",
@@ -3527,13 +3758,10 @@
             "description": "The result of the tool call.",
             "oneOf": [
               {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/Content"
-                },
-                "title": "ContentList"
+                "type": "object"
               },
               {
+                "type": "array",
                 "items": {
                   "oneOf": [
                     {
@@ -3543,8 +3771,7 @@
                       "$ref": "#/components/schemas/TextContent"
                     }
                   ]
-                },
-                "type": "array"
+                }
               },
               {
                 "type": "string"
@@ -3573,6 +3800,13 @@
                 ]
               }
             }
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "FunctionResultStep"
           }
         ]
       },
@@ -3641,9 +3875,6 @@
             "description": "The tool choice configuration.",
             "oneOf": [
               {
-                "$ref": "#/components/schemas/ToolChoiceConfig"
-              },
-              {
                 "type": "string",
                 "x-google-enum-descriptions": [
                   "Auto tool choice.",
@@ -3656,11 +3887,28 @@
                   "any",
                   "none",
                   "validated"
+                ],
+                "x-speakeasy-model-namespace": "interactions",
+                "x-speakeasy-exports": [
+                  {
+                    "group": "interactions",
+                    "name": "ToolChoiceType"
+                  }
                 ]
+              },
+              {
+                "$ref": "#/components/schemas/ToolChoiceConfig"
               }
             ]
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GenerationConfig"
+          }
+        ]
       },
       "GoogleMaps": {
         "description": "A tool that can be used by the model to call Google Maps.",
@@ -3703,7 +3951,8 @@
             "label": "google_maps",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    tools: [{\n        type: 'google_maps',\n        latitude: 37.7749,\n        longitude: -122.4194\n    }],\n    input: 'What is the best food near me?'\n});\nconsole.log(interaction.output_text);\n"
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleMapsCallArguments": {
         "description": "The arguments to pass to the Google Maps tool.",
@@ -3716,7 +3965,8 @@
               "type": "string"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleMapsCallDelta": {
         "type": "object",
@@ -3731,12 +3981,14 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleMapsCallStep": {
         "description": "Google Maps call step.",
@@ -3756,7 +4008,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -3777,6 +4030,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GoogleMapsCallStep"
+          }
         ]
       },
       "GoogleMapsCallStepArguments": {
@@ -3790,7 +4050,15 @@
               "type": "string"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "GoogleMapsCallArguments",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GoogleMapsCallArguments"
+          }
+        ]
       },
       "GoogleMapsResult": {
         "description": "The result of the Google Maps.",
@@ -3807,7 +4075,8 @@
             "description": "Resource name of the Google Maps widget context token.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleMapsResultDelta": {
         "type": "object",
@@ -3825,12 +4094,14 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleMapsResultItem": {
         "description": "The result of the Google Maps.",
@@ -3845,7 +4116,15 @@
           "widget_context_token": {
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "GoogleMapsResult",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GoogleMapsResult"
+          }
+        ]
       },
       "GoogleMapsResultPlaces": {
         "type": "object",
@@ -3865,7 +4144,8 @@
               "$ref": "#/components/schemas/ReviewSnippet"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleMapsResultStep": {
         "description": "Google Maps result step.",
@@ -3887,7 +4167,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -3911,6 +4192,13 @@
                 ]
               }
             }
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GoogleMapsResultStep"
           }
         ]
       },
@@ -3958,7 +4246,8 @@
             "label": "google_search",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    tools: [{ type: 'google_search' }],\n    input: 'Who is the current president of France?'\n});\nconsole.log(interaction.output_text);\n"
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleSearchCallArguments": {
         "description": "The arguments to pass to Google Search.",
@@ -3971,7 +4260,8 @@
               "type": "string"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleSearchCallDelta": {
         "type": "object",
@@ -3985,13 +4275,15 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "arguments",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleSearchCallStep": {
         "description": "Google Search call step.",
@@ -4025,7 +4317,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -4046,6 +4339,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GoogleSearchCallStep"
+          }
         ]
       },
       "GoogleSearchCallStepArguments": {
@@ -4059,7 +4359,15 @@
               "type": "string"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "GoogleSearchCallArguments",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GoogleSearchCallArguments"
+          }
+        ]
       },
       "GoogleSearchResult": {
         "description": "The result of the Google Search.",
@@ -4069,7 +4377,8 @@
             "description": "Web content snippet that can be embedded in a web page or an app webview.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleSearchResultDelta": {
         "type": "object",
@@ -4089,13 +4398,15 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "result",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "GoogleSearchResultItem": {
         "description": "The result of the Google Search.",
@@ -4105,7 +4416,15 @@
             "description": "Web content snippet that can be embedded in a web page or an app webview.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "GoogleSearchResult",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GoogleSearchResult"
+          }
+        ]
       },
       "GoogleSearchResultStep": {
         "description": "Google Search result step.",
@@ -4132,7 +4451,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -4156,6 +4476,13 @@
                 ]
               }
             }
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "GoogleSearchResultStep"
           }
         ]
       },
@@ -4182,7 +4509,8 @@
             "type": "integer",
             "format": "int32"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "HybridSearch": {
         "description": "Config for Hybrid Search.",
@@ -4193,7 +4521,8 @@
             "type": "number",
             "format": "float"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ImageConfig": {
         "description": "The configuration for image interaction.",
@@ -4247,7 +4576,15 @@
               "512 image size."
             ]
           }
-        }
+        },
+        "deprecated": true,
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "ImageConfig"
+          }
+        ]
       },
       "ImageContent": {
         "description": "An image content block.",
@@ -4259,7 +4596,8 @@
           "data": {
             "description": "The image content.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "uri": {
             "description": "The URI of the image.",
@@ -4308,6 +4646,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "ImageContent"
+          }
         ]
       },
       "ImageDelta": {
@@ -4318,7 +4663,8 @@
           },
           "data": {
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "uri": {
             "type": "string"
@@ -4353,7 +4699,8 @@
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ImageResponseFormat": {
         "description": "Configuration for image output format.",
@@ -4452,6 +4799,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "ImageResponseFormat"
+          }
         ]
       },
       "Interaction": {
@@ -4468,7 +4822,8 @@
           "id": {
             "description": "Required. Output only. A unique identifier for the interaction completion.",
             "readOnly": true,
-            "type": "string"
+            "type": "string",
+            "default": ""
           },
           "status": {
             "description": "Required. Output only. The status of the interaction.",
@@ -4494,21 +4849,13 @@
             ]
           },
           "created": {
-            "description": "Required. Output only. The time at which the response was created in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+            "description": "Output only. The time at which the response was created in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
             "readOnly": true,
-            "type": "string",
-            "format": "date-time"
+            "type": "string"
           },
           "updated": {
-            "description": "Required. Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+            "description": "Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
             "readOnly": true,
-            "type": "string",
-            "format": "date-time"
-          },
-          "role": {
-            "description": "Output only. The role of the interaction.",
-            "readOnly": true,
-            "deprecated": true,
             "type": "string"
           },
           "system_instruction": {
@@ -4523,9 +4870,9 @@
             }
           },
           "usage": {
+            "$ref": "#/components/schemas/Usage",
             "description": "Output only. Statistics on the interaction request's token usage.",
-            "readOnly": true,
-            "$ref": "#/components/schemas/Usage"
+            "readOnly": true
           },
           "response_modalities": {
             "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
@@ -4549,30 +4896,24 @@
             "type": "string"
           },
           "service_tier": {
-            "description": "The service tier for the interaction.",
-            "$ref": "#/components/schemas/ServiceTier"
+            "$ref": "#/components/schemas/ServiceTier",
+            "description": "The service tier for the interaction."
           },
           "webhook_config": {
-            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes.",
-            "$ref": "#/components/schemas/WebhookConfig"
+            "$ref": "#/components/schemas/WebhookConfig",
+            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
           },
           "steps": {
-            "description": "Required. Output only. The steps that make up the interaction.",
+            "description": "Output only. The steps that make up the interaction, when included in the response.",
             "readOnly": true,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Step"
             }
           },
-          "input": {
-            "$ref": "#/components/schemas/InteractionsInput"
-          },
           "response_format": {
             "description": "Enforces that the generated response is a JSON object that complies with the JSON schema specified in this field.",
             "oneOf": [
-              {
-                "$ref": "#/components/schemas/ResponseFormat"
-              },
               {
                 "type": "array",
                 "items": {
@@ -4583,25 +4924,29 @@
                     "type": "text",
                     "mime_type": "application/json"
                   }
-                ]
+                ],
+                "x-speakeasy-model-namespace": "interactions"
+              },
+              {
+                "$ref": "#/components/schemas/ResponseFormat"
               }
             ]
           },
           "environment": {
-            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID.",
             "oneOf": [
               {
-                "$ref": "#/components/schemas/EnvironmentConfig"
+                "type": "string"
               },
               {
-                "type": "string"
+                "$ref": "#/components/schemas/EnvironmentConfig"
               }
-            ]
+            ],
+            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
           },
           "generation_config": {
+            "$ref": "#/components/schemas/GenerationConfig",
             "description": "Input only. Configuration parameters for the model interaction.",
-            "writeOnly": true,
-            "$ref": "#/components/schemas/GenerationConfig"
+            "writeOnly": true
           },
           "cached_content": {
             "description": "The name of the cached content used as context to serve the prediction.\nNote: only used in explicit caching, where users can have control over\ncaching (e.g. what content to cache) and enjoy guaranteed cost savings.\nFormat:\n`projects/{project}/locations/{location}/cachedContents/{cachedContent}`",
@@ -4611,29 +4956,38 @@
             "description": "Configuration parameters for the agent interaction.",
             "oneOf": [
               {
-                "$ref": "#/components/schemas/DeepResearchAgentConfig"
-              },
-              {
                 "$ref": "#/components/schemas/DynamicAgentConfig"
               },
               {
-                "$ref": "#/components/schemas/FindRequest"
-              },
-              {
-                "$ref": "#/components/schemas/FixRequest"
+                "$ref": "#/components/schemas/DeepResearchAgentConfig"
               }
             ],
             "discriminator": {
               "propertyName": "type"
             }
+          },
+          "input": {
+            "$ref": "#/components/schemas/InteractionsInput"
+          },
+          "output_text": {
+            "description": "Concatenated text from the last model output in response to the current request.\n\nNote: this is added by the SDK.",
+            "type": "string"
+          },
+          "output_image": {
+            "description": "The last image generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+            "$ref": "#/components/schemas/ImageContent"
+          },
+          "output_audio": {
+            "description": "The last audio generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+            "$ref": "#/components/schemas/AudioContent"
+          },
+          "output_video": {
+            "description": "The last video generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+            "$ref": "#/components/schemas/VideoContent"
           }
         },
         "required": [
-          "created",
-          "id",
-          "status",
-          "steps",
-          "updated"
+          "status"
         ],
         "example": {
           "created": "2025-12-04T15:01:45Z",
@@ -4667,7 +5021,14 @@
             "total_tokens": 79,
             "total_tool_use_tokens": 0
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "Interaction"
+          }
+        ]
       },
       "InteractionCompletedEvent": {
         "type": "object",
@@ -4675,17 +5036,17 @@
           "event_type": {
             "const": "interaction.completed"
           },
-          "interaction": {
-            "description": "Required. The completed interaction with empty outputs to reduce the payload size.\nUse the preceding ContentDelta events for the actual output.",
-            "$ref": "#/components/schemas/Interaction"
-          },
           "event_id": {
             "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
             "type": "string"
           },
           "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
+            "$ref": "#/components/schemas/StreamMetadata",
+            "description": "Optional metadata accompanying ANY streamed event."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/InteractionSseEventInteraction",
+            "description": "Partial completed interaction resource emitted at the end of the stream."
           }
         },
         "required": [
@@ -4708,6 +5069,30 @@
                 "event_id": "evt_123"
               }
             }
+          },
+          {
+            "interaction_completed": {
+              "summary": "Interaction Completed",
+              "value": {
+                "event_type": "interaction.completed",
+                "interaction": {
+                  "id": "v1_ChdXS0l4YWZXTk9xbk0xZThQczhEcmlROBIXV0tJeGFmV05PcW5NMWU4UHM4RHJpUTg",
+                  "model": "gemini-3-flash-preview",
+                  "object": "interaction",
+                  "status": "completed",
+                  "created": "2025-12-04T15:01:45Z",
+                  "updated": "2025-12-04T15:01:45Z"
+                },
+                "event_id": "evt_123"
+              }
+            }
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionCompletedEvent"
           }
         ]
       },
@@ -4717,16 +5102,17 @@
           "event_type": {
             "const": "interaction.created"
           },
-          "interaction": {
-            "$ref": "#/components/schemas/Interaction"
-          },
           "event_id": {
             "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
             "type": "string"
           },
           "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
+            "$ref": "#/components/schemas/StreamMetadata",
+            "description": "Optional metadata accompanying ANY streamed event."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/InteractionSseEventInteraction",
+            "description": "Partial interaction resource emitted when the stream is created."
           }
         },
         "required": [
@@ -4749,6 +5135,28 @@
                 "event_id": "evt_123"
               }
             }
+          },
+          {
+            "interaction_created": {
+              "summary": "Interaction Created",
+              "value": {
+                "event_type": "interaction.created",
+                "interaction": {
+                  "id": "v1_ChdXS0l4YWZXTk9xbk0xZThQczhEcmlROBIXV0tJeGFmV05PcW5NMWU4UHM4RHJpUTg",
+                  "model": "gemini-3-flash-preview",
+                  "object": "interaction",
+                  "status": "in_progress"
+                },
+                "event_id": "evt_123"
+              }
+            }
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionCreatedEvent"
           }
         ]
       },
@@ -4756,30 +5164,128 @@
         "type": "object",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/ErrorEvent"
+            "$ref": "#/components/schemas/InteractionCreatedEvent"
           },
           {
             "$ref": "#/components/schemas/InteractionCompletedEvent"
           },
           {
-            "$ref": "#/components/schemas/InteractionCreatedEvent"
-          },
-          {
             "$ref": "#/components/schemas/InteractionStatusUpdate"
           },
           {
-            "$ref": "#/components/schemas/StepDelta"
+            "$ref": "#/components/schemas/ErrorEvent"
           },
           {
             "$ref": "#/components/schemas/StepStart"
           },
           {
+            "$ref": "#/components/schemas/StepDelta"
+          },
+          {
             "$ref": "#/components/schemas/StepStop"
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "InteractionSSEEvent",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionSSEEvent"
           }
         ],
         "discriminator": {
           "propertyName": "event_type"
         }
+      },
+      "InteractionSseEventInteraction": {
+        "type": "object",
+        "description": "Partial interaction resource emitted by interaction lifecycle SSE events.\nStreaming lifecycle payloads may omit fields that are only available on\nfull non-streaming Interaction responses.\n",
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "description": "Required. Output only. A unique identifier for the interaction completion.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "object": {
+            "description": "Output only. The resource type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "model": {
+            "description": "The model that will complete your prompt.",
+            "type": "string"
+          },
+          "agent": {
+            "description": "The agent to interact with.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Required. Output only. The status of the interaction.",
+            "enum": [
+              "in_progress",
+              "requires_action",
+              "completed",
+              "failed",
+              "cancelled",
+              "incomplete"
+            ],
+            "readOnly": true,
+            "type": "string",
+            "x-google-enum-descriptions": [
+              "The interaction is in progress.",
+              "The interaction requires action/input from the user.",
+              "The interaction is completed.",
+              "The interaction failed.",
+              "The interaction was cancelled.",
+              "The interaction is completed, but contains incomplete results (e.g. hitting max_tokens)."
+            ]
+          },
+          "created": {
+            "description": "Output only. The time at which the response was created in ISO 8601 format.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "updated": {
+            "description": "Output only. The time at which the response was last updated in ISO 8601 format.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "service_tier": {
+            "$ref": "#/components/schemas/ServiceTier",
+            "description": "The service tier for the interaction."
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage",
+            "description": "Output only. Statistics on the interaction request's token usage.",
+            "readOnly": true
+          },
+          "steps": {
+            "description": "Output only. The steps that make up the interaction, if included in this event.",
+            "items": {
+              "$ref": "#/components/schemas/Step"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "InteractionSseStreamEvent": {
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/InteractionSseEvent"
+          }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "InteractionSSEStreamEvent"
       },
       "InteractionStatusUpdate": {
         "type": "object",
@@ -4836,13 +5342,20 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "InteractionStatusUpdate"
+          }
         ]
       },
       "InteractionsInput": {
         "description": "The input for the interaction.",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/Content"
+            "type": "string"
           },
           {
             "type": "array",
@@ -4859,9 +5372,17 @@
             "title": "ContentList"
           },
           {
-            "type": "string"
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Turn"
+            },
+            "title": "TurnList"
+          },
+          {
+            "$ref": "#/components/schemas/Content"
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ListAgentsResponse": {
         "type": "object",
@@ -4875,7 +5396,15 @@
           "next_page_token": {
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "agents",
+        "x-speakeasy-name-override": "AgentListResponse",
+        "x-speakeasy-exports": [
+          {
+            "group": "agents",
+            "name": "AgentListResponse"
+          }
+        ]
       },
       "ListWebhooksResponse": {
         "description": "Response message for WebhookService.ListWebhooks.",
@@ -4892,7 +5421,15 @@
             "description": "A token, which can be sent as `page_token` to retrieve the next page.\nIf this field is omitted, there are no subsequent pages.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "webhooks",
+        "x-speakeasy-name-override": "WebhookListResponse",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookListResponse"
+          }
+        ]
       },
       "McpServer": {
         "description": "A MCPServer is a server that can be called by the model to perform actions.",
@@ -4943,7 +5480,9 @@
             "label": "mcp_server",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    tools: [{\n        type: 'mcp_server',\n        name: 'weather_service',\n        url: 'https://gemini-api-demos.uc.r.appspot.com/mcp'\n    }],\n    input: 'Today is 12-05-2025, what is the temperature today in London?'\n});\nconsole.log(interaction.output_text);\n"
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "MCPServer"
       },
       "McpServerToolCallDelta": {
         "type": "object",
@@ -4969,7 +5508,9 @@
           "name",
           "server_name",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "MCPServerToolCallDelta"
       },
       "McpServerToolCallStep": {
         "description": "MCPServer tool call step.",
@@ -5021,6 +5562,14 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "MCPServerToolCallStep",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "MCPServerToolCallStep"
+          }
         ]
       },
       "McpServerToolResultDelta": {
@@ -5038,13 +5587,10 @@
           "result": {
             "oneOf": [
               {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/Content"
-                },
-                "title": "ContentList"
+                "type": "object"
               },
               {
+                "type": "array",
                 "items": {
                   "oneOf": [
                     {
@@ -5054,8 +5600,7 @@
                       "$ref": "#/components/schemas/TextContent"
                     }
                   ]
-                },
-                "type": "array"
+                }
               },
               {
                 "type": "string"
@@ -5066,7 +5611,9 @@
         "required": [
           "result",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "MCPServerToolResultDelta"
       },
       "McpServerToolResultStep": {
         "description": "MCPServer tool result step.",
@@ -5091,13 +5638,13 @@
             "description": "The output from the MCP server call. Can be simple text or rich content.",
             "oneOf": [
               {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/Content"
-                },
-                "title": "ContentList"
+                "type": "object"
               },
               {
+                "type": "string"
+              },
+              {
+                "type": "array",
                 "items": {
                   "oneOf": [
                     {
@@ -5107,11 +5654,7 @@
                       "$ref": "#/components/schemas/TextContent"
                     }
                   ]
-                },
-                "type": "array"
-              },
-              {
-                "type": "object"
+                }
               }
             ]
           }
@@ -5134,6 +5677,14 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "MCPServerToolResultStep",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "MCPServerToolResultStep"
+          }
         ]
       },
       "MediaResolution": {
@@ -5149,7 +5700,8 @@
           "medium",
           "high",
           "ultra_high"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ModalityTokens": {
         "description": "The token count for a single response modality.",
@@ -5164,119 +5716,67 @@
             "type": "integer",
             "format": "int32"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ModelOption": {
         "title": "Model",
         "description": "The model that will complete your prompt.\\n\\nSee [models](https://ai.google.dev/gemini-api/docs/models) for additional details.",
-        "anyOf": [
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "Model",
+        "type": "string",
+        "enum": [
+          "gemini-2.5-computer-use-preview-10-2025",
+          "gemini-2.5-flash",
+          "gemini-2.5-flash-image",
+          "gemini-2.5-flash-lite",
+          "gemini-2.5-flash-lite-preview-09-2025",
+          "gemini-2.5-flash-native-audio-preview-12-2025",
+          "gemini-2.5-flash-preview-09-2025",
+          "gemini-2.5-flash-preview-tts",
+          "gemini-2.5-pro",
+          "gemini-2.5-pro-preview-tts",
+          "gemini-3-flash-preview",
+          "gemini-3-pro-image-preview",
+          "gemini-3-pro-preview",
+          "gemini-3.1-pro-preview",
+          "gemini-3.1-flash-image-preview",
+          "gemini-3.1-flash-lite",
+          "gemini-3.1-flash-lite-preview",
+          "gemini-3.1-flash-tts-preview",
+          "gemini-3.5-flash",
+          "lyria-3-clip-preview",
+          "lyria-3-pro-preview"
+        ],
+        "x-speakeasy-unknown-values": "allow",
+        "x-speakeasy-enum-format": "union",
+        "x-speakeasy-enum-descriptions": [
+          "An agentic capability model designed for direct interface interaction, allowing Gemini to perceive and navigate digital environments.",
+          "Our first hybrid reasoning model which supports a 1M token context window and has thinking budgets.",
+          "Our native image generation model, optimized for speed, flexibility, and contextual understanding. Text input and output is priced the same as 2.5 Flash.",
+          "Our smallest and most cost effective model, built for at scale usage.",
+          "The latest model based on Gemini 2.5 Flash lite optimized for cost-efficiency, high throughput and high quality.",
+          "Our native audio models optimized for higher quality audio outputs with better pacing, voice naturalness, verbosity, and mood.",
+          "The latest model based on the 2.5 Flash model. 2.5 Flash Preview is best for large scale processing, low-latency, high volume tasks that require thinking, and agentic use cases.",
+          "Our 2.5 Flash text-to-speech model optimized for powerful, low-latency controllable speech generation.",
+          "Our state-of-the-art multipurpose model, which excels at coding and complex reasoning tasks.",
+          "Our 2.5 Pro text-to-speech audio model optimized for powerful, low-latency speech generation for more natural outputs and easier to steer prompts.",
+          "Our most intelligent model built for speed, combining frontier intelligence with superior search and grounding.",
+          "State-of-the-art image generation and editing model.",
+          "Our most intelligent model with SOTA reasoning and multimodal understanding, and powerful agentic and vibe coding capabilities.",
+          "Our latest SOTA reasoning model with unprecedented depth and nuance, and powerful multimodal understanding and coding capabilities.",
+          "Pro-level visual intelligence with Flash-speed efficiency and reality-grounded generation capabilities.",
+          "Our most cost-efficient model, optimized for high-volume agentic tasks, translation, and simple data processing.",
+          "Our most cost-efficient model, optimized for high-volume agentic tasks, translation, and simple data processing.",
+          "Gemini 3.1 Flash TTS: Powerful, low-latency speech generation. Enjoy natural outputs, steerable prompts, and new expressive audio tags for precise narration control.",
+          "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
+          "Our low-latency, music generation model optimized for high-fidelity audio clips and precise rhythmic control.",
+          "Our advanced, full-song generative model with deep compositional understanding, optimized for precise structural control and complex transitions across diverse musical styles."
+        ],
+        "x-speakeasy-exports": [
           {
-            "type": "string"
-          },
-          {
-            "description": "An agentic capability model designed for direct interface interaction, allowing Gemini to perceive and navigate digital environments.",
-            "const": "gemini-2.5-computer-use-preview-10-2025",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Gemini 3.1 Flash TTS: Powerful, low-latency speech generation. Enjoy natural outputs, steerable prompts, and new expressive audio tags for precise narration control.",
-            "const": "gemini-3.1-flash-tts-preview",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our 2.5 Flash text-to-speech model optimized for powerful, low-latency controllable speech generation.",
-            "const": "gemini-2.5-flash-preview-tts",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our 2.5 Pro text-to-speech audio model optimized for powerful, low-latency speech generation for more natural outputs and easier to steer prompts.",
-            "const": "gemini-2.5-pro-preview-tts",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our advanced, full-song generative model with deep compositional understanding, optimized for precise structural control and complex transitions across diverse musical styles.",
-            "const": "lyria-3-pro-preview",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our first hybrid reasoning model which supports a 1M token context window and has thinking budgets.",
-            "const": "gemini-2.5-flash",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our latest SOTA reasoning model with unprecedented depth and nuance, and powerful multimodal understanding and coding capabilities.",
-            "const": "gemini-3.1-pro-preview",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our low-latency, music generation model optimized for high-fidelity audio clips and precise rhythmic control.",
-            "const": "lyria-3-clip-preview",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our most cost-efficient model, optimized for high-volume agentic tasks, translation, and simple data processing.",
-            "const": "gemini-3.1-flash-lite",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our most cost-efficient model, optimized for high-volume agentic tasks, translation, and simple data processing.",
-            "const": "gemini-3.1-flash-lite-preview",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our most intelligent model built for speed, combining frontier intelligence with superior search and grounding.",
-            "const": "gemini-3-flash-preview",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
-            "const": "gemini-3.5-flash",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our most intelligent model with SOTA reasoning and multimodal understanding, and powerful agentic and vibe coding capabilities.",
-            "const": "gemini-3-pro-preview",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our native audio models optimized for higher quality audio outputs with better pacing, voice naturalness, verbosity, and mood.",
-            "const": "gemini-2.5-flash-native-audio-preview-12-2025",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our native image generation model, optimized for speed, flexibility, and contextual understanding. Text input and output is priced the same as 2.5 Flash.",
-            "const": "gemini-2.5-flash-image",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our smallest and most cost effective model, built for at scale usage.",
-            "const": "gemini-2.5-flash-lite",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Our state-of-the-art multipurpose model, which excels at coding and complex reasoning tasks.",
-            "const": "gemini-2.5-pro",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "Pro-level visual intelligence with Flash-speed efficiency and reality-grounded generation capabilities.",
-            "const": "gemini-3.1-flash-image-preview",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "State-of-the-art image generation and editing model.",
-            "const": "gemini-3-pro-image-preview",
-            "x-stainless-nominal": "false`"
-          },
-          {
-            "description": "The latest model based on Gemini 2.5 Flash lite optimized for cost-efficiency, high throughput and high quality.",
-            "const": "gemini-2.5-flash-lite-preview-09-2025",
-            "x-stainless-nominal": false
-          },
-          {
-            "description": "The latest model based on the 2.5 Flash model. 2.5 Flash Preview is best for large scale processing, low-latency, high volume tasks that require thinking, and agentic use cases.",
-            "const": "gemini-2.5-flash-preview-09-2025",
-            "x-stainless-nominal": false
+            "group": "interactions",
+            "name": "Model"
           }
         ]
       },
@@ -5312,6 +5812,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "ModelOutputStep"
+          }
         ]
       },
       "ParallelAISearchConfig": {
@@ -5329,17 +5836,34 @@
               "description": "Properties of the object."
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "PingWebhookRequest": {
         "description": "Request message for WebhookService.PingWebhook.",
         "type": "object",
-        "x-stainless-empty-object": true
+        "x-stainless-empty-object": true,
+        "x-speakeasy-model-namespace": "webhooks",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookPingParams",
+            "representation": "input"
+          }
+        ]
       },
       "PingWebhookResponse": {
         "description": "Response message for WebhookService.PingWebhook.",
         "type": "object",
-        "x-stainless-empty-object": true
+        "x-stainless-empty-object": true,
+        "x-speakeasy-model-namespace": "webhooks",
+        "x-speakeasy-name-override": "WebhookPingResponse",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookPingResponse"
+          }
+        ]
       },
       "PlaceCitation": {
         "description": "A place citation annotation.",
@@ -5380,6 +5904,13 @@
         },
         "required": [
           "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "PlaceCitation"
+          }
         ]
       },
       "Places": {
@@ -5404,7 +5935,8 @@
               "$ref": "#/components/schemas/ReviewSnippet"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "RagResource": {
         "description": "The definition of the Rag resource.",
@@ -5421,7 +5953,8 @@
               "type": "string"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "RagRetrievalConfig": {
         "description": "Specifies the context retrieval config.",
@@ -5444,7 +5977,8 @@
             "description": "Optional. Config for ranking and reranking.",
             "$ref": "#/components/schemas/Ranking"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "RagStoreConfig": {
         "description": "Use to specify configuration for RAG Store.",
@@ -5473,7 +6007,8 @@
             "description": "Optional. The retrieval config for the Rag query.",
             "$ref": "#/components/schemas/RagRetrievalConfig"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "RankService": {
         "description": "Config for Rank Service.",
@@ -5489,7 +6024,8 @@
         },
         "required": [
           "ranking_config"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Ranking": {
         "description": "Config for ranking and reranking.",
@@ -5497,7 +6033,8 @@
         "discriminator": {
           "propertyName": "type"
         },
-        "$ref": "#/components/schemas/RankService"
+        "$ref": "#/components/schemas/RankService",
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ResponseFormat": {
         "type": "object",
@@ -5506,15 +6043,17 @@
             "$ref": "#/components/schemas/AudioResponseFormat"
           },
           {
-            "$ref": "#/components/schemas/ImageResponseFormat"
-          },
-          {
             "$ref": "#/components/schemas/TextResponseFormat"
           },
           {
-            "type": "object"
+            "$ref": "#/components/schemas/ImageResponseFormat"
+          },
+          {
+            "type": "object",
+            "additionalProperties": true
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ResponseModality": {
         "type": "string",
@@ -5531,7 +6070,8 @@
           "audio",
           "video",
           "document"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Retrieval": {
         "description": "A tool that can be used by the model to retrieve files.",
@@ -5578,7 +6118,8 @@
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ReviewSnippet": {
         "description": "Encapsulates a snippet of a user review that answers a question about\nthe features of a specific place in Google Maps.",
@@ -5596,7 +6137,8 @@
             "description": "The ID of the review snippet.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "RotateSigningSecretRequest": {
         "description": "Request message for WebhookService.RotateSigningSecret.",
@@ -5614,7 +6156,15 @@
               "revoke_previous_secrets_immediately"
             ]
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "webhooks",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookRotateSigningSecretParams",
+            "representation": "input"
+          }
+        ]
       },
       "RotateSigningSecretResponse": {
         "description": "Response message for WebhookService.RotateSigningSecret.",
@@ -5625,7 +6175,15 @@
             "readOnly": true,
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "webhooks",
+        "x-speakeasy-name-override": "WebhookRotateSigningSecretResponse",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookRotateSigningSecretResponse"
+          }
+        ]
       },
       "ServiceTier": {
         "type": "string",
@@ -5638,34 +6196,8 @@
           "flex",
           "standard",
           "priority"
-        ]
-      },
-      "SessionConfig": {
-        "description": "The configuration of CodeMender sessions.",
-        "type": "object",
-        "properties": {
-          "pipeline_mode": {
-            "description": "The pipeline mode of a CodeMender session. It can only be used for a\nfind session.",
-            "type": "string",
-            "x-google-enum-descriptions": [
-              "Fast scan using only the initial classifier.",
-              "Performs classification followed by detailed investigation."
-            ],
-            "enum": [
-              "scan",
-              "verify"
-            ]
-          },
-          "topology": {
-            "description": "The cognitive architecture or \"thinking\" topology used by the agent\n(e.g. \"default\", \"deep\").",
-            "type": "string"
-          },
-          "max_rounds": {
-            "description": "The maximum number of interaction rounds the agent is allowed to perform\nbefore reaching a timeout.",
-            "type": "integer",
-            "format": "int32"
-          }
-        }
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "SigningSecret": {
         "description": "Represents a signing secret used to verify webhook payloads.",
@@ -5682,7 +6214,14 @@
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "webhooks",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "SigningSecret"
+          }
+        ]
       },
       "Source": {
         "description": "A source to be mounted into the environment.",
@@ -5719,7 +6258,8 @@
             "description": "Optional encoding for inline content (e.g. `base64`).",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "SpeechConfig": {
         "description": "The configuration for speech interaction.",
@@ -5737,47 +6277,21 @@
             "description": "The speaker's name, it should match the speaker name given in the prompt.",
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "SpeechConfig"
+          }
+        ]
       },
       "Step": {
         "description": "A step in the interaction.",
         "type": "object",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/CodeExecutionCallStep"
-          },
-          {
-            "$ref": "#/components/schemas/CodeExecutionResultStep"
-          },
-          {
-            "$ref": "#/components/schemas/FileSearchCallStep"
-          },
-          {
-            "$ref": "#/components/schemas/FileSearchResultStep"
-          },
-          {
-            "$ref": "#/components/schemas/FunctionCallStep"
-          },
-          {
-            "$ref": "#/components/schemas/FunctionResultStep"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMapsCallStep"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMapsResultStep"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleSearchCallStep"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleSearchResultStep"
-          },
-          {
-            "$ref": "#/components/schemas/McpServerToolCallStep"
-          },
-          {
-            "$ref": "#/components/schemas/McpServerToolResultStep"
+            "$ref": "#/components/schemas/UserInputStep"
           },
           {
             "$ref": "#/components/schemas/ModelOutputStep"
@@ -5786,13 +6300,53 @@
             "$ref": "#/components/schemas/ThoughtStep"
           },
           {
+            "$ref": "#/components/schemas/FunctionCallStep"
+          },
+          {
+            "$ref": "#/components/schemas/CodeExecutionCallStep"
+          },
+          {
             "$ref": "#/components/schemas/UrlContextCallStep"
+          },
+          {
+            "$ref": "#/components/schemas/McpServerToolCallStep"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleSearchCallStep"
+          },
+          {
+            "$ref": "#/components/schemas/FileSearchCallStep"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleMapsCallStep"
+          },
+          {
+            "$ref": "#/components/schemas/FunctionResultStep"
+          },
+          {
+            "$ref": "#/components/schemas/CodeExecutionResultStep"
           },
           {
             "$ref": "#/components/schemas/UrlContextResultStep"
           },
           {
-            "$ref": "#/components/schemas/UserInputStep"
+            "$ref": "#/components/schemas/GoogleSearchResultStep"
+          },
+          {
+            "$ref": "#/components/schemas/McpServerToolResultStep"
+          },
+          {
+            "$ref": "#/components/schemas/FileSearchResultStep"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleMapsResultStep"
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "Step"
           }
         ],
         "discriminator": {
@@ -5818,7 +6372,7 @@
           },
           "metadata": {
             "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
+            "$ref": "#/components/schemas/StepDeltaMetadata"
           }
         },
         "required": [
@@ -5840,80 +6394,99 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "StepDelta"
+          }
         ]
       },
       "StepDeltaData": {
         "type": "object",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/ArgumentsDelta"
-          },
-          {
-            "$ref": "#/components/schemas/AudioDelta"
-          },
-          {
-            "$ref": "#/components/schemas/CodeExecutionCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/CodeExecutionResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/DocumentDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FileSearchCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FileSearchResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FunctionResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMapsCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMapsResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleSearchCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleSearchResultDelta"
+            "$ref": "#/components/schemas/TextDelta"
           },
           {
             "$ref": "#/components/schemas/ImageDelta"
           },
           {
-            "$ref": "#/components/schemas/McpServerToolCallDelta"
+            "$ref": "#/components/schemas/AudioDelta"
           },
           {
-            "$ref": "#/components/schemas/McpServerToolResultDelta"
+            "$ref": "#/components/schemas/DocumentDelta"
           },
           {
-            "$ref": "#/components/schemas/TextAnnotationDelta"
-          },
-          {
-            "$ref": "#/components/schemas/TextDelta"
-          },
-          {
-            "$ref": "#/components/schemas/ThoughtSignatureDelta"
+            "$ref": "#/components/schemas/VideoDelta"
           },
           {
             "$ref": "#/components/schemas/ThoughtSummaryDelta"
           },
           {
+            "$ref": "#/components/schemas/ThoughtSignatureDelta"
+          },
+          {
+            "$ref": "#/components/schemas/TextAnnotationDelta"
+          },
+          {
+            "$ref": "#/components/schemas/ArgumentsDelta"
+          },
+          {
+            "$ref": "#/components/schemas/CodeExecutionCallDelta"
+          },
+          {
             "$ref": "#/components/schemas/UrlContextCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleSearchCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/McpServerToolCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/FileSearchCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleMapsCallDelta"
+          },
+          {
+            "$ref": "#/components/schemas/CodeExecutionResultDelta"
           },
           {
             "$ref": "#/components/schemas/UrlContextResultDelta"
           },
           {
-            "$ref": "#/components/schemas/VideoDelta"
+            "$ref": "#/components/schemas/GoogleSearchResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/McpServerToolResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/FileSearchResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleMapsResultDelta"
+          },
+          {
+            "$ref": "#/components/schemas/FunctionResultDelta"
           }
         ],
+        "x-speakeasy-model-namespace": "interactions",
         "discriminator": {
           "propertyName": "type"
+        }
+      },
+      "StepDeltaMetadata": {
+        "type": "object",
+        "description": "Optional metadata accompanying ANY streamed event.",
+        "x-speakeasy-model-namespace": "interactions",
+        "properties": {
+          "total_usage": {
+            "$ref": "#/components/schemas/Usage",
+            "description": "Statistics on the interaction request's token usage."
+          }
         }
       },
       "StepStart": {
@@ -5956,6 +6529,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "StepStart"
+          }
         ]
       },
       "StepStop": {
@@ -5991,6 +6571,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "StepStop"
+          }
         ]
       },
       "StreamMetadata": {
@@ -5999,7 +6586,8 @@
           "total_usage": {
             "$ref": "#/components/schemas/Usage"
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "TextAnnotationDelta": {
         "type": "object",
@@ -6017,7 +6605,8 @@
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "TextContent": {
         "description": "A text content block.",
@@ -6052,6 +6641,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "TextContent"
+          }
         ]
       },
       "TextDelta": {
@@ -6067,7 +6663,8 @@
         "required": [
           "text",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "TextResponseFormat": {
         "description": "Configuration for text output format.",
@@ -6127,6 +6724,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "TextResponseFormat"
+          }
         ]
       },
       "ThinkingLevel": {
@@ -6142,6 +6746,13 @@
           "low",
           "medium",
           "high"
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "ThinkingLevel"
+          }
         ]
       },
       "ThinkingSummaries": {
@@ -6153,7 +6764,8 @@
         "enum": [
           "auto",
           "none"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ThoughtContent": {
         "description": "A thought content block.",
@@ -6165,7 +6777,8 @@
           "signature": {
             "description": "Signature to match the backend source to be part of the generation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "summary": {
             "description": "A summary of the thought.",
@@ -6194,7 +6807,8 @@
               }
             }
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ThoughtSignatureDelta": {
         "type": "object",
@@ -6205,12 +6819,14 @@
           "signature": {
             "description": "Signature to match the backend source to be part of the generation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ThoughtStep": {
         "description": "A thought step.",
@@ -6222,7 +6838,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "summary": {
             "description": "A summary of the thought.",
@@ -6251,18 +6868,26 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "ThoughtStep"
+          }
         ]
       },
       "ThoughtSummaryContent": {
         "type": "object",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/ImageContent"
+            "$ref": "#/components/schemas/TextContent"
           },
           {
-            "$ref": "#/components/schemas/TextContent"
+            "$ref": "#/components/schemas/ImageContent"
           }
         ],
+        "x-speakeasy-model-namespace": "interactions",
         "discriminator": {
           "propertyName": "type"
         }
@@ -6280,38 +6905,46 @@
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Tool": {
         "description": "A tool that can be used by the model.",
         "type": "object",
         "oneOf": [
           {
+            "$ref": "#/components/schemas/Function"
+          },
+          {
             "$ref": "#/components/schemas/CodeExecution"
+          },
+          {
+            "$ref": "#/components/schemas/UrlContext"
           },
           {
             "$ref": "#/components/schemas/ComputerUse"
           },
           {
-            "$ref": "#/components/schemas/FileSearch"
-          },
-          {
-            "$ref": "#/components/schemas/Function"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMaps"
+            "$ref": "#/components/schemas/McpServer"
           },
           {
             "$ref": "#/components/schemas/GoogleSearch"
           },
           {
-            "$ref": "#/components/schemas/McpServer"
+            "$ref": "#/components/schemas/FileSearch"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleMaps"
           },
           {
             "$ref": "#/components/schemas/Retrieval"
-          },
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
           {
-            "$ref": "#/components/schemas/UrlContext"
+            "group": "interactions",
+            "name": "Tool"
           }
         ],
         "discriminator": {
@@ -6334,7 +6967,14 @@
               "my_tool"
             ]
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "ToolChoiceConfig"
+          }
+        ]
       },
       "Turn": {
         "deprecated": true,
@@ -6358,7 +6998,8 @@
               }
             ]
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "UrlCitation": {
         "description": "A URL citation annotation.",
@@ -6388,6 +7029,14 @@
         },
         "required": [
           "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "URLCitation",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "URLCitation"
+          }
         ]
       },
       "UrlContext": {
@@ -6417,7 +7066,9 @@
             "label": "url_context",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.5-flash',\n    tools: [{ type: 'url_context' }],\n    input: 'Summarize https://www.example.com'\n});\nconsole.log(interaction.output_text);\n"
           }
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "URLContext"
       },
       "UrlContextCallArguments": {
         "description": "The arguments to pass to the URL context.",
@@ -6430,7 +7081,15 @@
               "type": "string"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "URLContextCallArguments",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "URLContextCallArguments"
+          }
+        ]
       },
       "UrlContextCallDelta": {
         "type": "object",
@@ -6444,13 +7103,16 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "arguments",
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "URLContextCallDelta"
       },
       "UrlContextCallStep": {
         "description": "URL context call step.",
@@ -6459,10 +7121,6 @@
           "type": {
             "const": "url_context_call"
           },
-          "arguments": {
-            "description": "Required. The arguments to pass to the URL context.",
-            "$ref": "#/components/schemas/UrlContextCallStepArguments"
-          },
           "id": {
             "description": "Required. A unique ID for this specific tool call.",
             "type": "string"
@@ -6470,7 +7128,16 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
+          },
+          "arguments": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UrlContextCallArguments"
+              }
+            ],
+            "description": "The arguments to pass to the URL context."
           }
         },
         "required": [
@@ -6493,20 +7160,15 @@
               }
             }
           }
-        ]
-      },
-      "UrlContextCallStepArguments": {
-        "description": "The arguments to pass to the URL context.",
-        "type": "object",
-        "properties": {
-          "urls": {
-            "description": "The URLs to fetch.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "URLContextCallStep",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "URLContextCallStep"
           }
-        }
+        ]
       },
       "UrlContextResult": {
         "description": "The result of the URL context.",
@@ -6532,7 +7194,15 @@
               "unsafe"
             ]
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "URLContextResult",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "URLContextResult"
+          }
+        ]
       },
       "UrlContextResultDelta": {
         "type": "object",
@@ -6552,39 +7222,16 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
           "result",
           "type"
-        ]
-      },
-      "UrlContextResultItem": {
-        "description": "The result of the URL context.",
-        "type": "object",
-        "properties": {
-          "url": {
-            "description": "The URL that was fetched.",
-            "type": "string"
-          },
-          "status": {
-            "description": "The status of the URL retrieval.",
-            "type": "string",
-            "x-google-enum-descriptions": [
-              "",
-              "",
-              "",
-              ""
-            ],
-            "enum": [
-              "success",
-              "error",
-              "paywall",
-              "unsafe"
-            ]
-          }
-        }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "URLContextResultDelta"
       },
       "UrlContextResultStep": {
         "description": "URL context result step.",
@@ -6597,7 +7244,7 @@
             "description": "Required. The results of the URL context.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UrlContextResultItem"
+              "$ref": "#/components/schemas/UrlContextResult"
             }
           },
           "is_error": {
@@ -6611,7 +7258,8 @@
           "signature": {
             "description": "A signature hash for backend validation.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           }
         },
         "required": [
@@ -6635,6 +7283,14 @@
                 ]
               }
             }
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-name-override": "URLContextResultStep",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "URLContextResultStep"
           }
         ]
       },
@@ -6707,7 +7363,14 @@
               "$ref": "#/components/schemas/GroundingToolCount"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "Usage"
+          }
+        ]
       },
       "UserInputStep": {
         "description": "Input provided by the user.",
@@ -6742,6 +7405,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "UserInputStep"
+          }
         ]
       },
       "VertexAISearchConfig": {
@@ -6759,7 +7429,8 @@
               "type": "string"
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "VideoContent": {
         "description": "A video content block.",
@@ -6771,7 +7442,8 @@
           "data": {
             "description": "The video content.",
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "uri": {
             "description": "The URI of the video.",
@@ -6821,6 +7493,13 @@
               }
             }
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "VideoContent"
+          }
         ]
       },
       "VideoDelta": {
@@ -6831,7 +7510,8 @@
           },
           "data": {
             "type": "string",
-            "format": "byte"
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
           "uri": {
             "type": "string"
@@ -6868,7 +7548,8 @@
         },
         "required": [
           "type"
-        ]
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Webhook": {
         "description": "A Webhook resource.",
@@ -6886,45 +7567,26 @@
             "description": "Required. The events that the webhook is subscribed to.\nAvailable events:\n- batch.succeeded\n- batch.expired\n- batch.failed\n- interaction.requires_action\n- interaction.completed\n- interaction.failed\n- video.generated",
             "type": "array",
             "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "const": "batch.expired",
-                  "description": "Batch has not been processed within the 48h timeframe.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "batch.failed",
-                  "description": "Batch job failed.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "batch.succeeded",
-                  "description": "Batch processing finished successfully.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "interaction.completed",
-                  "description": "Interaction completed successfully.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "interaction.failed",
-                  "description": "Interaction failed.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "interaction.requires_action",
-                  "description": "Interaction requires action (e.g., function calling).",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "video.generated",
-                  "description": "Video generation completed.",
-                  "x-stainless-nominal": false
-                }
+              "type": "string",
+              "enum": [
+                "batch.succeeded",
+                "batch.expired",
+                "batch.failed",
+                "interaction.requires_action",
+                "interaction.completed",
+                "interaction.failed",
+                "video.generated"
+              ],
+              "x-speakeasy-unknown-values": "allow",
+              "x-speakeasy-enum-format": "union",
+              "x-speakeasy-enum-descriptions": [
+                "Batch processing finished successfully.",
+                "Batch has not been processed within the 48h timeframe.",
+                "Batch job failed.",
+                "Interaction requires action (e.g., function calling).",
+                "Interaction completed successfully.",
+                "Interaction failed.",
+                "Video generation completed."
               ]
             }
           },
@@ -6977,6 +7639,18 @@
         "required": [
           "subscribed_events",
           "uri"
+        ],
+        "x-speakeasy-model-namespace": "webhooks",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "Webhook"
+          },
+          {
+            "group": "webhooks",
+            "name": "WebhookInput",
+            "representation": "input"
+          }
         ]
       },
       "WebhookConfig": {
@@ -6997,7 +7671,14 @@
               "description": "Properties of the object."
             }
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "interactions",
+        "x-speakeasy-exports": [
+          {
+            "group": "interactions",
+            "name": "WebhookConfig"
+          }
+        ]
       },
       "WebhookUpdate": {
         "type": "object",
@@ -7014,45 +7695,26 @@
             "description": "Optional. The events that the webhook is subscribed to.\nAvailable events:\n- batch.succeeded\n- batch.expired\n- batch.failed\n- interaction.requires_action\n- interaction.completed\n- interaction.failed\n- video.generated",
             "type": "array",
             "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "const": "batch.expired",
-                  "description": "Batch has not been processed within the 48h timeframe.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "batch.failed",
-                  "description": "Batch job failed.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "batch.succeeded",
-                  "description": "Batch processing finished successfully.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "interaction.completed",
-                  "description": "Interaction completed successfully.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "interaction.failed",
-                  "description": "Interaction failed.",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "interaction.requires_action",
-                  "description": "Interaction requires action (e.g., function calling).",
-                  "x-stainless-nominal": false
-                },
-                {
-                  "const": "video.generated",
-                  "description": "Video generation completed.",
-                  "x-stainless-nominal": false
-                }
+              "type": "string",
+              "enum": [
+                "batch.succeeded",
+                "batch.expired",
+                "batch.failed",
+                "interaction.requires_action",
+                "interaction.completed",
+                "interaction.failed",
+                "video.generated"
+              ],
+              "x-speakeasy-unknown-values": "allow",
+              "x-speakeasy-enum-format": "union",
+              "x-speakeasy-enum-descriptions": [
+                "Batch processing finished successfully.",
+                "Batch has not been processed within the 48h timeframe.",
+                "Batch job failed.",
+                "Interaction requires action (e.g., function calling).",
+                "Interaction completed successfully.",
+                "Interaction failed.",
+                "Video generation completed."
               ]
             }
           },
@@ -7070,8 +7732,55 @@
               "disabled_due_to_failed_deliveries"
             ]
           }
-        }
+        },
+        "x-speakeasy-model-namespace": "webhooks",
+        "x-speakeasy-exports": [
+          {
+            "group": "webhooks",
+            "name": "WebhookUpdate"
+          },
+          {
+            "group": "webhooks",
+            "name": "WebhookUpdateParams",
+            "representation": "input"
+          }
+        ]
       }
     }
-  }
+  },
+  "x-speakeasy-retries": {
+    "strategy": "attempt-count-backoff",
+    "maxRetries": 4,
+    "backoff": {
+      "initialInterval": 500,
+      "maxInterval": 8000,
+      "maxElapsedTime": 30000,
+      "exponent": 2
+    },
+    "statusCodes": [
+      408,
+      409,
+      429,
+      "5XX"
+    ],
+    "retryConnectionErrors": true
+  },
+  "x-speakeasy-globals": {
+    "parameters": [
+      {
+        "$ref": "#/components/parameters/api_version"
+      },
+      {
+        "$ref": "#/components/parameters/google_genai_api_revision"
+      },
+      {
+        "$ref": "#/components/parameters/google_genai_user_project"
+      }
+    ]
+  },
+  "security": [
+    {
+      "googleGenAIAuth": []
+    }
+  ]
 }

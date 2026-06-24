@@ -148,18 +148,80 @@ public sealed interface Tool permits
      * @param type                        The type of tool (must be "computer_use").
      * @param environment                 The environment (e.g., "browser").
      * @param excludedPredefinedFunctions List of excluded predefined functions.
+     * @param enablePromptInjectionDetection Whether to enable prompt injection detection.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ComputerUse(
         String type,
         String environment, // "browser"
-        @JsonProperty("excludedPredefinedFunctions") List<String> excludedPredefinedFunctions
+        @JsonProperty("excludedPredefinedFunctions") List<String> excludedPredefinedFunctions,
+        @JsonProperty("enable_prompt_injection_detection") Boolean enablePromptInjectionDetection
     ) implements Tool {
         /**
          * Creates a new ComputerUse tool (defaults to browser environment).
          */
         public ComputerUse() {
-            this("computer_use", "browser", null);
+            this("computer_use", "browser", null, null);
+        }
+
+        /**
+         * Returns a new builder for ComputerUse.
+         * @return a new builder for ComputerUse.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link ComputerUse}. */
+        public static class Builder {
+            private String type = "computer_use";
+            private String environment = "browser";
+            private List<String> excludedPredefinedFunctions;
+            private Boolean enablePromptInjectionDetection;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the type.
+             *
+             * @param type The type.
+             * @return This builder.
+             */
+            public Builder type(String type) { this.type = type; return this; }
+
+            /**
+             * Sets the environment.
+             *
+             * @param environment The environment.
+             * @return This builder.
+             */
+            public Builder environment(String environment) { this.environment = environment; return this; }
+
+            /**
+             * Sets the excluded predefined functions.
+             *
+             * @param excludedPredefinedFunctions The excluded predefined functions.
+             * @return This builder.
+             */
+            public Builder excludedPredefinedFunctions(List<String> excludedPredefinedFunctions) { this.excludedPredefinedFunctions = excludedPredefinedFunctions; return this; }
+
+            /**
+             * Sets whether to enable prompt injection detection.
+             *
+             * @param enablePromptInjectionDetection Whether to enable prompt injection detection.
+             * @return This builder.
+             */
+            public Builder enablePromptInjectionDetection(Boolean enablePromptInjectionDetection) { this.enablePromptInjectionDetection = enablePromptInjectionDetection; return this; }
+
+            /**
+             * Builds the ComputerUse.
+             *
+             * @return A new ComputerUse instance.
+             */
+            public ComputerUse build() {
+                return new ComputerUse(type, environment, excludedPredefinedFunctions, enablePromptInjectionDetection);
+            }
         }
     }
 
@@ -188,6 +250,75 @@ public sealed interface Tool permits
          */
         public McpServer(String name, String url) {
             this("mcp_server", name, url, null, null);
+        }
+
+        /**
+         * Returns a new builder for McpServer.
+         * @return a new builder for McpServer.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link McpServer}. */
+        public static class Builder {
+            private String type = "mcp_server";
+            private String name;
+            private String url;
+            private Map<String, String> headers;
+            private List<AllowedTools> allowedTools;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the type.
+             *
+             * @param type The type.
+             * @return This builder.
+             */
+            public Builder type(String type) { this.type = type; return this; }
+
+            /**
+             * Sets the name.
+             *
+             * @param name The name.
+             * @return This builder.
+             */
+            public Builder name(String name) { this.name = name; return this; }
+
+            /**
+             * Sets the url.
+             *
+             * @param url The url.
+             * @return This builder.
+             */
+            public Builder url(String url) { this.url = url; return this; }
+
+            /**
+             * Sets the headers.
+             *
+             * @param headers The headers.
+             * @return This builder.
+             */
+            public Builder headers(Map<String, String> headers) { this.headers = headers; return this; }
+
+            /**
+             * Sets the allowed tools.
+             *
+             * @param allowedTools The allowed tools.
+             * @return This builder.
+             */
+            public Builder allowedTools(List<AllowedTools> allowedTools) { this.allowedTools = allowedTools; return this; }
+
+            /**
+             * Builds the McpServer.
+             *
+             * @return A new McpServer instance.
+             */
+            public McpServer build() {
+                return new McpServer(type, name, url, headers, allowedTools);
+            }
         }
     }
 

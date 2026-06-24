@@ -37,7 +37,7 @@ These agents can be equipped with complex tools (Google Search, Code Execution, 
 - `ResearchFrontend` (in `src/test/java`) — A standalone demo web application for the Deep Research agent, deployable to Google Cloud Run. See `researcher-deployment.md` for deployment instructions.
 
 ## Key Documents
-- `UPDATING_SDK.md` — Instructions for keeping the SDK implementation in sync with the remote Gemini Interactions API contract via its OpenAPI JSON definition (`openapi.json`). Read this before adding or modifying API models.
+- `UPDATING_SDK.md` — Instructions for keeping the SDK implementation in sync with the remote Gemini Interactions API contract via its OpenAPI JSON definition (`openapi.json`). Read this before adding or modifying API models, and remember to update `README.md` and `skills/gemini-interactions-java-api/SKILL.md` to reflect the new capabilities.
 - `researcher-deployment.md` — Step-by-step guide to building and deploying the `ResearchFrontend` demo to Google Cloud Run.
 - `RELEASE.md` — Release process using JReleaser and GitHub Actions to publish to Maven Central. See `README.md` for additional context on versioning and usage.
 

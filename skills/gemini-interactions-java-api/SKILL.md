@@ -75,8 +75,7 @@ ModelInteractionParams request = ModelInteractionParams.builder()
     .build();
 
 Interaction response = client.create(request);
-Step.ModelOutputStep step = (Step.ModelOutputStep) response.steps().getLast();
-System.out.println(step.content().get(0));
+System.out.println(response.outputText());
 ```
 
 ### Multimodal Image Generation (Nano Banana Pro)
@@ -99,17 +98,10 @@ ModelInteractionParams request = ModelInteractionParams.builder()
     .build();
 
 Interaction interaction = client.create(request);
-
-interaction.steps().forEach(step -> {
-    if (step instanceof Step.ModelOutputStep modelOutputStep) {
-        modelOutputStep.content().forEach(content -> {
-            if (content instanceof ImageContent image) {
-                byte[] imageBytes = image.data();
-                System.out.println("Image generated with " + imageBytes.length + " bytes.");
-            }
-        });
-    }
-});
+Content.ImageContent image = interaction.outputImage();
+if (image != null) {
+    System.out.println("Image generated with " + image.data().length + " bytes.");
+}
 ```
 
 ### Stateful Conversation (Multi-Turn)
@@ -132,8 +124,7 @@ ModelInteractionParams turn1 = ModelInteractionParams.builder()
 
 Interaction response1 = client.create(turn1);
 String id = response1.id();
-Step.ModelOutputStep step1 = (Step.ModelOutputStep) response1.steps().getLast();
-System.out.println(step1.content().get(0));
+System.out.println(response1.outputText());
 
 // 2. Second turn (referencing previous ID)
 ModelInteractionParams turn2 = ModelInteractionParams.builder()
@@ -144,8 +135,7 @@ ModelInteractionParams turn2 = ModelInteractionParams.builder()
     .build();
 
 Interaction response2 = client.create(turn2);
-Step.ModelOutputStep step2 = (Step.ModelOutputStep) response2.steps().getLast();
-System.out.println(step2.content().get(0));
+System.out.println(response2.outputText());
 ```
 
 ### Structured Output (JSON)
@@ -173,8 +163,7 @@ ModelInteractionParams params = ModelInteractionParams.builder()
     .build();
 
 Interaction response = client.create(params);
-Step.ModelOutputStep step = (Step.ModelOutputStep) response.steps().getLast();
-System.out.println(step.content().get(0));
+System.out.println(response.outputText());
 ```
 
 ### Deep Research Agent Invocation

@@ -21,3 +21,5 @@ The SDK models and client are built around the Gemini Interactions OpenAPI speci
    ```
 
 4. **Update SDK Code**: Review the changes in the `openapi.json` and manually update the Java SDK models (e.g., `Events.java`, `Interaction.java`) to reflect any new endpoints, properties, or Server-Sent Events (SSE) delta types.
+
+5. **Update Documentation & Agent Skills**: Whenever you update the models or capabilities of the SDK, you **must** update `README.md` and the `skills/gemini-interactions-java-api/SKILL.md` file so that developers and AI coding assistants are aware of the latest patterns.

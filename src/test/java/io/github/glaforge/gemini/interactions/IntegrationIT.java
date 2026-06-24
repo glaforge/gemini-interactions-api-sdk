@@ -36,6 +36,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IntegrationIT {
 
@@ -63,6 +65,31 @@ public class IntegrationIT {
                         default -> System.out.println("Unknown content type: " + output);
                     }
                 });
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
+    public void testOutputTextSupport() throws IOException, InterruptedException {
+        GeminiInteractionsClient client = GeminiInteractionsClient.builder()
+                .apiKey(System.getenv("GEMINI_API_KEY"))
+                .build();
+
+        Interaction interaction = client.create(ModelInteractionParams.builder()
+                .model("gemini-3.5-flash")
+                .input("Why is the sky blue? Keep it brief.")
+                .build());
+
+        System.out.println("Initial Interaction status: " + interaction.status());
+        while (interaction.status() != Interaction.Status.COMPLETED && interaction.status() != Interaction.Status.FAILED) {
+            Thread.sleep(1000);
+            interaction = client.get(interaction.id());
+        }
+
+        System.out.println("Final Interaction: " + interaction);
+        System.out.println("Output text: " + interaction.outputText());
+
+        assertNotNull(interaction.outputText(), "Output text should not be null");
+        assertTrue(interaction.outputText().contains("Rayleigh"), "Answer should mention Rayleigh scattering");
     }
 
     @Test

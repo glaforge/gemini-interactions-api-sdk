@@ -15,8 +15,7 @@ A modern Java SDK for the [Google Gemini Interactions API](https://ai.google.dev
 > - **New:** `interaction.steps()`
 >
 > Interactions now consist of a sequence of `Step` objects (e.g., `ModelOutputStep`, `FunctionCallStep`). All `Content` items
-> are now nested within these steps. To retrieve the model's text response, you must extract the `ModelOutputStep` from the
-> `steps()` list, and then retrieve the `TextContent` from that step's `content()` list. Furthermore, Server-Sent Events
+> are now nested within these steps. However, the SDK provides convenience getters like `interaction.outputText()`, `interaction.outputImage()`, `interaction.outputAudio()`, and `interaction.outputVideo()` to dynamically extract the final output from the steps sequence for you. Furthermore, Server-Sent Events
 > (SSE) now use `StepDelta` instead of `ContentDelta`.
 
 ## Installation
@@ -84,8 +83,7 @@ ModelInteractionParams request = ModelInteractionParams.builder()
     .build();
 
 Interaction response = client.create(request);
-Step.ModelOutputStep step = (Step.ModelOutputStep) response.steps().get(0);
-System.out.println(step.content().get(0));
+System.out.println(response.outputText());
 ```
 
 ### Configuration (GenerationConfig)
