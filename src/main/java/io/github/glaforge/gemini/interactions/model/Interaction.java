@@ -33,10 +33,8 @@ import java.time.Instant;
  * @param steps                 List of steps.
  * @param usage                 Token usage details.
  * @param previousInteractionId ID of the previous interaction in the conversation.
- * @param outputText            Output text of the interaction.
- * @param outputImage           Output image of the interaction.
- * @param outputAudio           Output audio of the interaction.
- * @param outputVideo           Output video of the interaction.
+ * @param environmentId         ID of the environment.
+ * @param cachedContent         URI of the cached content used.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Interaction(
