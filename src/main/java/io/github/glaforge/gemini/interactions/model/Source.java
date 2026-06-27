@@ -37,6 +37,90 @@ public record Source(
     String source
 ) {
     /**
+     * Returns a new builder for Source.
+     * @return a new builder for Source.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /** Builder for {@link Source}. */
+    public static class Builder {
+        private Type type;
+        private String target;
+        private String content;
+        private String encoding;
+        private String source;
+
+        /** Creates a new Builder. */
+        public Builder() {}
+
+        /**
+         * Sets the source type.
+         *
+         * @param type The source type.
+         * @return This builder.
+         */
+        public Builder type(Type type) {
+            this.type = type;
+            return this;
+        }
+
+        /**
+         * Sets the target path.
+         *
+         * @param target Where the source should appear in the environment.
+         * @return This builder.
+         */
+        public Builder target(String target) {
+            this.target = target;
+            return this;
+        }
+
+        /**
+         * Sets the inline content.
+         *
+         * @param content The inline content.
+         * @return This builder.
+         */
+        public Builder content(String content) {
+            this.content = content;
+            return this;
+        }
+
+        /**
+         * Sets the encoding for inline content.
+         *
+         * @param encoding Optional encoding for inline content.
+         * @return This builder.
+         */
+        public Builder encoding(String encoding) {
+            this.encoding = encoding;
+            return this;
+        }
+
+        /**
+         * Sets the source location.
+         *
+         * @param source The source location (e.g., GCS path, repository Git URL).
+         * @return This builder.
+         */
+        public Builder source(String source) {
+            this.source = source;
+            return this;
+        }
+
+        /**
+         * Builds the Source.
+         *
+         * @return The Source.
+         */
+        public Source build() {
+            return new Source(type, target, content, encoding, source);
+        }
+    }
+
+    /**
      * Enum for Source types.
      */
     public enum Type {

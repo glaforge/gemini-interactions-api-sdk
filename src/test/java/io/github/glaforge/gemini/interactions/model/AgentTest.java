@@ -199,4 +199,35 @@ class AgentTest {
         assertEquals("agent-1", response.agents().get(0).id());
         assertEquals("agent-2", response.agents().get(1).id());
     }
+
+    @Test
+    void sourceBuilder() {
+        Source source = Source.builder()
+            .type(Source.Type.INLINE)
+            .target("src/utils.py")
+            .content("def add(a, b): return a + b")
+            .encoding("utf-8")
+            .build();
+
+        assertEquals(Source.Type.INLINE, source.type());
+        assertEquals("src/utils.py", source.target());
+        assertEquals("def add(a, b): return a + b", source.content());
+        assertEquals("utf-8", source.encoding());
+        assertNull(source.source());
+    }
+
+    @Test
+    void sourceBuilderWithLocation() {
+        Source source = Source.builder()
+            .type(Source.Type.GCS)
+            .target("data/")
+            .source("gs://my-bucket/data/")
+            .build();
+
+        assertEquals(Source.Type.GCS, source.type());
+        assertEquals("data/", source.target());
+        assertEquals("gs://my-bucket/data/", source.source());
+        assertNull(source.content());
+        assertNull(source.encoding());
+    }
 }
