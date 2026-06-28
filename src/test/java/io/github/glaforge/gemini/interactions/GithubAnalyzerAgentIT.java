@@ -99,9 +99,7 @@ public class GithubAnalyzerAgentIT {
             // 3. Poll for completion
             int maxPolls = 60;
             int polls = 0;
-            while (interaction.status() != Interaction.Status.COMPLETED &&
-                    interaction.status() != Interaction.Status.FAILED &&
-                    interaction.status() != Interaction.Status.CANCELLED &&
+            while (!interaction.status().isFinished() &&
                     polls < maxPolls) {
                 System.out.println("Waiting for agent... Current status: " + interaction.status());
                 Thread.sleep(3000);

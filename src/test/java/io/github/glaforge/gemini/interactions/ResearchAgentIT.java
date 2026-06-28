@@ -131,8 +131,7 @@ public class ResearchAgentIT {
         if (researchTextBuilder.isEmpty() && capturedResearchId[0] != null) {
             System.out.println("\n[Stream completed but no report received. Polling interaction for final result...]");
             Interaction finalInteraction = client.get(capturedResearchId[0]);
-            while (finalInteraction.status() != Interaction.Status.COMPLETED
-                    && finalInteraction.status() != Interaction.Status.FAILED) {
+            while (!finalInteraction.status().isFinished()) {
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {

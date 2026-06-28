@@ -130,7 +130,7 @@ public class SkillVerificationIT {
         Interaction interaction = client.create(request);
         
         // Poll for completion
-        while (interaction.status() != Status.COMPLETED && interaction.status() != Status.FAILED) {
+        while (!interaction.status().isFinished()) {
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {

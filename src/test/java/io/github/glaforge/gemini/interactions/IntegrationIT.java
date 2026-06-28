@@ -80,7 +80,7 @@ public class IntegrationIT {
                 .build());
 
         System.out.println("Initial Interaction status: " + interaction.status());
-        while (interaction.status() != Interaction.Status.COMPLETED && interaction.status() != Interaction.Status.FAILED) {
+        while (!interaction.status().isFinished()) {
             Thread.sleep(1000);
             interaction = client.get(interaction.id());
         }
@@ -108,7 +108,7 @@ public class IntegrationIT {
         System.out.println(interaction);
 
         System.out.println("Waiting for interaction to complete... " + interaction.id());
-        while (interaction.status() != Interaction.Status.COMPLETED) {
+        while (!interaction.status().isFinished()) {
             System.out.println("Status: " + interaction.status());
             Thread.sleep(1000);
             interaction = client.get(interaction.id());
@@ -238,9 +238,7 @@ public class IntegrationIT {
             System.out.println("Interaction status: " + interaction.status() + " ID: " + interaction.id());
 
             // Wait for completion (since remote execution takes a few seconds)
-            while (interaction.status() != Interaction.Status.COMPLETED &&
-                    interaction.status() != Interaction.Status.FAILED &&
-                    interaction.status() != Interaction.Status.CANCELLED) {
+            while (!interaction.status().isFinished()) {
                 System.out.println("Waiting for agent to process... current status: " + interaction.status());
                 Thread.sleep(2500);
                 interaction = client.get(interaction.id());

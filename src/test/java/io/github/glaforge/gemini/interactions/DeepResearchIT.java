@@ -33,7 +33,7 @@ public class DeepResearchIT {
         Interaction interaction = client.create(request);
 
         // Poll for completion
-        while (interaction.status() != Status.COMPLETED) {
+        while (!interaction.status().isFinished()) {
             System.out.print(".");
             Thread.sleep(1000);
             interaction = client.get(interaction.id());

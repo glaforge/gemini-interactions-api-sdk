@@ -76,6 +76,12 @@
             <version>0.89.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <artifactId>ansiren</artifactId>
+            <groupId>io.github.glaforge</groupId>
+            <version>0.1.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -245,7 +245,16 @@ public record Interaction(
         /** Interaction failed. */
         @JsonProperty("failed") FAILED,
         /** Interaction cancelled. */
-        @JsonProperty("cancelled") CANCELLED
+        @JsonProperty("cancelled") CANCELLED;
+        
+        /**
+         * Checks whether the status represents a finished state.
+         *
+         * @return true if the status is COMPLETED, FAILED, or CANCELLED.
+         */
+        public boolean isFinished() {
+            return this == COMPLETED || this == FAILED || this == CANCELLED;
+        }
     }
 
     /**
