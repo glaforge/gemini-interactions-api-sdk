@@ -314,7 +314,7 @@ AgentInteractionParams request = AgentInteractionParams.builder()
 Interaction interaction = client.create(request);
 
 // Poll for completion
-while (interaction.status() != Status.COMPLETED) {
+while (!interaction.status().isFinished()) {
     Thread.sleep(1000);
     interaction = client.get(interaction.id());
 }
@@ -373,7 +373,7 @@ AgentInteractionParams params = AgentInteractionParams.builder()
 Interaction interaction = client.create(params);
 
 // Poll remote sandbox until completion
-while (interaction.status() != Interaction.Status.COMPLETED) {
+while (!interaction.status().isFinished()) {
     Thread.sleep(2000);
     interaction = client.get(interaction.id());
 }

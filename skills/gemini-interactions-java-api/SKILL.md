@@ -187,7 +187,7 @@ AgentInteractionParams request = AgentInteractionParams.builder()
 Interaction interaction = client.create(request);
 
 // Poll for completion
-while (interaction.status() != Status.COMPLETED && interaction.status() != Status.FAILED) {
+while (!interaction.status().isFinished()) {
     try {
         Thread.sleep(2000);
     } catch (InterruptedException e) {
@@ -197,6 +197,42 @@ while (interaction.status() != Status.COMPLETED && interaction.status() != Statu
 }
 
 System.out.println(interaction.steps());
+```
+
+### Streaming Interactions
+
+For long-running tasks or to see real-time updates (thoughts, code execution, text output), you can use the streaming API.
+
+```java
+import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+
+GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
+
+AgentInteractionParams params = AgentInteractionParams.builder()
+    .agent("deep-research-pro-preview-12-2025")
+    .input("Write a Python script for Conway's Game of Life")
+    .stream(true)
+    .build();
+
+try (var eventStream = client.stream(params)) {
+    eventStream.forEach(event -> {
+        if (event instanceof Events.InteractionCreated created) {
+            System.out.println("Interaction created: " + created.interaction().id());
+        } else if (event instanceof Events.ContentDelta contentDelta) {
+            if (contentDelta.delta() instanceof Events.TextDelta textDelta) {
+                System.out.print(textDelta.text());
+            }
+        } else if (event instanceof Events.StepDelta stepDelta) {
+            if (stepDelta.delta() instanceof Events.ThoughtSummaryDelta thought) {
+                System.out.println("\n[Thinking...] " + thought.content());
+            } else if (stepDelta.delta() instanceof Events.CodeExecutionCallDelta codeCall) {
+                System.out.println("\n[Executing Code...] " + codeCall.arguments());
+            }
+        }
+    });
+}
 ```
 
 ### Custom Agents (Sandboxing & Environment Egress)
