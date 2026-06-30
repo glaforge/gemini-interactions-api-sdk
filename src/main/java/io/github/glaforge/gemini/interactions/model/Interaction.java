@@ -229,7 +229,9 @@ public record Interaction(
         /** Image modality. */
         @JsonProperty("image") IMAGE,
         /** Audio modality. */
-        @JsonProperty("audio") AUDIO
+        @JsonProperty("audio") AUDIO,
+        /** Video modality. */
+        @JsonProperty("video") VIDEO
     }
 
     /**

@@ -104,6 +104,32 @@ if (image != null) {
 }
 ```
 
+### Multimodal Video Generation (Gemini Omni Flash)
+
+Generate videos and extract the video data.
+
+```java
+import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
+
+GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-omni-flash-preview")
+    .input("A highly detailed cinematic shot of a futuristic banana.")
+    .responseModalities(Modality.VIDEO)
+    .build();
+
+Interaction interaction = client.create(request);
+Content.VideoContent video = interaction.outputVideo();
+if (video != null) {
+    System.out.println("Video generated with " + video.data().length + " bytes.");
+}
+```
+
 ### Stateful Conversation (Multi-Turn)
 
 Use `store(true)` to persist the conversation in the cloud, and `previousInteractionId` to continue the thread.
