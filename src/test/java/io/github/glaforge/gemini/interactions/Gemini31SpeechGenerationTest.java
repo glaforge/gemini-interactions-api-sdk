@@ -10,6 +10,7 @@ import io.github.glaforge.gemini.interactions.model.Step;
 import org.junit.jupiter.api.Test;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import java.util.Base64;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -29,6 +30,7 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
+@DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
 public class Gemini31SpeechGenerationTest {
 
     @Test
