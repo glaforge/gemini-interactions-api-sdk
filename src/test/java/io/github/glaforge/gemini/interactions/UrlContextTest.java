@@ -56,7 +56,7 @@ public class UrlContextTest {
         String prompt = "Summarize the article at this URL: " + url;
 
         InteractionParams.ModelInteractionParams createParams = InteractionParams.ModelInteractionParams.builder()
-            .model("gemini-3.1-flash")
+            .model("gemini-3.5-flash")
             .input(prompt)
             .tools(tools)
             .build();
@@ -106,7 +106,7 @@ public class UrlContextTest {
              System.out.println("Sending follow-up prompt...");
 
              InteractionParams.ModelInteractionParams continuationParams = InteractionParams.ModelInteractionParams.builder()
-                 .model("gemini-3.1-flash")
+                 .model("gemini-3.5-flash")
                  .previousInteractionId(interaction.id())
                  .input("Please summarize the article based on the context you retrieved.")
                  .build();
