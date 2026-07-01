@@ -56,14 +56,27 @@ public class UrlContextTest {
         String prompt = "Summarize the article at this URL: " + url;
 
         InteractionParams.ModelInteractionParams createParams = InteractionParams.ModelInteractionParams.builder()
-            .model("gemini-2.5-flash")
+            .model("gemini-3.1-flash")
             .input(prompt)
             .tools(tools)
             .build();
 
-        System.out.println("Sending URL context request...");
-        Interaction interaction = client.create(createParams);
-        System.out.println("Response status: " + interaction.status());
+        Interaction interaction = null;
+        int maxRetries = 3;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                System.out.println("Sending URL context request (attempt " + (i + 1) + ")...");
+                interaction = client.create(createParams);
+                System.out.println("Response status: " + interaction.status());
+                break;
+            } catch (Exception e) {
+                System.out.println("Attempt " + (i + 1) + " failed: " + e.getMessage());
+                if (i == maxRetries - 1) {
+                    throw e;
+                }
+                Thread.sleep(5000);
+            }
+        }
         assertNotNull(interaction.steps(), "Interaction steps should not be null");
 
         // 3. Verify Response
@@ -93,13 +106,26 @@ public class UrlContextTest {
              System.out.println("Sending follow-up prompt...");
 
              InteractionParams.ModelInteractionParams continuationParams = InteractionParams.ModelInteractionParams.builder()
-                 .model("gemini-2.5-flash")
+                 .model("gemini-3.1-flash")
                  .previousInteractionId(interaction.id())
                  .input("Please summarize the article based on the context you retrieved.")
                  .build();
 
-             Interaction followUp = client.create(continuationParams);
-             System.out.println("Follow-up Status: " + followUp.status());
+             Interaction followUp = null;
+             for (int i = 0; i < maxRetries; i++) {
+                 try {
+                     System.out.println("Sending follow-up prompt (attempt " + (i + 1) + ")...");
+                     followUp = client.create(continuationParams);
+                     System.out.println("Follow-up Status: " + followUp.status());
+                     break;
+                 } catch (Exception e) {
+                     System.out.println("Follow-up attempt " + (i + 1) + " failed: " + e.getMessage());
+                     if (i == maxRetries - 1) {
+                         throw e;
+                     }
+                     Thread.sleep(5000);
+                 }
+             }
 
              for (Step step : followUp.steps()) {
                  if (step instanceof Step.ModelOutputStep out) {
