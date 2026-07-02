@@ -52,7 +52,7 @@ public class UrlContextTest {
 
         // 2. Create Interaction
         // User asked to summarize a specific URL
-        String url = "https://glaforge.dev/posts/2026/07/01/of-skills-and-loops-with-ai-assistance/";
+        String url = "https://fr.wikipedia.org/wiki/Intelligence_artificielle";
         String prompt = "Summarize the article at this URL: " + url;
 
         InteractionParams.ModelInteractionParams createParams = InteractionParams.ModelInteractionParams.builder()
