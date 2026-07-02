@@ -61,7 +61,7 @@ public class IntegrationIT {
                 .forEach((Content output) -> {
                     switch (output) {
                         case TextContent text -> System.out.println(text.text());
-                        case ImageContent image -> System.out.println(image.data());
+                        case ImageContent image -> System.out.println("Image data size: " + (image.data() != null ? image.data().length : 0) + " bytes");
                         default -> System.out.println("Unknown content type: " + output);
                     }
                 });

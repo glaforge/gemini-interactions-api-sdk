@@ -230,6 +230,11 @@ public sealed interface Content permits
         public ImageContent(byte[] data, String mimeType) {
             this("image", data, null, mimeType, null);
         }
+
+        @Override
+        public String toString() {
+            return "ImageContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", resolution=" + resolution + "]";
+        }
     }
 
     /**
@@ -260,6 +265,11 @@ public sealed interface Content permits
         public AudioContent(byte[] data, String mimeType) {
             this("audio", data, null, mimeType, null, null);
         }
+
+        @Override
+        public String toString() {
+            return "AudioContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", rate=" + rate + ", channels=" + channels + "]";
+        }
     }
 
     /**
@@ -276,7 +286,12 @@ public sealed interface Content permits
         byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType
-    ) implements Content {}
+    ) implements Content {
+        @Override
+        public String toString() {
+            return "DocumentContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + "]";
+        }
+    }
 
     /**
      * Content containing video.
@@ -294,7 +309,12 @@ public sealed interface Content permits
         String uri,
         @JsonProperty("mime_type") String mimeType,
         Resolution resolution
-    ) implements Content {}
+    ) implements Content {
+        @Override
+        public String toString() {
+            return "VideoContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", resolution=" + resolution + "]";
+        }
+    }
 
     /**
      * Content containing a thought.
