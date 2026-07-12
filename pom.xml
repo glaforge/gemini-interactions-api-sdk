@@ -21,7 +21,7 @@
 
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>1.0.0-RC4</version>
+    <version>1.0.0-RC5-SNAPSHOT</version>
     <name>Gemini Interactions API SDK</name>
 
     <properties>
@@ -106,7 +106,7 @@
         <connection>scm:git:git://github.com/glaforge/gemini-interactions-api-sdk.git</connection>
         <developerConnection>scm:git:git@github.com:glaforge/gemini-interactions-api-sdk.git</developerConnection>
         <url>https://github.com/glaforge/gemini-interactions-api-sdk/tree/main</url>
-        <tag>v1.0.0-RC4</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <profiles>
