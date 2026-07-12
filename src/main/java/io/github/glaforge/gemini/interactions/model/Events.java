@@ -362,7 +362,11 @@ public sealed interface Events permits
         /** Google Maps result delta. */
         @JsonProperty("google_maps_result") GOOGLE_MAPS_RESULT("google_maps_result"),
         /** Text annotation delta. */
-        @JsonProperty("text_annotation_delta") TEXT_ANNOTATION_DELTA("text_annotation_delta");
+        @JsonProperty("text_annotation_delta") TEXT_ANNOTATION_DELTA("text_annotation_delta"),
+        /** Retrieval call delta. */
+        @JsonProperty("retrieval_call") RETRIEVAL_CALL("retrieval_call"),
+        /** Retrieval result delta. */
+        @JsonProperty("retrieval_result") RETRIEVAL_RESULT("retrieval_result");
 
         private final String jsonValue;
 
@@ -417,7 +421,9 @@ public sealed interface Events permits
         @JsonSubTypes.Type(value = FileSearchResultDelta.class, name = "file_search_result"),
         @JsonSubTypes.Type(value = GoogleMapsCallDelta.class, name = "google_maps_call"),
         @JsonSubTypes.Type(value = GoogleMapsResultDelta.class, name = "google_maps_result"),
-        @JsonSubTypes.Type(value = TextAnnotationDelta.class, name = "text_annotation_delta")
+        @JsonSubTypes.Type(value = TextAnnotationDelta.class, name = "text_annotation_delta"),
+        @JsonSubTypes.Type(value = RetrievalCallDelta.class, name = "retrieval_call"),
+        @JsonSubTypes.Type(value = RetrievalResultDelta.class, name = "retrieval_result")
     })
     sealed interface Delta permits
         TextDelta, ImageDelta, AudioDelta, DocumentDelta, VideoDelta,
@@ -429,7 +435,7 @@ public sealed interface Events permits
         McpServerToolCallDelta, McpServerToolResultDelta,
         FileSearchCallDelta, FileSearchResultDelta,
         GoogleMapsCallDelta, GoogleMapsResultDelta,
-        TextAnnotationDelta, UnknownDelta {
+        TextAnnotationDelta, RetrievalCallDelta, RetrievalResultDelta, UnknownDelta {
         /**
          * Returns the type of the delta.
          * @return the type of the delta.
@@ -681,6 +687,27 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleMapsResultDelta(DeltaType type, @JsonProperty("call_id") String callId, List<Map<String, Object>> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
+
+    /**
+     * Delta for Retrieval call.
+     *
+     * @param type          The type of delta ("retrieval_call").
+     * @param arguments     The retrieval arguments.
+     * @param retrievalType The retrieval type.
+     * @param signature     The signature.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record RetrievalCallDelta(DeltaType type, RetrievalStepArguments arguments, @JsonProperty("retrieval_type") String retrievalType, String signature) implements Delta {}
+
+    /**
+     * Delta for Retrieval result.
+     *
+     * @param type      The type of delta ("retrieval_result").
+     * @param isError   Whether the result is an error.
+     * @param signature The signature.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record RetrievalResultDelta(DeltaType type, @JsonProperty("is_error") Boolean isError, String signature) implements Delta {}
 
     /**
      * Delta for unknown or missing types.

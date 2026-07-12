@@ -86,7 +86,8 @@ public class InteractionParams {
         @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier,
-        @JsonProperty("cached_content") String cachedContent
+        @JsonProperty("cached_content") String cachedContent,
+        @JsonProperty("safety_settings") List<SafetySetting> safetySettings
     ) implements Request {
 
 
@@ -113,6 +114,7 @@ public class InteractionParams {
             private ServiceTier serviceTier;
             private List<Config.SpeechConfig> speechConfigs;
             private String cachedContent;
+            private List<SafetySetting> safetySettings;
 
             /**
              * Sets the model.
@@ -338,6 +340,14 @@ public class InteractionParams {
             public Builder speechConfigs(List<Config.SpeechConfig> speechConfigs) { this.speechConfigs = speechConfigs; return this; }
 
             /**
+             * Sets safety settings.
+             *
+             * @param safetySettings The safety settings.
+             * @return This builder.
+             */
+            public Builder safetySettings(List<SafetySetting> safetySettings) { this.safetySettings = safetySettings; return this; }
+
+            /**
              * Builds the CreateModelInteractionParams.
              *
              * @return The CreateModelInteractionParams parameters.
@@ -346,7 +356,7 @@ public class InteractionParams {
                 Config.GenerationConfig finalConfig = generationConfig;
                 if (speechConfigs != null) {
                     if (finalConfig == null) {
-                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, null, null);
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, null, null, null);
                     } else {
                         finalConfig = new Config.GenerationConfig(
                             finalConfig.temperature(),
@@ -359,11 +369,12 @@ public class InteractionParams {
                             finalConfig.maxOutputTokens(),
                             speechConfigs != null ? speechConfigs : finalConfig.speechConfig(),
                             finalConfig.presencePenalty(),
-                            finalConfig.frequencyPenalty()
+                            finalConfig.frequencyPenalty(),
+                            finalConfig.videoConfig()
                         );
                     }
                 }
-                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, cachedContent);
+                return new ModelInteractionParams(model, input, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, cachedContent, safetySettings);
             }
         }
     }
@@ -401,7 +412,8 @@ public class InteractionParams {
         @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
         @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
-        @JsonProperty("service_tier") ServiceTier serviceTier
+        @JsonProperty("service_tier") ServiceTier serviceTier,
+        @JsonProperty("safety_settings") List<SafetySetting> safetySettings
     ) implements Request {
         /**
          * Returns a new builder for agent interaction parameters.
@@ -428,6 +440,7 @@ public class InteractionParams {
             private String previousInteractionId;
             private ServiceTier serviceTier;
             private List<Config.SpeechConfig> speechConfigs;
+            private List<SafetySetting> safetySettings;
 
             /**
              * Sets the agent.
@@ -656,6 +669,14 @@ public class InteractionParams {
             public Builder speechConfigs(List<Config.SpeechConfig> speechConfigs) { this.speechConfigs = speechConfigs; return this; }
 
             /**
+             * Sets safety settings.
+             *
+             * @param safetySettings The safety settings.
+             * @return This builder.
+             */
+            public Builder safetySettings(List<SafetySetting> safetySettings) { this.safetySettings = safetySettings; return this; }
+
+            /**
              * Builds the CreateAgentInteractionParams.
              *
              * @return The CreateAgentInteractionParams parameters.
@@ -664,7 +685,7 @@ public class InteractionParams {
                 Config.GenerationConfig finalConfig = generationConfig;
                 if (speechConfigs != null) {
                     if (finalConfig == null) {
-                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, null, null);
+                        finalConfig = new Config.GenerationConfig(null, null, null, null, null, null, null, null, speechConfigs, null, null, null);
                     } else {
                         finalConfig = new Config.GenerationConfig(
                             finalConfig.temperature(),
@@ -677,11 +698,12 @@ public class InteractionParams {
                             finalConfig.maxOutputTokens(),
                             speechConfigs != null ? speechConfigs : finalConfig.speechConfig(),
                             finalConfig.presencePenalty(),
-                            finalConfig.frequencyPenalty()
+                            finalConfig.frequencyPenalty(),
+                            finalConfig.videoConfig()
                         );
                     }
                 }
-                return new AgentInteractionParams(agent, input, environment, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier);
+                return new AgentInteractionParams(agent, input, environment, agentConfig, finalConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, safetySettings);
             }
         }
     }

@@ -110,6 +110,28 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 Interaction response = client.create(request);
 ```
 
+### Safety Settings
+
+You can customize the safety settings for an interaction to control the likelihood of the model generating harmful content.
+
+```java
+import io.github.glaforge.gemini.interactions.model.SafetySetting;
+import io.github.glaforge.gemini.interactions.model.HarmCategory;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import java.util.List;
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("How do I make gunpowder?")
+    .safetySettings(List.of(
+        new SafetySetting(HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, "BLOCK_LOW_AND_ABOVE", null)
+    ))
+    .build();
+
+Interaction response = client.create(request);
+```
+
 ### Streaming Response
 ```java
 import io.github.glaforge.gemini.interactions.model.Events.StepDelta;

@@ -21,7 +21,9 @@ import tools.jackson.core.JsonToken;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.JsonNode;
 import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
+import io.github.glaforge.gemini.interactions.model.LocalEnvironmentConfig;
 
 /**
  * Custom Jackson deserializer to handle base environment configuration which
@@ -35,6 +37,11 @@ public class BaseEnvironmentDeserializer extends ValueDeserializer<Object> {
         if (p.currentToken() == JsonToken.VALUE_STRING) {
             return p.getString();
         }
-        return p.readValueAs(EnvironmentConfig.class);
+        
+        JsonNode node = ctxt.readTree(p);
+        if (node.has("type") && "local".equals(node.get("type").asText())) {
+            return ctxt.readTreeAsValue(node, LocalEnvironmentConfig.class);
+        }
+        return ctxt.readTreeAsValue(node, EnvironmentConfig.class);
     }
 }

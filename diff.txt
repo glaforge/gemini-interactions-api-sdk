@@ -1,0 +1,4400 @@
+diff --git a/openapi.json b/openapi.json
+index c45dfd4..a713c40 100644
+--- a/openapi.json
++++ b/openapi.json
+@@ -2,7 +2,7 @@
+   "openapi": "3.0.3",
+   "info": {
+     "title": "Gemini API",
+-    "description": "The Gemini Interactions API that allows developers to build generative AI applications using Gemini models. Gemini is our most capable model, built from the ground up to be multimodal. It can generalize and seamlessly understand, operate across, and combine different types of information including language, images, audio, video, and code. You can use the Gemini API for use cases like reasoning across text and images, content generation, dialogue agents, summarization and classification systems, and more.",
++    "description": "The Gemini Interactions API allows developers to build generative AI applications using Gemini models. Gemini is our most capable model, built from the ground up to be multimodal. It can generalize and seamlessly understand, operate across, and combine different types of information including language, images, audio, video, and code. You can use the Gemini API for use cases like reasoning across text and images, content generation, dialogue agents, summarization and classification systems, and more.",
+     "version": "v1beta",
+     "x-google-revision": "0"
+   },
+@@ -1116,12 +1116,22 @@
+                   "cancel": {
+                     "summary": "Cancel Interaction",
+                     "value": {
+-                      "id": "v1_ChdPU0F4YWFtNkFwS2kxZThQZ05lbXdROBIXT1NBeGFhbTZBcEtpMWU4UGdOZW13UTg",
++                      "id": "v1_ChdVc0E0YXJTYk1zYlV6N0lQcXRXVG1BYxIXVXNBNGFyU2JNc2JVejdJUHF0V1RtQWM",
+                       "agent": "deep-research-pro-preview-12-2025",
+                       "status": "cancelled",
+-                      "object": "interaction",
+-                      "created": "2025-11-26T12:25:15Z",
+-                      "updated": "2025-11-26T12:25:15Z"
++                      "created": "2026-06-22T04:55:47Z",
++                      "updated": "2026-06-22T04:55:47Z",
++                      "steps": [
++                        {
++                          "type": "user_input",
++                          "content": [
++                            {
++                              "type": "text",
++                              "text": "Research the history of the Google TPUs with a focus on 2025 specs."
++                            }
++                          ]
++                        }
++                      ]
+                     }
+                   }
+                 }
+@@ -1554,15 +1564,6 @@
+         "in": "path",
+         "required": true
+       },
+-      "google_genai_api_revision": {
+-        "name": "Api-Revision",
+-        "in": "header",
+-        "schema": {
+-          "type": "string"
+-        },
+-        "description": "API revision header to send with Google GenAI API requests.",
+-        "x-speakeasy-name-override": "api_revision"
+-      },
+       "google_genai_user_project": {
+         "name": "x-goog-user-project",
+         "in": "header",
+@@ -1581,14 +1582,14 @@
+           "schema": {
+             "type": "object",
+             "properties": {
+-              "apiKey": {
+-                "type": "string",
+-                "description": "Gemini API key sent as x-goog-api-key."
+-              },
+               "accessToken": {
+                 "type": "string",
+                 "description": "OAuth access token sent as a bearer Authorization header."
+               },
++              "apiKey": {
++                "type": "string",
++                "description": "Gemini API key sent as x-goog-api-key."
++              },
+               "defaultHeaders": {
+                 "type": "object",
+                 "additionalProperties": {
+@@ -1607,29 +1608,10 @@
+         "description": "An agent definition for the CreateAgent API.\nThis message is the target for annotation-parser-based JSON parsing.\nNew format:\n  {\n    \"id\": \"customer-sentinel\",\n    \"base_agent\": \"\",\n    \"system_instruction\": \"...\",\n    \"base_environment\": { \"type\": \"remote\", \"sources\": [...] },\n    \"tools\": [ {\"type\": \"code_execution\"} ]\n  }",
+         "type": "object",
+         "properties": {
+-          "id": {
+-            "description": "The unique identifier for the agent.",
+-            "type": "string"
+-          },
+           "base_agent": {
+             "description": "The base agent to extend.",
+             "type": "string"
+           },
+-          "system_instruction": {
+-            "description": "System instruction for the agent.",
+-            "type": "string"
+-          },
+-          "description": {
+-            "description": "Agent description for developers to quickly read and understand.",
+-            "type": "string"
+-          },
+-          "tools": {
+-            "description": "The tools available to the agent.",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/AgentTool"
+-            }
+-          },
+           "base_environment": {
+             "description": "The environment configuration for the agent.",
+             "oneOf": [
+@@ -1643,6 +1625,25 @@
+             "discriminator": {
+               "propertyName": "type"
+             }
++          },
++          "description": {
++            "description": "Agent description for developers to quickly read and understand.",
++            "type": "string"
++          },
++          "id": {
++            "description": "The unique identifier for the agent.",
++            "type": "string"
++          },
++          "system_instruction": {
++            "description": "System instruction for the agent.",
++            "type": "string"
++          },
++          "tools": {
++            "description": "The tools available to the agent.",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/AgentTool"
++            }
+           }
+         },
+         "x-speakeasy-model-namespace": "agents",
+@@ -1753,15 +1754,27 @@
+             "type": "string"
+           },
+           "transform": {
+-            "description": "Headers to inject on all outbound requests matching this domain. Each entry is a flat {header_name: header_value} object. The egress proxy injects these automatically.",
+-            "type": "array",
+-            "items": {
+-              "type": "object",
+-              "additionalProperties": {
+-                "type": "string"
++            "description": "Headers to inject on all outbound requests matching this domain. Accepts a single dict or a list of dicts. The egress proxy injects these automatically.",
++            "oneOf": [
++              {
++                "type": "object",
++                "additionalProperties": {
++                  "type": "string"
++                },
++                "description": "A single header injection mapping, e.g., {\"Authorization\": \"Bearer token\"}."
+               },
+-              "description": "A single header to inject, e.g. {'Authorization': 'Bearer token'} or {'x-goog-api-key': 'key'}."
+-            }
++              {
++                "type": "array",
++                "items": {
++                  "type": "object",
++                  "additionalProperties": {
++                    "type": "string"
++                  },
++                  "description": "A single header to inject."
++                },
++                "description": "A list of headers to inject."
++              }
++            ]
+           }
+         },
+         "required": [
+@@ -1797,11 +1810,11 @@
+       "ArgumentsDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "arguments_delta"
+-          },
+           "arguments": {
+             "type": "string"
++          },
++          "type": {
++            "const": "arguments_delta"
+           }
+         },
+         "required": [
+@@ -1813,8 +1826,10 @@
+         "description": "An audio content block.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "audio"
++          "channels": {
++            "description": "The number of audio channels.",
++            "type": "integer",
++            "format": "int32"
+           },
+           "data": {
+             "description": "The audio content.",
+@@ -1822,10 +1837,6 @@
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "uri": {
+-            "description": "The URI of the audio.",
+-            "type": "string"
+-          },
+           "mime_type": {
+             "description": "The mime type of the audio.",
+             "type": "string",
+@@ -1858,15 +1869,17 @@
+               "audio/mulaw"
+             ]
+           },
+-          "channels": {
+-            "description": "The number of audio channels.",
+-            "type": "integer",
+-            "format": "int32"
+-          },
+           "sample_rate": {
+             "description": "The sample rate of the audio.",
+             "type": "integer",
+             "format": "int32"
++          },
++          "type": {
++            "const": "audio"
++          },
++          "uri": {
++            "description": "The URI of the audio.",
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -1895,17 +1908,16 @@
+       "AudioDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "audio"
++          "channels": {
++            "description": "The number of audio channels.",
++            "type": "integer",
++            "format": "int32"
+           },
+           "data": {
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "uri": {
+-            "type": "string"
+-          },
+           "mime_type": {
+             "type": "string",
+             "x-google-enum-descriptions": [
+@@ -1948,10 +1960,11 @@
+             "type": "integer",
+             "format": "int32"
+           },
+-          "channels": {
+-            "description": "The number of audio channels.",
+-            "type": "integer",
+-            "format": "int32"
++          "type": {
++            "const": "audio"
++          },
++          "uri": {
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -1963,8 +1976,22 @@
+         "description": "Configuration for audio output format.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "audio"
++          "bit_rate": {
++            "description": "Bit rate in bits per second (bps). Only applicable for compressed formats\n(MP3, Opus).",
++            "type": "integer",
++            "format": "int32"
++          },
++          "delivery": {
++            "description": "The delivery mode for the audio output.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "Audio data is returned inline in the response.",
++              "Audio data is returned as a URI."
++            ],
++            "enum": [
++              "inline",
++              "uri"
++            ]
+           },
+           "mime_type": {
+             "description": "The MIME type of the audio output.",
+@@ -1986,27 +2013,13 @@
+               "audio/mulaw"
+             ]
+           },
+-          "delivery": {
+-            "description": "The delivery mode for the audio output.",
+-            "type": "string",
+-            "x-google-enum-descriptions": [
+-              "Audio data is returned inline in the response.",
+-              "Audio data is returned as a URI."
+-            ],
+-            "enum": [
+-              "inline",
+-              "uri"
+-            ]
+-          },
+           "sample_rate": {
+             "description": "Sample rate in Hz.",
+             "type": "integer",
+             "format": "int32"
+           },
+-          "bit_rate": {
+-            "description": "Bit rate in bits per second (bps). Only applicable for compressed formats\n(MP3, Opus).",
+-            "type": "integer",
+-            "format": "int32"
++          "type": {
++            "const": "audio"
+           }
+         },
+         "required": [
+@@ -2065,6 +2078,10 @@
+         "description": "The arguments to pass to the code execution.",
+         "type": "object",
+         "properties": {
++          "code": {
++            "description": "The code to be executed.",
++            "type": "string"
++          },
+           "language": {
+             "description": "Programming language of the `code`.",
+             "type": "string",
+@@ -2074,10 +2091,6 @@
+             "enum": [
+               "python"
+             ]
+-          },
+-          "code": {
+-            "description": "The code to be executed.",
+-            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -2085,9 +2098,6 @@
+       "CodeExecutionCallDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "code_execution_call"
+-          },
+           "arguments": {
+             "$ref": "#/components/schemas/CodeExecutionCallArguments"
+           },
+@@ -2096,6 +2106,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "code_execution_call"
+           }
+         },
+         "required": [
+@@ -2108,9 +2121,6 @@
+         "description": "Code execution call step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "code_execution_call"
+-          },
+           "arguments": {
+             "description": "Required. The arguments to pass to the code execution.",
+             "$ref": "#/components/schemas/CodeExecutionCallStepArguments"
+@@ -2124,6 +2134,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "code_execution_call"
+           }
+         },
+         "required": [
+@@ -2157,6 +2170,10 @@
+         "description": "The arguments to pass to the code execution.",
+         "type": "object",
+         "properties": {
++          "code": {
++            "description": "The code to be executed.",
++            "type": "string"
++          },
+           "language": {
+             "description": "Programming language of the `code`.",
+             "type": "string",
+@@ -2166,10 +2183,6 @@
+             "enum": [
+               "python"
+             ]
+-          },
+-          "code": {
+-            "description": "The code to be executed.",
+-            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions",
+@@ -2184,20 +2197,20 @@
+       "CodeExecutionResultDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "code_execution_result"
++          "is_error": {
++            "type": "boolean"
+           },
+           "result": {
+             "type": "string"
+           },
+-          "is_error": {
+-            "type": "boolean"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "code_execution_result"
+           }
+         },
+         "required": [
+@@ -2210,19 +2223,16 @@
+         "description": "Code execution result step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "code_execution_result"
+-          },
+-          "result": {
+-            "description": "Required. The output of the code execution.",
++          "call_id": {
++            "description": "Required. ID to match the ID from the function call block.",
+             "type": "string"
+           },
+           "is_error": {
+             "description": "Whether the code execution resulted in an error.",
+             "type": "boolean"
+           },
+-          "call_id": {
+-            "description": "Required. ID to match the ID from the function call block.",
++          "result": {
++            "description": "Required. The output of the code execution.",
+             "type": "string"
+           },
+           "signature": {
+@@ -2230,6 +2240,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "code_execution_result"
+           }
+         },
+         "required": [
+@@ -2261,8 +2274,34 @@
+         "description": "A tool that can be used by the model to interact with the computer.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "computer_use"
++          "disabled_safety_policies": {
++            "description": "Optional. Disabled safety policies for computer use.",
++            "type": "array",
++            "items": {
++              "type": "string",
++              "x-google-enum-descriptions": [
++                "Safety policy for financial transactions.",
++                "Safety policy for sensitive data modification.",
++                "Safety policy for communication tools (e.g. Gmail, Chat, Meet).",
++                "Safety policy for account creation.",
++                "Safety policy for data modification.",
++                "Safety policy for user consent management.",
++                "Safety policy for legal terms and agreements."
++              ],
++              "enum": [
++                "financial_transactions",
++                "sensitive_data_modification",
++                "communication_tool",
++                "account_creation",
++                "data_modification",
++                "user_consent_management",
++                "legal_terms_and_agreements"
++              ]
++            }
++          },
++          "enable_prompt_injection_detection": {
++            "description": "Whether enable the prompt injection detection check on computer-use\nrequest.",
++            "type": "boolean"
+           },
+           "environment": {
+             "description": "The environment being operated.",
+@@ -2285,9 +2324,8 @@
+               "type": "string"
+             }
+           },
+-          "enable_prompt_injection_detection": {
+-            "description": "Whether enable the prompt injection detection check on computer-use\nrequest.",
+-            "type": "boolean"
++          "type": {
++            "const": "computer_use"
+           }
+         },
+         "required": [
+@@ -2346,13 +2384,6 @@
+       "ContentDelta": {
+         "type": "object",
+         "properties": {
+-          "event_type": {
+-            "const": "content.delta"
+-          },
+-          "index": {
+-            "type": "integer",
+-            "format": "int32"
+-          },
+           "delta": {
+             "$ref": "#/components/schemas/ContentDeltaData"
+           },
+@@ -2360,6 +2391,13 @@
+             "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+             "type": "string"
+           },
++          "event_type": {
++            "const": "content.delta"
++          },
++          "index": {
++            "type": "integer",
++            "format": "int32"
++          },
+           "metadata": {
+             "description": "Optional metadata accompanying ANY streamed event.",
+             "$ref": "#/components/schemas/StreamMetadata"
+@@ -2466,20 +2504,20 @@
+       "ContentStart": {
+         "type": "object",
+         "properties": {
+-          "event_type": {
+-            "const": "content.start"
+-          },
+-          "index": {
+-            "type": "integer",
+-            "format": "int32"
+-          },
+-          "content": {
+-            "$ref": "#/components/schemas/Content"
++          "content": {
++            "$ref": "#/components/schemas/Content"
+           },
+           "event_id": {
+             "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+             "type": "string"
+           },
++          "event_type": {
++            "const": "content.start"
++          },
++          "index": {
++            "type": "integer",
++            "format": "int32"
++          },
+           "metadata": {
+             "description": "Optional metadata accompanying ANY streamed event.",
+             "$ref": "#/components/schemas/StreamMetadata"
+@@ -2509,6 +2547,10 @@
+       "ContentStop": {
+         "type": "object",
+         "properties": {
++          "event_id": {
++            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
++            "type": "string"
++          },
+           "event_type": {
+             "const": "content.stop"
+           },
+@@ -2516,10 +2558,6 @@
+             "type": "integer",
+             "format": "int32"
+           },
+-          "event_id": {
+-            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+-            "type": "string"
+-          },
+           "metadata": {
+             "description": "Optional metadata accompanying ANY streamed event.",
+             "$ref": "#/components/schemas/StreamMetadata"
+@@ -2549,26 +2587,110 @@
+             "$ref": "#/components/schemas/AgentOption",
+             "description": "The name of the `Agent` used for generating the interaction."
+           },
+-          "stream": {
+-            "description": "Input only. Whether the interaction will be streamed.",
+-            "writeOnly": true,
+-            "type": "boolean"
+-          },
+-          "store": {
+-            "description": "Input only. Whether to store the response and request for later retrieval.",
+-            "writeOnly": true,
+-            "type": "boolean"
++          "agent_config": {
++            "description": "Configuration parameters for the agent interaction.",
++            "oneOf": [
++              {
++                "$ref": "#/components/schemas/DynamicAgentConfig"
++              },
++              {
++                "$ref": "#/components/schemas/DeepResearchAgentConfig"
++              }
++            ],
++            "discriminator": {
++              "propertyName": "type"
++            }
+           },
+           "background": {
+             "description": "Input only. Whether to run the model interaction in the background.",
+             "writeOnly": true,
+             "type": "boolean"
+           },
++          "created": {
++            "description": "Required. Output only. The time at which the response was created in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
++            "readOnly": true,
++            "type": "string",
++            "format": "date-time"
++          },
++          "environment": {
++            "oneOf": [
++              {
++                "type": "string"
++              },
++              {
++                "$ref": "#/components/schemas/EnvironmentConfig"
++              }
++            ],
++            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
++          },
++          "environment_id": {
++            "description": "Output only. The environment ID for the interaction. Only populated if environment\nconfig is set in the request.",
++            "readOnly": true,
++            "type": "string"
++          },
+           "id": {
+             "description": "Required. Output only. A unique identifier for the interaction completion.",
+             "readOnly": true,
+             "type": "string"
+           },
++          "input": {
++            "$ref": "#/components/schemas/InteractionsInput"
++          },
++          "labels": {
++            "type": "object",
++            "additionalProperties": {
++              "type": "string"
++            },
++            "description": "The labels with user-defined metadata for the request."
++          },
++          "previous_interaction_id": {
++            "description": "The ID of the previous interaction, if any.",
++            "type": "string"
++          },
++          "response_format": {
++            "description": "Enforces that the generated response is a JSON object that complies with the JSON schema specified in this field.",
++            "oneOf": [
++              {
++                "type": "array",
++                "items": {
++                  "$ref": "#/components/schemas/ResponseFormat"
++                },
++                "example": [
++                  {
++                    "type": "text",
++                    "mime_type": "application/json"
++                  }
++                ],
++                "x-speakeasy-model-namespace": "interactions"
++              },
++              {
++                "$ref": "#/components/schemas/ResponseFormat"
++              }
++            ]
++          },
++          "response_mime_type": {
++            "description": "The mime type of the response. This is required if response_format is set.",
++            "deprecated": true,
++            "type": "string"
++          },
++          "response_modalities": {
++            "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/ResponseModality"
++            }
++          },
++          "safety_settings": {
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/SafetySetting"
++            },
++            "description": "Safety settings for the interaction."
++          },
++          "service_tier": {
++            "$ref": "#/components/schemas/ServiceTier",
++            "description": "The service tier for the interaction."
++          },
+           "status": {
+             "description": "Required. Output only. The status of the interaction.",
+             "readOnly": true,
+@@ -2592,17 +2714,15 @@
+               "budget_exceeded"
+             ]
+           },
+-          "created": {
+-            "description": "Required. Output only. The time at which the response was created in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+-            "readOnly": true,
+-            "type": "string",
+-            "format": "date-time"
++          "store": {
++            "description": "Input only. Whether to store the response and request for later retrieval.",
++            "writeOnly": true,
++            "type": "boolean"
+           },
+-          "updated": {
+-            "description": "Required. Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+-            "readOnly": true,
+-            "type": "string",
+-            "format": "date-time"
++          "stream": {
++            "description": "Input only. Whether the interaction will be streamed.",
++            "writeOnly": true,
++            "type": "boolean"
+           },
+           "system_instruction": {
+             "description": "System instruction for the interaction.",
+@@ -2615,83 +2735,15 @@
+               "$ref": "#/components/schemas/Tool"
+             }
+           },
+-          "response_modalities": {
+-            "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/ResponseModality"
+-            }
+-          },
+-          "response_mime_type": {
+-            "description": "The mime type of the response. This is required if response_format is set.",
+-            "deprecated": true,
+-            "type": "string"
+-          },
+-          "previous_interaction_id": {
+-            "description": "The ID of the previous interaction, if any.",
+-            "type": "string"
+-          },
+-          "environment_id": {
+-            "description": "Output only. The environment ID for the interaction. Only populated if environment\nconfig is set in the request.",
++          "updated": {
++            "description": "Required. Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+             "readOnly": true,
+-            "type": "string"
+-          },
+-          "service_tier": {
+-            "$ref": "#/components/schemas/ServiceTier",
+-            "description": "The service tier for the interaction."
++            "type": "string",
++            "format": "date-time"
+           },
+           "webhook_config": {
+             "$ref": "#/components/schemas/WebhookConfig",
+             "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
+-          },
+-          "response_format": {
+-            "description": "Enforces that the generated response is a JSON object that complies with the JSON schema specified in this field.",
+-            "oneOf": [
+-              {
+-                "type": "array",
+-                "items": {
+-                  "$ref": "#/components/schemas/ResponseFormat"
+-                },
+-                "example": [
+-                  {
+-                    "type": "text",
+-                    "mime_type": "application/json"
+-                  }
+-                ],
+-                "x-speakeasy-model-namespace": "interactions"
+-              },
+-              {
+-                "$ref": "#/components/schemas/ResponseFormat"
+-              }
+-            ]
+-          },
+-          "environment": {
+-            "oneOf": [
+-              {
+-                "type": "string"
+-              },
+-              {
+-                "$ref": "#/components/schemas/EnvironmentConfig"
+-              }
+-            ],
+-            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
+-          },
+-          "agent_config": {
+-            "description": "Configuration parameters for the agent interaction.",
+-            "oneOf": [
+-              {
+-                "$ref": "#/components/schemas/DynamicAgentConfig"
+-              },
+-              {
+-                "$ref": "#/components/schemas/DeepResearchAgentConfig"
+-              }
+-            ],
+-            "discriminator": {
+-              "propertyName": "type"
+-            }
+-          },
+-          "input": {
+-            "$ref": "#/components/schemas/InteractionsInput"
+           }
+         },
+         "required": [
+@@ -2716,105 +2768,65 @@
+       "CreateModelInteractionParams": {
+         "description": "Parameters for creating model interactions",
+         "properties": {
+-          "model": {
+-            "$ref": "#/components/schemas/ModelOption",
+-            "description": "The name of the `Model` used for generating the interaction."
+-          },
+-          "stream": {
+-            "description": "Input only. Whether the interaction will be streamed.",
+-            "writeOnly": true,
+-            "type": "boolean"
+-          },
+-          "store": {
+-            "description": "Input only. Whether to store the response and request for later retrieval.",
+-            "writeOnly": true,
+-            "type": "boolean"
+-          },
+           "background": {
+             "description": "Input only. Whether to run the model interaction in the background.",
+             "writeOnly": true,
+             "type": "boolean"
+           },
+-          "id": {
+-            "description": "Required. Output only. A unique identifier for the interaction completion.",
+-            "readOnly": true,
++          "cached_content": {
++            "description": "The name of the cached content used as context to serve the prediction.\nNote: only used in explicit caching, where users can have control over\ncaching (e.g. what content to cache) and enjoy guaranteed cost savings.\nFormat:\n`projects/{project}/locations/{location}/cachedContents/{cachedContent}`",
+             "type": "string"
+           },
+-          "status": {
+-            "description": "Required. Output only. The status of the interaction.",
+-            "readOnly": true,
+-            "type": "string",
+-            "x-google-enum-descriptions": [
+-              "The interaction is in progress.",
+-              "The interaction requires action/input from the user.",
+-              "The interaction is completed.",
+-              "The interaction failed.",
+-              "The interaction was cancelled.",
+-              "The interaction is completed, but contains incomplete results (e.g.\nhitting max_tokens).",
+-              "The interaction was halted because the token budget was exceeded."
+-            ],
+-            "enum": [
+-              "in_progress",
+-              "requires_action",
+-              "completed",
+-              "failed",
+-              "cancelled",
+-              "incomplete",
+-              "budget_exceeded"
+-            ]
+-          },
+           "created": {
+             "description": "Required. Output only. The time at which the response was created in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+             "readOnly": true,
+             "type": "string",
+             "format": "date-time"
+           },
+-          "updated": {
+-            "description": "Required. Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
++          "environment": {
++            "oneOf": [
++              {
++                "type": "string"
++              },
++              {
++                "$ref": "#/components/schemas/EnvironmentConfig"
++              }
++            ],
++            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
++          },
++          "environment_id": {
++            "description": "Output only. The environment ID for the interaction. Only populated if environment\nconfig is set in the request.",
+             "readOnly": true,
+-            "type": "string",
+-            "format": "date-time"
++            "type": "string"
+           },
+-          "system_instruction": {
+-            "description": "System instruction for the interaction.",
++          "generation_config": {
++            "$ref": "#/components/schemas/GenerationConfig",
++            "description": "Input only. Configuration parameters for the model interaction.",
++            "writeOnly": true
++          },
++          "id": {
++            "description": "Required. Output only. A unique identifier for the interaction completion.",
++            "readOnly": true,
+             "type": "string"
+           },
+-          "tools": {
+-            "description": "A list of tool declarations the model may call during interaction.",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/Tool"
+-            }
++          "input": {
++            "$ref": "#/components/schemas/InteractionsInput"
+           },
+-          "response_modalities": {
+-            "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/ResponseModality"
+-            }
++          "labels": {
++            "type": "object",
++            "additionalProperties": {
++              "type": "string"
++            },
++            "description": "The labels with user-defined metadata for the request."
+           },
+-          "response_mime_type": {
+-            "description": "The mime type of the response. This is required if response_format is set.",
+-            "deprecated": true,
+-            "type": "string"
++          "model": {
++            "$ref": "#/components/schemas/ModelOption",
++            "description": "The name of the `Model` used for generating the interaction."
+           },
+           "previous_interaction_id": {
+             "description": "The ID of the previous interaction, if any.",
+             "type": "string"
+           },
+-          "environment_id": {
+-            "description": "Output only. The environment ID for the interaction. Only populated if environment\nconfig is set in the request.",
+-            "readOnly": true,
+-            "type": "string"
+-          },
+-          "service_tier": {
+-            "$ref": "#/components/schemas/ServiceTier",
+-            "description": "The service tier for the interaction."
+-          },
+-          "webhook_config": {
+-            "$ref": "#/components/schemas/WebhookConfig",
+-            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
+-          },
+           "response_format": {
+             "description": "Enforces that the generated response is a JSON object that complies with the JSON schema specified in this field.",
+             "oneOf": [
+@@ -2836,28 +2848,82 @@
+               }
+             ]
+           },
+-          "environment": {
+-            "oneOf": [
+-              {
+-                "type": "string"
+-              },
+-              {
+-                "$ref": "#/components/schemas/EnvironmentConfig"
+-              }
++          "response_mime_type": {
++            "description": "The mime type of the response. This is required if response_format is set.",
++            "deprecated": true,
++            "type": "string"
++          },
++          "response_modalities": {
++            "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/ResponseModality"
++            }
++          },
++          "safety_settings": {
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/SafetySetting"
++            },
++            "description": "Safety settings for the interaction."
++          },
++          "service_tier": {
++            "$ref": "#/components/schemas/ServiceTier",
++            "description": "The service tier for the interaction."
++          },
++          "status": {
++            "description": "Required. Output only. The status of the interaction.",
++            "readOnly": true,
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "The interaction is in progress.",
++              "The interaction requires action/input from the user.",
++              "The interaction is completed.",
++              "The interaction failed.",
++              "The interaction was cancelled.",
++              "The interaction is completed, but contains incomplete results (e.g.\nhitting max_tokens).",
++              "The interaction was halted because the token budget was exceeded."
+             ],
+-            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
++            "enum": [
++              "in_progress",
++              "requires_action",
++              "completed",
++              "failed",
++              "cancelled",
++              "incomplete",
++              "budget_exceeded"
++            ]
+           },
+-          "generation_config": {
+-            "$ref": "#/components/schemas/GenerationConfig",
+-            "description": "Input only. Configuration parameters for the model interaction.",
+-            "writeOnly": true
++          "store": {
++            "description": "Input only. Whether to store the response and request for later retrieval.",
++            "writeOnly": true,
++            "type": "boolean"
+           },
+-          "cached_content": {
+-            "description": "The name of the cached content used as context to serve the prediction.\nNote: only used in explicit caching, where users can have control over\ncaching (e.g. what content to cache) and enjoy guaranteed cost savings.\nFormat:\n`projects/{project}/locations/{location}/cachedContents/{cachedContent}`",
++          "stream": {
++            "description": "Input only. Whether the interaction will be streamed.",
++            "writeOnly": true,
++            "type": "boolean"
++          },
++          "system_instruction": {
++            "description": "System instruction for the interaction.",
+             "type": "string"
+           },
+-          "input": {
+-            "$ref": "#/components/schemas/InteractionsInput"
++          "tools": {
++            "description": "A list of tool declarations the model may call during interaction.",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/Tool"
++            }
++          },
++          "updated": {
++            "description": "Required. Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
++            "readOnly": true,
++            "type": "string",
++            "format": "date-time"
++          },
++          "webhook_config": {
++            "$ref": "#/components/schemas/WebhookConfig",
++            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
+           }
+         },
+         "required": [
+@@ -2883,13 +2949,21 @@
+         "description": "Configuration for the Deep Research agent.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "deep-research"
++          "collaborative_planning": {
++            "description": "Enables human-in-the-loop planning for the Deep Research agent. If set to\ntrue, the Deep Research agent will provide a research plan in its response.\nThe agent will then proceed only if the user confirms the plan in the next\nturn.",
++            "type": "boolean"
++          },
++          "enable_bigquery_tool": {
++            "description": "Enables bigquery tool for the Deep Research agent.",
++            "type": "boolean"
+           },
+           "thinking_summaries": {
+             "description": "Whether to include thought summaries in the response.",
+             "$ref": "#/components/schemas/ThinkingSummaries"
+           },
++          "type": {
++            "const": "deep-research"
++          },
+           "visualization": {
+             "description": "Whether to include visualizations in the response.",
+             "type": "string",
+@@ -2901,14 +2975,6 @@
+               "off",
+               "auto"
+             ]
+-          },
+-          "collaborative_planning": {
+-            "description": "Enables human-in-the-loop planning for the Deep Research agent. If set to\ntrue, the Deep Research agent will provide a research plan in its response.\nThe agent will then proceed only if the user confirms the plan in the next\nturn.",
+-            "type": "boolean"
+-          },
+-          "enable_bigquery_tool": {
+-            "description": "Enables bigquery tool for the Deep Research agent.",
+-            "type": "boolean"
+           }
+         },
+         "required": [
+@@ -2931,19 +2997,12 @@
+         "description": "A document content block.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "document"
+-          },
+           "data": {
+             "description": "The document content.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "uri": {
+-            "description": "The URI of the document.",
+-            "type": "string"
+-          },
+           "mime_type": {
+             "description": "The mime type of the document.",
+             "type": "string",
+@@ -2955,6 +3014,13 @@
+               "application/pdf",
+               "text/csv"
+             ]
++          },
++          "type": {
++            "const": "document"
++          },
++          "uri": {
++            "description": "The URI of the document.",
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -2983,17 +3049,11 @@
+       "DocumentDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "document"
+-          },
+           "data": {
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "uri": {
+-            "type": "string"
+-          },
+           "mime_type": {
+             "type": "string",
+             "x-google-enum-descriptions": [
+@@ -3004,6 +3064,12 @@
+               "application/pdf",
+               "text/csv"
+             ]
++          },
++          "type": {
++            "const": "document"
++          },
++          "uri": {
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -3056,14 +3122,9 @@
+       "EnvironmentConfig": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "remote"
+-          },
+-          "sources": {
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/Source"
+-            }
++          "environment_id": {
++            "description": "Optional. The environment ID for the interaction. If specified, the request will\nupdate the existing environment instead of creating a new one.",
++            "type": "string"
+           },
+           "network": {
+             "description": "Network configuration for the environment.",
+@@ -3081,6 +3142,15 @@
+                 ]
+               }
+             ]
++          },
++          "sources": {
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/Source"
++            }
++          },
++          "type": {
++            "const": "remote"
+           }
+         },
+         "required": [
+@@ -3246,9 +3316,6 @@
+       "ErrorEvent": {
+         "type": "object",
+         "properties": {
+-          "event_type": {
+-            "const": "error"
+-          },
+           "error": {
+             "$ref": "#/components/schemas/Error"
+           },
+@@ -3256,6 +3323,9 @@
+             "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+             "type": "string"
+           },
++          "event_type": {
++            "const": "error"
++          },
+           "metadata": {
+             "description": "Optional metadata accompanying ANY streamed event.",
+             "$ref": "#/components/schemas/StreamMetadata"
+@@ -3311,35 +3381,37 @@
+         "description": "A file citation annotation.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "file_citation"
++          "custom_metadata": {
++            "description": "User provided metadata about the retrieved context.",
++            "type": "object",
++            "additionalProperties": {
++              "description": "Properties of the object."
++            }
+           },
+           "document_uri": {
+             "description": "The URI of the file.",
+             "type": "string"
+           },
++          "end_index": {
++            "description": "End of the attributed segment, exclusive.",
++            "type": "integer",
++            "format": "int32"
++          },
+           "file_name": {
+             "description": "The name of the file.",
+             "type": "string"
+           },
+-          "source": {
+-            "description": "Source attributed for a portion of the text.",
++          "media_id": {
++            "description": "Media ID in-case of image citations, if applicable.",
+             "type": "string"
+           },
+-          "custom_metadata": {
+-            "description": "User provided metadata about the retrieved context.",
+-            "type": "object",
+-            "additionalProperties": {
+-              "description": "Properties of the object."
+-            }
+-          },
+           "page_number": {
+             "description": "Page number of the cited document, if applicable.",
+             "type": "integer",
+             "format": "int32"
+           },
+-          "media_id": {
+-            "description": "Media ID in-case of image citations, if applicable.",
++          "source": {
++            "description": "Source attributed for a portion of the text.",
+             "type": "string"
+           },
+           "start_index": {
+@@ -3347,10 +3419,8 @@
+             "type": "integer",
+             "format": "int32"
+           },
+-          "end_index": {
+-            "description": "End of the attributed segment, exclusive.",
+-            "type": "integer",
+-            "format": "int32"
++          "type": {
++            "const": "file_citation"
+           }
+         },
+         "required": [
+@@ -3368,9 +3438,6 @@
+         "description": "A tool that can be used by the model to search files.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "file_search"
+-          },
+           "file_search_store_names": {
+             "description": "The file search store names to search.",
+             "type": "array",
+@@ -3378,14 +3445,17 @@
+               "type": "string"
+             }
+           },
++          "metadata_filter": {
++            "description": "Metadata filter to apply to the semantic retrieval documents and chunks.",
++            "type": "string"
++          },
+           "top_k": {
+             "description": "The number of semantic retrieval chunks to retrieve.",
+             "type": "integer",
+             "format": "int32"
+           },
+-          "metadata_filter": {
+-            "description": "Metadata filter to apply to the semantic retrieval documents and chunks.",
+-            "type": "string"
++          "type": {
++            "const": "file_search"
+           }
+         },
+         "required": [
+@@ -3413,14 +3483,14 @@
+       "FileSearchCallDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "file_search_call"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "file_search_call"
+           }
+         },
+         "required": [
+@@ -3432,9 +3502,6 @@
+         "description": "File Search call step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "file_search_call"
+-          },
+           "id": {
+             "description": "Required. A unique ID for this specific tool call.",
+             "type": "string"
+@@ -3444,6 +3511,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "file_search_call"
+           }
+         },
+         "required": [
+@@ -3477,9 +3547,6 @@
+       "FileSearchResultDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "file_search_result"
+-          },
+           "result": {
+             "type": "array",
+             "items": {
+@@ -3491,6 +3558,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "file_search_result"
+           }
+         },
+         "required": [
+@@ -3503,9 +3573,6 @@
+         "description": "File Search result step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "file_search_result"
+-          },
+           "call_id": {
+             "description": "Required. ID to match the ID from the function call block.",
+             "type": "string"
+@@ -3515,6 +3582,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "file_search_result"
+           }
+         },
+         "required": [
+@@ -3544,6 +3614,10 @@
+         "description": "Config for filters.",
+         "type": "object",
+         "properties": {
++          "metadata_filter": {
++            "description": "Optional. String for metadata filtering.",
++            "type": "string"
++          },
+           "vector_distance_threshold": {
+             "description": "Optional. Only returns contexts with vector distance smaller than the\nthreshold.",
+             "type": "number",
+@@ -3553,10 +3627,6 @@
+             "description": "Optional. Only returns contexts with vector similarity larger than the\nthreshold.",
+             "type": "number",
+             "format": "double"
+-          },
+-          "metadata_filter": {
+-            "description": "Optional. String for metadata filtering.",
+-            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -3565,19 +3635,19 @@
+         "description": "A tool that can be used by the model.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "function"
++          "description": {
++            "description": "A description of the function.",
++            "type": "string"
+           },
+           "name": {
+             "description": "The name of the function.",
+             "type": "string"
+           },
+-          "description": {
+-            "description": "A description of the function.",
+-            "type": "string"
+-          },
+           "parameters": {
+             "description": "The JSON Schema for the function's parameters."
++          },
++          "type": {
++            "const": "function"
+           }
+         },
+         "required": [
+@@ -3611,12 +3681,6 @@
+       "FunctionCallDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "function_call"
+-          },
+-          "name": {
+-            "type": "string"
+-          },
+           "arguments": {
+             "type": "object",
+             "additionalProperties": {
+@@ -3626,6 +3690,12 @@
+           "id": {
+             "description": "Required. A unique ID for this specific tool call.",
+             "type": "string"
++          },
++          "name": {
++            "type": "string"
++          },
++          "type": {
++            "const": "function_call"
+           }
+         },
+         "required": [
+@@ -3640,13 +3710,6 @@
+         "description": "A function tool call step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "function_call"
+-          },
+-          "name": {
+-            "description": "Required. The name of the tool to call.",
+-            "type": "string"
+-          },
+           "arguments": {
+             "description": "Required. The arguments to pass to the function.",
+             "type": "object",
+@@ -3657,6 +3720,13 @@
+           "id": {
+             "description": "Required. A unique ID for this specific tool call.",
+             "type": "string"
++          },
++          "name": {
++            "description": "Required. The name of the tool to call.",
++            "type": "string"
++          },
++          "type": {
++            "const": "function_call"
+           }
+         },
+         "required": [
+@@ -3691,17 +3761,14 @@
+       "FunctionResultDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "function_result"
+-          },
+-          "name": {
++          "call_id": {
++            "description": "Required. ID to match the ID from the function call block.",
+             "type": "string"
+           },
+           "is_error": {
+             "type": "boolean"
+           },
+-          "call_id": {
+-            "description": "Required. ID to match the ID from the function call block.",
++          "name": {
+             "type": "string"
+           },
+           "result": {
+@@ -3726,6 +3793,9 @@
+                 "type": "string"
+               }
+             ]
++          },
++          "type": {
++            "const": "function_result"
+           }
+         },
+         "required": [
+@@ -3739,19 +3809,16 @@
+         "description": "Result of a function tool call.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "function_result"
+-          },
+-          "name": {
+-            "description": "The name of the tool that was called.",
++          "call_id": {
++            "description": "Required. ID to match the ID from the function call block.",
+             "type": "string"
+           },
+           "is_error": {
+             "description": "Whether the tool call resulted in an error.",
+             "type": "boolean"
+           },
+-          "call_id": {
+-            "description": "Required. ID to match the ID from the function call block.",
++          "name": {
++            "description": "The name of the tool that was called.",
+             "type": "string"
+           },
+           "result": {
+@@ -3777,6 +3844,9 @@
+                 "type": "string"
+               }
+             ]
++          },
++          "type": {
++            "const": "function_result"
+           }
+         },
+         "required": [
+@@ -3814,21 +3884,28 @@
+         "description": "Configuration parameters for model interactions.",
+         "type": "object",
+         "properties": {
+-          "temperature": {
+-            "description": "Controls the randomness of the output.",
+-            "type": "number",
+-            "format": "float"
++          "image_config": {
++            "description": "Configuration for image interaction.",
++            "deprecated": true,
++            "$ref": "#/components/schemas/ImageConfig"
+           },
+-          "top_p": {
+-            "description": "The maximum cumulative probability of tokens to consider when sampling.",
+-            "type": "number",
+-            "format": "float"
++          "max_output_tokens": {
++            "description": "The maximum number of tokens to include in the response.",
++            "type": "integer",
++            "format": "int32"
+           },
+           "seed": {
+             "description": "Seed used in decoding for reproducibility.",
+             "type": "integer",
+             "format": "int32"
+           },
++          "speech_config": {
++            "description": "Configuration for speech interaction.",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/SpeechConfig"
++            }
++          },
+           "stop_sequences": {
+             "description": "A list of character sequences that will stop output interaction.",
+             "type": "array",
+@@ -3836,6 +3913,11 @@
+               "type": "string"
+             }
+           },
++          "temperature": {
++            "description": "Controls the randomness of the output.",
++            "type": "number",
++            "format": "float"
++          },
+           "thinking_level": {
+             "description": "The level of thought tokens that the model should generate.",
+             "$ref": "#/components/schemas/ThinkingLevel"
+@@ -3844,33 +3926,6 @@
+             "description": "Whether to include thought summaries in the response.",
+             "$ref": "#/components/schemas/ThinkingSummaries"
+           },
+-          "max_output_tokens": {
+-            "description": "The maximum number of tokens to include in the response.",
+-            "type": "integer",
+-            "format": "int32"
+-          },
+-          "speech_config": {
+-            "description": "Configuration for speech interaction.",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/SpeechConfig"
+-            }
+-          },
+-          "image_config": {
+-            "description": "Configuration for image interaction.",
+-            "deprecated": true,
+-            "$ref": "#/components/schemas/ImageConfig"
+-          },
+-          "presence_penalty": {
+-            "description": "Penalizes tokens that have already appeared in the generated\ntext. A positive value encourages the model to generate more diverse and\nless repetitive text. Valid values can range from [-2.0, 2.0].",
+-            "type": "number",
+-            "format": "float"
+-          },
+-          "frequency_penalty": {
+-            "description": "Penalizes tokens based on their frequency in the generated text.\nA positive value helps to reduce the repetition of words and phrases.\nValid values can range from [-2.0, 2.0].",
+-            "type": "number",
+-            "format": "float"
+-          },
+           "tool_choice": {
+             "description": "The tool choice configuration.",
+             "oneOf": [
+@@ -3900,6 +3955,15 @@
+                 "$ref": "#/components/schemas/ToolChoiceConfig"
+               }
+             ]
++          },
++          "top_p": {
++            "description": "The maximum cumulative probability of tokens to consider when sampling.",
++            "type": "number",
++            "format": "float"
++          },
++          "video_config": {
++            "description": "Configuration for video generation.",
++            "$ref": "#/components/schemas/VideoConfig"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions",
+@@ -3914,9 +3978,6 @@
+         "description": "A tool that can be used by the model to call Google Maps.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_maps"
+-          },
+           "enable_widget": {
+             "description": "Whether to return a widget context token in the tool call result of the\nresponse.",
+             "type": "boolean"
+@@ -3930,6 +3991,9 @@
+             "description": "The longitude of the user's location.",
+             "type": "number",
+             "format": "double"
++          },
++          "type": {
++            "const": "google_maps"
+           }
+         },
+         "required": [
+@@ -3971,9 +4035,6 @@
+       "GoogleMapsCallDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_maps_call"
+-          },
+           "arguments": {
+             "description": "The arguments to pass to the Google Maps tool.",
+             "$ref": "#/components/schemas/GoogleMapsCallArguments"
+@@ -3983,6 +4044,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "google_maps_call"
+           }
+         },
+         "required": [
+@@ -3994,9 +4058,6 @@
+         "description": "Google Maps call step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_maps_call"
+-          },
+           "arguments": {
+             "description": "The arguments to pass to the Google Maps tool.",
+             "$ref": "#/components/schemas/GoogleMapsCallStepArguments"
+@@ -4010,6 +4071,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "google_maps_call"
+           }
+         },
+         "required": [
+@@ -4081,9 +4145,6 @@
+       "GoogleMapsResultDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_maps_result"
+-          },
+           "result": {
+             "description": "The results of the Google Maps.",
+             "type": "array",
+@@ -4096,6 +4157,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "google_maps_result"
+           }
+         },
+         "required": [
+@@ -4129,13 +4193,10 @@
+       "GoogleMapsResultPlaces": {
+         "type": "object",
+         "properties": {
+-          "place_id": {
+-            "type": "string"
+-          },
+           "name": {
+             "type": "string"
+           },
+-          "url": {
++          "place_id": {
+             "type": "string"
+           },
+           "review_snippets": {
+@@ -4143,6 +4204,9 @@
+             "items": {
+               "$ref": "#/components/schemas/ReviewSnippet"
+             }
++          },
++          "url": {
++            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -4151,8 +4215,9 @@
+         "description": "Google Maps result step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_maps_result"
++          "call_id": {
++            "description": "Required. ID to match the ID from the function call block.",
++            "type": "string"
+           },
+           "result": {
+             "type": "array",
+@@ -4160,15 +4225,14 @@
+               "$ref": "#/components/schemas/GoogleMapsResultItem"
+             }
+           },
+-          "call_id": {
+-            "description": "Required. ID to match the ID from the function call block.",
+-            "type": "string"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "google_maps_result"
+           }
+         },
+         "required": [
+@@ -4206,9 +4270,6 @@
+         "description": "A tool that can be used by the model to search Google.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_search"
+-          },
+           "search_types": {
+             "description": "The types of search grounding to enable.",
+             "type": "array",
+@@ -4225,6 +4286,9 @@
+                 "enterprise_web_search"
+               ]
+             }
++          },
++          "type": {
++            "const": "google_search"
+           }
+         },
+         "required": [
+@@ -4266,9 +4330,6 @@
+       "GoogleSearchCallDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_search_call"
+-          },
+           "arguments": {
+             "$ref": "#/components/schemas/GoogleSearchCallArguments"
+           },
+@@ -4277,6 +4338,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "google_search_call"
+           }
+         },
+         "required": [
+@@ -4289,13 +4353,14 @@
+         "description": "Google Search call step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_search_call"
+-          },
+           "arguments": {
+             "description": "Required. The arguments to pass to Google Search.",
+             "$ref": "#/components/schemas/GoogleSearchCallStepArguments"
+           },
++          "id": {
++            "description": "Required. A unique ID for this specific tool call.",
++            "type": "string"
++          },
+           "search_type": {
+             "description": "The type of search grounding enabled.",
+             "type": "string",
+@@ -4310,15 +4375,14 @@
+               "enterprise_web_search"
+             ]
+           },
+-          "id": {
+-            "description": "Required. A unique ID for this specific tool call.",
+-            "type": "string"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "google_search_call"
+           }
+         },
+         "required": [
+@@ -4383,8 +4447,8 @@
+       "GoogleSearchResultDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_search_result"
++          "is_error": {
++            "type": "boolean"
+           },
+           "result": {
+             "type": "array",
+@@ -4392,14 +4456,14 @@
+               "$ref": "#/components/schemas/GoogleSearchResult"
+             }
+           },
+-          "is_error": {
+-            "type": "boolean"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "google_search_result"
+           }
+         },
+         "required": [
+@@ -4430,8 +4494,13 @@
+         "description": "Google Search result step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "google_search_result"
++          "call_id": {
++            "description": "Required. ID to match the ID from the function call block.",
++            "type": "string"
++          },
++          "is_error": {
++            "description": "Whether the Google Search resulted in an error.",
++            "type": "boolean"
+           },
+           "result": {
+             "description": "Required. The results of the Google Search.",
+@@ -4440,19 +4509,14 @@
+               "$ref": "#/components/schemas/GoogleSearchResultItem"
+             }
+           },
+-          "is_error": {
+-            "description": "Whether the Google Search resulted in an error.",
+-            "type": "boolean"
+-          },
+-          "call_id": {
+-            "description": "Required. ID to match the ID from the function call block.",
+-            "type": "string"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "google_search_result"
+           }
+         },
+         "required": [
+@@ -4490,6 +4554,11 @@
+         "description": "The number of grounding tool counts.",
+         "type": "object",
+         "properties": {
++          "count": {
++            "description": "The number of grounding tool counts.",
++            "type": "integer",
++            "format": "int32"
++          },
+           "type": {
+             "description": "The grounding tool type associated with the count.",
+             "type": "string",
+@@ -4503,15 +4572,56 @@
+               "google_maps",
+               "retrieval"
+             ]
+-          },
+-          "count": {
+-            "description": "The number of grounding tool counts.",
+-            "type": "integer",
+-            "format": "int32"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+       },
++      "HarmCategory": {
++        "type": "string",
++        "x-google-enum-descriptions": [
++          "Content that promotes violence or incites hatred against individuals or\ngroups based on certain attributes.",
++          "Content that promotes, facilitates, or enables dangerous activities.",
++          "Abusive, threatening, or content intended to bully, torment, or ridicule.",
++          "Content that contains sexually explicit material.",
++          "Deprecated: Election filter is not longer supported.\nThe harm category is civic integrity.",
++          "Images that contain hate speech.",
++          "Images that contain dangerous content.",
++          "Images that contain harassment.",
++          "Images that contain sexually explicit content.",
++          "Prompts designed to bypass safety filters."
++        ],
++        "x-google-enum-deprecated": [
++          false,
++          false,
++          false,
++          false,
++          true,
++          false,
++          false,
++          false,
++          false,
++          false
++        ],
++        "enum": [
++          "hate_speech",
++          "dangerous_content",
++          "harassment",
++          "sexually_explicit",
++          "civic_integrity",
++          "image_hate",
++          "image_dangerous_content",
++          "image_harassment",
++          "image_sexually_explicit",
++          "jailbreak"
++        ],
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "HarmCategory"
++          }
++        ]
++      },
+       "HybridSearch": {
+         "description": "Config for Hybrid Search.",
+         "type": "object",
+@@ -4590,19 +4700,12 @@
+         "description": "An image content block.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "image"
+-          },
+           "data": {
+             "description": "The image content.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "uri": {
+-            "description": "The URI of the image.",
+-            "type": "string"
+-          },
+           "mime_type": {
+             "description": "The mime type of the image.",
+             "type": "string",
+@@ -4630,6 +4733,13 @@
+           "resolution": {
+             "description": "The resolution of the media.",
+             "$ref": "#/components/schemas/MediaResolution"
++          },
++          "type": {
++            "const": "image"
++          },
++          "uri": {
++            "description": "The URI of the image.",
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -4658,17 +4768,11 @@
+       "ImageDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "image"
+-          },
+           "data": {
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "uri": {
+-            "type": "string"
+-          },
+           "mime_type": {
+             "type": "string",
+             "x-google-enum-descriptions": [
+@@ -4695,6 +4799,12 @@
+           "resolution": {
+             "description": "The resolution of the media.",
+             "$ref": "#/components/schemas/MediaResolution"
++          },
++          "type": {
++            "const": "image"
++          },
++          "uri": {
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -4706,31 +4816,6 @@
+         "description": "Configuration for image output format.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "image"
+-          },
+-          "mime_type": {
+-            "description": "The MIME type of the image output.",
+-            "type": "string",
+-            "x-google-enum-descriptions": [
+-              "JPEG image format."
+-            ],
+-            "enum": [
+-              "image/jpeg"
+-            ]
+-          },
+-          "delivery": {
+-            "description": "The delivery mode for the image output.",
+-            "type": "string",
+-            "x-google-enum-descriptions": [
+-              "Image data is returned inline in the response.",
+-              "Image data is returned as a URI."
+-            ],
+-            "enum": [
+-              "inline",
+-              "uri"
+-            ]
+-          },
+           "aspect_ratio": {
+             "description": "The aspect ratio for the image output.",
+             "type": "string",
+@@ -4767,6 +4852,18 @@
+               "4:1"
+             ]
+           },
++          "delivery": {
++            "description": "The delivery mode for the image output.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "Image data is returned inline in the response.",
++              "Image data is returned as a URI."
++            ],
++            "enum": [
++              "inline",
++              "uri"
++            ]
++          },
+           "image_size": {
+             "description": "The size of the image output.",
+             "type": "string",
+@@ -4782,6 +4879,19 @@
+               "2K",
+               "4K"
+             ]
++          },
++          "mime_type": {
++            "description": "The MIME type of the image output.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "JPEG image format."
++            ],
++            "enum": [
++              "image/jpeg"
++            ]
++          },
++          "type": {
++            "const": "image"
+           }
+         },
+         "required": [
+@@ -4811,105 +4921,93 @@
+       "Interaction": {
+         "description": "The Interaction resource.",
+         "properties": {
+-          "model": {
+-            "$ref": "#/components/schemas/ModelOption",
+-            "description": "The name of the `Model` used for generating the interaction."
+-          },
+           "agent": {
+             "$ref": "#/components/schemas/AgentOption",
+             "description": "The name of the `Agent` used for generating the interaction."
+           },
+-          "id": {
+-            "description": "Required. Output only. A unique identifier for the interaction completion.",
+-            "readOnly": true,
+-            "type": "string",
+-            "default": ""
+-          },
+-          "status": {
+-            "description": "Required. Output only. The status of the interaction.",
+-            "readOnly": true,
+-            "type": "string",
+-            "x-google-enum-descriptions": [
+-              "The interaction is in progress.",
+-              "The interaction requires action/input from the user.",
+-              "The interaction is completed.",
+-              "The interaction failed.",
+-              "The interaction was cancelled.",
+-              "The interaction is completed, but contains incomplete results (e.g.\nhitting max_tokens).",
+-              "The interaction was halted because the token budget was exceeded."
++          "agent_config": {
++            "description": "Configuration parameters for the agent interaction.",
++            "oneOf": [
++              {
++                "$ref": "#/components/schemas/DynamicAgentConfig"
++              },
++              {
++                "$ref": "#/components/schemas/DeepResearchAgentConfig"
++              }
+             ],
+-            "enum": [
+-              "in_progress",
+-              "requires_action",
+-              "completed",
+-              "failed",
+-              "cancelled",
+-              "incomplete",
+-              "budget_exceeded"
+-            ]
++            "discriminator": {
++              "propertyName": "type"
++            }
++          },
++          "cached_content": {
++            "description": "The name of the cached content used as context to serve the prediction.\nNote: only used in explicit caching, where users can have control over\ncaching (e.g. what content to cache) and enjoy guaranteed cost savings.\nFormat:\n`projects/{project}/locations/{location}/cachedContents/{cachedContent}`",
++            "type": "string"
+           },
+           "created": {
+             "description": "Output only. The time at which the response was created in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+             "readOnly": true,
+             "type": "string"
+           },
+-          "updated": {
+-            "description": "Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
++          "environment": {
++            "oneOf": [
++              {
++                "type": "string"
++              },
++              {
++                "$ref": "#/components/schemas/EnvironmentConfig"
++              }
++            ],
++            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
++          },
++          "environment_id": {
++            "description": "Output only. The environment ID for the interaction. Only populated if environment\nconfig is set in the request.",
+             "readOnly": true,
+             "type": "string"
+           },
+-          "system_instruction": {
+-            "description": "System instruction for the interaction.",
+-            "type": "string"
++          "generation_config": {
++            "$ref": "#/components/schemas/GenerationConfig",
++            "description": "Input only. Configuration parameters for the model interaction.",
++            "writeOnly": true
+           },
+-          "tools": {
+-            "description": "A list of tool declarations the model may call during interaction.",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/Tool"
+-            }
++          "id": {
++            "description": "Required. Output only. A unique identifier for the interaction completion.",
++            "readOnly": true,
++            "type": "string",
++            "default": ""
+           },
+-          "usage": {
+-            "$ref": "#/components/schemas/Usage",
+-            "description": "Output only. Statistics on the interaction request's token usage.",
+-            "readOnly": true
++          "input": {
++            "$ref": "#/components/schemas/InteractionsInput"
+           },
+-          "response_modalities": {
+-            "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/ResponseModality"
+-            }
++          "labels": {
++            "type": "object",
++            "additionalProperties": {
++              "type": "string"
++            },
++            "description": "The labels with user-defined metadata for the request."
+           },
+-          "response_mime_type": {
+-            "description": "The mime type of the response. This is required if response_format is set.",
+-            "deprecated": true,
+-            "type": "string"
++          "model": {
++            "$ref": "#/components/schemas/ModelOption",
++            "description": "The name of the `Model` used for generating the interaction."
+           },
+-          "previous_interaction_id": {
+-            "description": "The ID of the previous interaction, if any.",
+-            "type": "string"
++          "output_audio": {
++            "description": "The last audio generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
++            "$ref": "#/components/schemas/AudioContent"
+           },
+-          "environment_id": {
+-            "description": "Output only. The environment ID for the interaction. Only populated if environment\nconfig is set in the request.",
+-            "readOnly": true,
+-            "type": "string"
++          "output_image": {
++            "description": "The last image generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
++            "$ref": "#/components/schemas/ImageContent"
+           },
+-          "service_tier": {
+-            "$ref": "#/components/schemas/ServiceTier",
+-            "description": "The service tier for the interaction."
++          "output_text": {
++            "description": "Concatenated text from the last model output in response to the current request.\n\nNote: this is added by the SDK.",
++            "type": "string"
+           },
+-          "webhook_config": {
+-            "$ref": "#/components/schemas/WebhookConfig",
+-            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
++          "output_video": {
++            "description": "The last video generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
++            "$ref": "#/components/schemas/VideoContent"
+           },
+-          "steps": {
+-            "description": "Output only. The steps that make up the interaction, when included in the response.",
+-            "readOnly": true,
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/Step"
+-            }
++          "previous_interaction_id": {
++            "description": "The ID of the previous interaction, if any.",
++            "type": "string"
+           },
+           "response_format": {
+             "description": "Enforces that the generated response is a JSON object that complies with the JSON schema specified in this field.",
+@@ -4932,58 +5030,84 @@
+               }
+             ]
+           },
+-          "environment": {
+-            "oneOf": [
+-              {
+-                "type": "string"
+-              },
+-              {
+-                "$ref": "#/components/schemas/EnvironmentConfig"
+-              }
+-            ],
+-            "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
++          "response_mime_type": {
++            "description": "The mime type of the response. This is required if response_format is set.",
++            "deprecated": true,
++            "type": "string"
+           },
+-          "generation_config": {
+-            "$ref": "#/components/schemas/GenerationConfig",
+-            "description": "Input only. Configuration parameters for the model interaction.",
+-            "writeOnly": true
++          "response_modalities": {
++            "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/ResponseModality"
++            }
+           },
+-          "cached_content": {
+-            "description": "The name of the cached content used as context to serve the prediction.\nNote: only used in explicit caching, where users can have control over\ncaching (e.g. what content to cache) and enjoy guaranteed cost savings.\nFormat:\n`projects/{project}/locations/{location}/cachedContents/{cachedContent}`",
+-            "type": "string"
++          "safety_settings": {
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/SafetySetting"
++            },
++            "description": "Safety settings for the interaction."
+           },
+-          "agent_config": {
+-            "description": "Configuration parameters for the agent interaction.",
+-            "oneOf": [
+-              {
+-                "$ref": "#/components/schemas/DynamicAgentConfig"
+-              },
+-              {
+-                "$ref": "#/components/schemas/DeepResearchAgentConfig"
+-              }
++          "service_tier": {
++            "$ref": "#/components/schemas/ServiceTier",
++            "description": "The service tier for the interaction."
++          },
++          "status": {
++            "description": "Required. Output only. The status of the interaction.",
++            "readOnly": true,
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "The interaction is in progress.",
++              "The interaction requires action/input from the user.",
++              "The interaction is completed.",
++              "The interaction failed.",
++              "The interaction was cancelled.",
++              "The interaction is completed, but contains incomplete results (e.g.\nhitting max_tokens).",
++              "The interaction was halted because the token budget was exceeded."
+             ],
+-            "discriminator": {
+-              "propertyName": "type"
+-            }
++            "enum": [
++              "in_progress",
++              "requires_action",
++              "completed",
++              "failed",
++              "cancelled",
++              "incomplete",
++              "budget_exceeded"
++            ]
+           },
+-          "input": {
+-            "$ref": "#/components/schemas/InteractionsInput"
++          "steps": {
++            "description": "Output only. The steps that make up the interaction, when included in the response.",
++            "readOnly": true,
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/Step"
++            }
+           },
+-          "output_text": {
+-            "description": "Concatenated text from the last model output in response to the current request.\n\nNote: this is added by the SDK.",
++          "system_instruction": {
++            "description": "System instruction for the interaction.",
+             "type": "string"
+           },
+-          "output_image": {
+-            "description": "The last image generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+-            "$ref": "#/components/schemas/ImageContent"
++          "tools": {
++            "description": "A list of tool declarations the model may call during interaction.",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/Tool"
++            }
+           },
+-          "output_audio": {
+-            "description": "The last audio generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+-            "$ref": "#/components/schemas/AudioContent"
++          "updated": {
++            "description": "Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
++            "readOnly": true,
++            "type": "string"
++          },
++          "usage": {
++            "$ref": "#/components/schemas/Usage",
++            "description": "Output only. Statistics on the interaction request's token usage.",
++            "readOnly": true
+           },
+-          "output_video": {
+-            "description": "The last video generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+-            "$ref": "#/components/schemas/VideoContent"
++          "webhook_config": {
++            "$ref": "#/components/schemas/WebhookConfig",
++            "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
+           }
+         },
+         "required": [
+@@ -5033,20 +5157,20 @@
+       "InteractionCompletedEvent": {
+         "type": "object",
+         "properties": {
+-          "event_type": {
+-            "const": "interaction.completed"
+-          },
+           "event_id": {
+             "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+             "type": "string"
+           },
+-          "metadata": {
+-            "$ref": "#/components/schemas/StreamMetadata",
+-            "description": "Optional metadata accompanying ANY streamed event."
++          "event_type": {
++            "const": "interaction.completed"
+           },
+           "interaction": {
+             "$ref": "#/components/schemas/InteractionSseEventInteraction",
+             "description": "Partial completed interaction resource emitted at the end of the stream."
++          },
++          "metadata": {
++            "$ref": "#/components/schemas/StreamMetadata",
++            "description": "Optional metadata accompanying ANY streamed event."
+           }
+         },
+         "required": [
+@@ -5099,20 +5223,20 @@
+       "InteractionCreatedEvent": {
+         "type": "object",
+         "properties": {
+-          "event_type": {
+-            "const": "interaction.created"
+-          },
+           "event_id": {
+             "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+             "type": "string"
+           },
+-          "metadata": {
+-            "$ref": "#/components/schemas/StreamMetadata",
+-            "description": "Optional metadata accompanying ANY streamed event."
++          "event_type": {
++            "const": "interaction.created"
+           },
+           "interaction": {
+             "$ref": "#/components/schemas/InteractionSseEventInteraction",
+             "description": "Partial interaction resource emitted when the stream is created."
++          },
++          "metadata": {
++            "$ref": "#/components/schemas/StreamMetadata",
++            "description": "Optional metadata accompanying ANY streamed event."
+           }
+         },
+         "required": [
+@@ -5205,13 +5329,17 @@
+           "status"
+         ],
+         "properties": {
+-          "id": {
+-            "description": "Required. Output only. A unique identifier for the interaction completion.",
++          "agent": {
++            "description": "The agent to interact with.",
++            "type": "string"
++          },
++          "created": {
++            "description": "Output only. The time at which the response was created in ISO 8601 format.",
+             "readOnly": true,
+             "type": "string"
+           },
+-          "object": {
+-            "description": "Output only. The resource type.",
++          "id": {
++            "description": "Required. Output only. A unique identifier for the interaction completion.",
+             "readOnly": true,
+             "type": "string"
+           },
+@@ -5219,10 +5347,15 @@
+             "description": "The model that will complete your prompt.",
+             "type": "string"
+           },
+-          "agent": {
+-            "description": "The agent to interact with.",
++          "object": {
++            "description": "Output only. The resource type.",
++            "readOnly": true,
+             "type": "string"
+           },
++          "service_tier": {
++            "$ref": "#/components/schemas/ServiceTier",
++            "description": "The service tier for the interaction."
++          },
+           "status": {
+             "description": "Required. Output only. The status of the interaction.",
+             "enum": [
+@@ -5244,32 +5377,23 @@
+               "The interaction is completed, but contains incomplete results (e.g. hitting max_tokens)."
+             ]
+           },
+-          "created": {
+-            "description": "Output only. The time at which the response was created in ISO 8601 format.",
++          "steps": {
++            "description": "Output only. The steps that make up the interaction, if included in this event.",
++            "items": {
++              "$ref": "#/components/schemas/Step"
++            },
+             "readOnly": true,
+-            "type": "string"
++            "type": "array"
+           },
+           "updated": {
+             "description": "Output only. The time at which the response was last updated in ISO 8601 format.",
+             "readOnly": true,
+             "type": "string"
+           },
+-          "service_tier": {
+-            "$ref": "#/components/schemas/ServiceTier",
+-            "description": "The service tier for the interaction."
+-          },
+           "usage": {
+             "$ref": "#/components/schemas/Usage",
+             "description": "Output only. Statistics on the interaction request's token usage.",
+             "readOnly": true
+-          },
+-          "steps": {
+-            "description": "Output only. The steps that make up the interaction, if included in this event.",
+-            "items": {
+-              "$ref": "#/components/schemas/Step"
+-            },
+-            "readOnly": true,
+-            "type": "array"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -5290,12 +5414,20 @@
+       "InteractionStatusUpdate": {
+         "type": "object",
+         "properties": {
++          "event_id": {
++            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
++            "type": "string"
++          },
+           "event_type": {
+             "const": "interaction.status_update"
+           },
+           "interaction_id": {
+             "type": "string"
+           },
++          "metadata": {
++            "description": "Optional metadata accompanying ANY streamed event.",
++            "$ref": "#/components/schemas/StreamMetadata"
++          },
+           "status": {
+             "type": "string",
+             "x-google-enum-descriptions": [
+@@ -5316,14 +5448,6 @@
+               "incomplete",
+               "budget_exceeded"
+             ]
+-          },
+-          "event_id": {
+-            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+-            "type": "string"
+-          },
+-          "metadata": {
+-            "description": "Optional metadata accompanying ANY streamed event.",
+-            "$ref": "#/components/schemas/StreamMetadata"
+           }
+         },
+         "required": [
+@@ -5410,16 +5534,16 @@
+         "description": "Response message for WebhookService.ListWebhooks.",
+         "type": "object",
+         "properties": {
++          "next_page_token": {
++            "description": "A token, which can be sent as `page_token` to retrieve the next page.\nIf this field is omitted, there are no subsequent pages.",
++            "type": "string"
++          },
+           "webhooks": {
+             "description": "The webhooks.",
+             "type": "array",
+             "items": {
+               "$ref": "#/components/schemas/Webhook"
+             }
+-          },
+-          "next_page_token": {
+-            "description": "A token, which can be sent as `page_token` to retrieve the next page.\nIf this field is omitted, there are no subsequent pages.",
+-            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "webhooks",
+@@ -5431,20 +5555,29 @@
+           }
+         ]
+       },
++      "LocalEnvironmentConfig": {
++        "description": "Configuration for an environment that lives on the client connection rather\nthan in a server-managed sandbox.\n\nWhen set (via Interaction.local_environment), the agent's filesystem and\nshell are treated as living on the client: the agent's built-in environment\noperations (e.g. reading/listing/editing files and running commands) are\nsuspended on the server and yielded back to the client to execute, with their\nresults returned on a subsequent turn. This is mutually exclusive with a\nserver-managed `EnvironmentConfig` (remote_environment), since the\nenvironment is either on the client or in a server sandbox, never both.\n\nThis governs only the agent's built-in environment. Client-declared function\ntools are always executed on the client regardless of this field.",
++        "type": "object",
++        "properties": {
++          "type": {
++            "const": "local"
++          }
++        },
++        "required": [
++          "type"
++        ],
++        "x-speakeasy-model-namespace": "interactions"
++      },
+       "McpServer": {
+         "description": "A MCPServer is a server that can be called by the model to perform actions.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "mcp_server"
+-          },
+-          "name": {
+-            "description": "The name of the MCPServer.",
+-            "type": "string"
+-          },
+-          "url": {
+-            "description": "The full URL for the MCPServer endpoint.\nExample: \"https://api.example.com/mcp\"",
+-            "type": "string"
++          "allowed_tools": {
++            "description": "The allowed tools.",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/AllowedTools"
++            }
+           },
+           "headers": {
+             "description": "Optional: Fields for authentication headers, timeouts, etc., if needed.",
+@@ -5453,12 +5586,16 @@
+               "type": "string"
+             }
+           },
+-          "allowed_tools": {
+-            "description": "The allowed tools.",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/AllowedTools"
+-            }
++          "name": {
++            "description": "The name of the MCPServer.",
++            "type": "string"
++          },
++          "type": {
++            "const": "mcp_server"
++          },
++          "url": {
++            "description": "The full URL for the MCPServer endpoint.\nExample: \"https://api.example.com/mcp\"",
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -5487,8 +5624,11 @@
+       "McpServerToolCallDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "mcp_server_tool_call"
++          "arguments": {
++            "type": "object",
++            "additionalProperties": {
++              "description": "Properties of the object."
++            }
+           },
+           "name": {
+             "type": "string"
+@@ -5496,11 +5636,8 @@
+           "server_name": {
+             "type": "string"
+           },
+-          "arguments": {
+-            "type": "object",
+-            "additionalProperties": {
+-              "description": "Properties of the object."
+-            }
++          "type": {
++            "const": "mcp_server_tool_call"
+           }
+         },
+         "required": [
+@@ -5516,17 +5653,6 @@
+         "description": "MCPServer tool call step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "mcp_server_tool_call"
+-          },
+-          "name": {
+-            "description": "Required. The name of the tool which was called.",
+-            "type": "string"
+-          },
+-          "server_name": {
+-            "description": "Required. The name of the used MCP server.",
+-            "type": "string"
+-          },
+           "arguments": {
+             "description": "Required. The JSON object of arguments for the function.",
+             "type": "object",
+@@ -5537,6 +5663,17 @@
+           "id": {
+             "description": "Required. A unique ID for this specific tool call.",
+             "type": "string"
++          },
++          "name": {
++            "description": "Required. The name of the tool which was called.",
++            "type": "string"
++          },
++          "server_name": {
++            "description": "Required. The name of the used MCP server.",
++            "type": "string"
++          },
++          "type": {
++            "const": "mcp_server_tool_call"
+           }
+         },
+         "required": [
+@@ -5575,15 +5712,9 @@
+       "McpServerToolResultDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "mcp_server_tool_result"
+-          },
+           "name": {
+             "type": "string"
+           },
+-          "server_name": {
+-            "type": "string"
+-          },
+           "result": {
+             "oneOf": [
+               {
+@@ -5606,6 +5737,12 @@
+                 "type": "string"
+               }
+             ]
++          },
++          "server_name": {
++            "type": "string"
++          },
++          "type": {
++            "const": "mcp_server_tool_result"
+           }
+         },
+         "required": [
+@@ -5619,21 +5756,14 @@
+         "description": "MCPServer tool result step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "mcp_server_tool_result"
++          "call_id": {
++            "description": "Required. ID to match the ID from the function call block.",
++            "type": "string"
+           },
+           "name": {
+             "description": "Name of the tool which is called for this specific tool call.",
+             "type": "string"
+           },
+-          "server_name": {
+-            "description": "The name of the used MCP server.",
+-            "type": "string"
+-          },
+-          "call_id": {
+-            "description": "Required. ID to match the ID from the function call block.",
+-            "type": "string"
+-          },
+           "result": {
+             "description": "The output from the MCP server call. Can be simple text or rich content.",
+             "oneOf": [
+@@ -5657,6 +5787,13 @@
+                 }
+               }
+             ]
++          },
++          "server_name": {
++            "description": "The name of the used MCP server.",
++            "type": "string"
++          },
++          "type": {
++            "const": "mcp_server_tool_result"
+           }
+         },
+         "required": [
+@@ -5784,14 +5921,18 @@
+         "description": "Output generated by the model.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "model_output"
+-          },
+           "content": {
+             "type": "array",
+             "items": {
+               "$ref": "#/components/schemas/Content"
+             }
++          },
++          "error": {
++            "description": "The error result of the operation in case of failure or cancellation.",
++            "$ref": "#/components/schemas/Status"
++          },
++          "type": {
++            "const": "model_output"
+           }
+         },
+         "required": [
+@@ -5869,19 +6010,17 @@
+         "description": "A place citation annotation.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "place_citation"
+-          },
+-          "place_id": {
+-            "description": "The ID of the place, in `places/{place_id}` format.",
+-            "type": "string"
++          "end_index": {
++            "description": "End of the attributed segment, exclusive.",
++            "type": "integer",
++            "format": "int32"
+           },
+           "name": {
+             "description": "Title of the place.",
+             "type": "string"
+           },
+-          "url": {
+-            "description": "URI reference of the place.",
++          "place_id": {
++            "description": "The ID of the place, in `places/{place_id}` format.",
+             "type": "string"
+           },
+           "review_snippets": {
+@@ -5896,10 +6035,12 @@
+             "type": "integer",
+             "format": "int32"
+           },
+-          "end_index": {
+-            "description": "End of the attributed segment, exclusive.",
+-            "type": "integer",
+-            "format": "int32"
++          "type": {
++            "const": "place_citation"
++          },
++          "url": {
++            "description": "URI reference of the place.",
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -5916,16 +6057,12 @@
+       "Places": {
+         "type": "object",
+         "properties": {
+-          "place_id": {
+-            "description": "The ID of the place, in `places/{place_id}` format.",
+-            "type": "string"
+-          },
+           "name": {
+             "description": "Title of the place.",
+             "type": "string"
+           },
+-          "url": {
+-            "description": "URI reference of the place.",
++          "place_id": {
++            "description": "The ID of the place, in `places/{place_id}` format.",
+             "type": "string"
+           },
+           "review_snippets": {
+@@ -5934,6 +6071,10 @@
+             "items": {
+               "$ref": "#/components/schemas/ReviewSnippet"
+             }
++          },
++          "url": {
++            "description": "URI reference of the place.",
++            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -5958,24 +6099,24 @@
+       },
+       "RagRetrievalConfig": {
+         "description": "Specifies the context retrieval config.",
+-        "type": "object",
+-        "properties": {
+-          "top_k": {
+-            "description": "Optional. The number of contexts to retrieve.",
+-            "type": "integer",
+-            "format": "int32"
++        "type": "object",
++        "properties": {
++          "filter": {
++            "description": "Optional. Config for filters.",
++            "$ref": "#/components/schemas/Filter"
+           },
+           "hybrid_search": {
+             "description": "Optional. Config for Hybrid Search.",
+             "$ref": "#/components/schemas/HybridSearch"
+           },
+-          "filter": {
+-            "description": "Optional. Config for filters.",
+-            "$ref": "#/components/schemas/Filter"
+-          },
+           "ranking": {
+             "description": "Optional. Config for ranking and reranking.",
+             "$ref": "#/components/schemas/Ranking"
++          },
++          "top_k": {
++            "description": "Optional. The number of contexts to retrieve.",
++            "type": "integer",
++            "format": "int32"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -5991,6 +6132,10 @@
+               "$ref": "#/components/schemas/RagResource"
+             }
+           },
++          "rag_retrieval_config": {
++            "description": "Optional. The retrieval config for the Rag query.",
++            "$ref": "#/components/schemas/RagRetrievalConfig"
++          },
+           "similarity_top_k": {
+             "description": "Optional. Number of top k results to return from the selected corpora.",
+             "deprecated": true,
+@@ -6002,10 +6147,6 @@
+             "deprecated": true,
+             "type": "number",
+             "format": "double"
+-          },
+-          "rag_retrieval_config": {
+-            "description": "Optional. The retrieval config for the Rag query.",
+-            "$ref": "#/components/schemas/RagRetrievalConfig"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -6014,12 +6155,12 @@
+         "description": "Config for Rank Service.",
+         "type": "object",
+         "properties": {
+-          "ranking_config": {
+-            "const": "rank_service"
+-          },
+           "model_name": {
+             "description": "Optional. The model name of the rank service.",
+             "type": "string"
++          },
++          "ranking_config": {
++            "const": "rank_service"
+           }
+         },
+         "required": [
+@@ -6030,9 +6171,6 @@
+       "Ranking": {
+         "description": "Config for ranking and reranking.",
+         "type": "object",
+-        "discriminator": {
+-          "propertyName": "type"
+-        },
+         "$ref": "#/components/schemas/RankService",
+         "x-speakeasy-model-namespace": "interactions"
+       },
+@@ -6048,6 +6186,9 @@
+           {
+             "$ref": "#/components/schemas/ImageResponseFormat"
+           },
++          {
++            "$ref": "#/components/schemas/VideoResponseFormat"
++          },
+           {
+             "type": "object",
+             "additionalProperties": true
+@@ -6077,8 +6218,17 @@
+         "description": "A tool that can be used by the model to retrieve files.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "retrieval"
++          "exa_ai_search_config": {
++            "description": "Used to specify configuration for ExaAISearch.",
++            "$ref": "#/components/schemas/ExaAISearchConfig"
++          },
++          "parallel_ai_search_config": {
++            "description": "Used to specify configuration for ParallelAISearch.",
++            "$ref": "#/components/schemas/ParallelAISearchConfig"
++          },
++          "rag_store_config": {
++            "description": "Used to specify configuration for RagStore.",
++            "$ref": "#/components/schemas/RagStoreConfig"
+           },
+           "retrieval_types": {
+             "description": "The types of file retrieval to enable.",
+@@ -6099,32 +6249,218 @@
+               ]
+             }
+           },
++          "type": {
++            "const": "retrieval"
++          },
+           "vertex_ai_search_config": {
+             "description": "Used to specify configuration for VertexAISearch.",
+             "$ref": "#/components/schemas/VertexAISearchConfig"
++          }
++        },
++        "required": [
++          "type"
++        ],
++        "x-speakeasy-model-namespace": "interactions"
++      },
++      "RetrievalCallDelta": {
++        "description": "Used by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc. RetrievalType decides which tool is used.",
++        "type": "object",
++        "properties": {
++          "arguments": {
++            "description": "Required. The arguments to pass to the Retrieval tool.",
++            "allOf": [
++              {
++                "$ref": "#/components/schemas/RetrievalStepArguments"
++              }
++            ],
++            "$ref": "#/components/schemas/RetrievalStepArguments"
+           },
+-          "exa_ai_search_config": {
+-            "description": "Used to specify configuration for ExaAISearch.",
+-            "$ref": "#/components/schemas/ExaAISearchConfig"
++          "retrieval_type": {
++            "description": "The type of retrieval tools.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "",
++              "",
++              "",
++              ""
++            ],
++            "enum": [
++              "vertex_ai_search",
++              "rag_store",
++              "exa_ai_search",
++              "parallel_ai_search"
++            ]
+           },
+-          "parallel_ai_search_config": {
+-            "description": "Used to specify configuration for ParallelAISearch.",
+-            "$ref": "#/components/schemas/ParallelAISearchConfig"
++          "signature": {
++            "description": "A signature hash for backend validation.",
++            "type": "string",
++            "format": "byte",
++            "x-speakeasy-base64-input-mode": "file"
+           },
+-          "rag_store_config": {
+-            "description": "Used to specify configuration for RagStore.",
+-            "$ref": "#/components/schemas/RagStoreConfig"
++          "type": {
++            "const": "retrieval_call"
+           }
+         },
+         "required": [
++          "arguments",
+           "type"
+         ],
+-        "x-speakeasy-model-namespace": "interactions"
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "RetrievalCallDelta"
++          }
++        ]
++      },
++      "RetrievalCallStep": {
++        "description": "Retrieval call step.\nUsed by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc. RetrievalType decides which tool is used.",
++        "type": "object",
++        "properties": {
++          "arguments": {
++            "description": "Required. The arguments to pass to the retrieval tool.",
++            "allOf": [
++              {
++                "$ref": "#/components/schemas/RetrievalStepArguments"
++              }
++            ],
++            "$ref": "#/components/schemas/RetrievalStepArguments"
++          },
++          "id": {
++            "description": "Required. A unique ID for this specific tool call.",
++            "type": "string"
++          },
++          "retrieval_type": {
++            "description": "The type of retrieval tools.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "",
++              "",
++              "",
++              ""
++            ],
++            "enum": [
++              "vertex_ai_search",
++              "rag_store",
++              "exa_ai_search",
++              "parallel_ai_search"
++            ]
++          },
++          "signature": {
++            "description": "A signature hash for backend validation.",
++            "type": "string",
++            "format": "byte",
++            "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "retrieval_call"
++          }
++        },
++        "required": [
++          "arguments",
++          "id",
++          "type"
++        ],
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "RetrievalCallStep"
++          }
++        ]
++      },
++      "RetrievalResultDelta": {
++        "description": "Used by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc.\nToolResultDelta.type",
++        "type": "object",
++        "properties": {
++          "is_error": {
++            "description": "Whether the retrieval resulted in an error.",
++            "type": "boolean"
++          },
++          "signature": {
++            "description": "A signature hash for backend validation.",
++            "type": "string",
++            "format": "byte",
++            "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "retrieval_result"
++          }
++        },
++        "required": [
++          "type"
++        ],
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "RetrievalResultDelta"
++          }
++        ]
++      },
++      "RetrievalResultStep": {
++        "description": "Vertex Retrieval result step.\nUsed by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc.",
++        "type": "object",
++        "properties": {
++          "call_id": {
++            "description": "Required. ID to match the ID from the function call block.",
++            "type": "string"
++          },
++          "is_error": {
++            "description": "Whether the retrieval resulted in an error.",
++            "type": "boolean"
++          },
++          "signature": {
++            "description": "A signature hash for backend validation.",
++            "type": "string",
++            "format": "byte",
++            "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "retrieval_result"
++          }
++        },
++        "required": [
++          "call_id",
++          "type"
++        ],
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "RetrievalResultStep"
++          }
++        ]
++      },
++      "RetrievalStepArguments": {
++        "description": "The arguments to pass to Retrieval tools.",
++        "type": "object",
++        "properties": {
++          "queries": {
++            "description": "Queries for Retrieval information.",
++            "type": "array",
++            "items": {
++              "type": "string"
++            }
++          }
++        },
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-name-override": "RetrievalCallArguments",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "RetrievalCallArguments"
++          }
++        ]
+       },
+       "ReviewSnippet": {
+         "description": "Encapsulates a snippet of a user review that answers a question about\nthe features of a specific place in Google Maps.",
+         "type": "object",
+         "properties": {
++          "review_id": {
++            "description": "The ID of the review snippet.",
++            "type": "string"
++          },
+           "title": {
+             "description": "Title of the review.",
+             "type": "string"
+@@ -6132,10 +6468,6 @@
+           "url": {
+             "description": "A link that corresponds to the user review on Google Maps.",
+             "type": "string"
+-          },
+-          "review_id": {
+-            "description": "The ID of the review snippet.",
+-            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -6185,6 +6517,57 @@
+           }
+         ]
+       },
++      "SafetySetting": {
++        "description": "A safety setting that affects the safety-blocking behavior.\n\nA SafetySetting consists of a\nharm category and a\nthreshold for that\ncategory.",
++        "type": "object",
++        "properties": {
++          "method": {
++            "description": "Optional. The method for blocking content. If not specified, the default\nbehavior is to use the probability score.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "The harm block method uses both probability and severity scores.",
++              "The harm block method uses the probability score."
++            ],
++            "enum": [
++              "severity",
++              "probability"
++            ]
++          },
++          "threshold": {
++            "description": "Required. The threshold for blocking content. If the harm probability\nexceeds this threshold, the content will be blocked.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "Block content with a low harm probability or higher.",
++              "Block content with a medium harm probability or higher.",
++              "Block content with a high harm probability.",
++              "Do not block any content, regardless of its harm probability.",
++              "Turn off the safety filter entirely."
++            ],
++            "enum": [
++              "block_low_and_above",
++              "block_medium_and_above",
++              "block_only_high",
++              "block_none",
++              "off"
++            ]
++          },
++          "type": {
++            "description": "Required. The type of harm category to be blocked.",
++            "$ref": "#/components/schemas/HarmCategory"
++          }
++        },
++        "required": [
++          "threshold",
++          "type"
++        ],
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "SafetySetting"
++          }
++        ]
++      },
+       "ServiceTier": {
+         "type": "string",
+         "x-google-enum-descriptions": [
+@@ -6203,16 +6586,16 @@
+         "description": "Represents a signing secret used to verify webhook payloads.",
+         "type": "object",
+         "properties": {
+-          "truncated_secret": {
+-            "description": "Output only. The truncated version of the signing secret.",
+-            "readOnly": true,
+-            "type": "string"
+-          },
+           "expire_time": {
+             "description": "Output only. The expiration date of the signing secret.",
+             "readOnly": true,
+             "type": "string",
+             "format": "date-time"
++          },
++          "truncated_secret": {
++            "description": "Output only. The truncated version of the signing secret.",
++            "readOnly": true,
++            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "webhooks",
+@@ -6227,6 +6610,22 @@
+         "description": "A source to be mounted into the environment.",
+         "type": "object",
+         "properties": {
++          "content": {
++            "description": "The inline content if `type` is `INLINE`.",
++            "type": "string"
++          },
++          "encoding": {
++            "description": "Optional encoding for inline content (e.g. `base64`).",
++            "type": "string"
++          },
++          "source": {
++            "description": "The source of the environment.\nFor GCS, this is the GCS path.\nFor GitHub, this is the GitHub path.",
++            "type": "string"
++          },
++          "target": {
++            "description": "Where the source should appear in the environment.",
++            "type": "string"
++          },
+           "type": {
+             "type": "string",
+             "x-google-enum-descriptions": [
+@@ -6241,22 +6640,6 @@
+               "repository",
+               "skill_registry"
+             ]
+-          },
+-          "source": {
+-            "description": "The source of the environment.\nFor GCS, this is the GCS path.\nFor GitHub, this is the GitHub path.",
+-            "type": "string"
+-          },
+-          "target": {
+-            "description": "Where the source should appear in the environment.",
+-            "type": "string"
+-          },
+-          "content": {
+-            "description": "The inline content if `type` is `INLINE`.",
+-            "type": "string"
+-          },
+-          "encoding": {
+-            "description": "Optional encoding for inline content (e.g. `base64`).",
+-            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -6265,10 +6648,6 @@
+         "description": "The configuration for speech interaction.",
+         "type": "object",
+         "properties": {
+-          "voice": {
+-            "description": "The voice of the speaker.",
+-            "type": "string"
+-          },
+           "language": {
+             "description": "The language of the speech.",
+             "type": "string"
+@@ -6276,6 +6655,10 @@
+           "speaker": {
+             "description": "The speaker's name, it should match the speaker name given in the prompt.",
+             "type": "string"
++          },
++          "voice": {
++            "description": "The voice of the speaker.",
++            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions",
+@@ -6286,6 +6669,32 @@
+           }
+         ]
+       },
++      "Status": {
++        "description": "The `Status` type defines a logical error model that is suitable for\ndifferent programming environments, including REST APIs and RPC APIs. It is\nused by [gRPC](https://github.com/grpc). Each `Status` message contains\nthree pieces of data: error code, error message, and error details.\n\nYou can find out more about this error model and how to work with it in the\n[API Design Guide](https://cloud.google.com/apis/design/errors).",
++        "type": "object",
++        "properties": {
++          "code": {
++            "description": "The status code, which should be an enum value of google.rpc.Code.",
++            "type": "integer",
++            "format": "int32"
++          },
++          "details": {
++            "description": "A list of messages that carry the error details.  There is a common set of\nmessage types for APIs to use.",
++            "type": "array",
++            "items": {
++              "type": "object",
++              "additionalProperties": {
++                "description": "Properties of the object. Contains field @type with type URL."
++              }
++            }
++          },
++          "message": {
++            "description": "A developer-facing error message, which should be in English. Any\nuser-facing error message should be localized and sent in the\ngoogle.rpc.Status.details field, or localized by the client.",
++            "type": "string"
++          }
++        },
++        "x-speakeasy-model-namespace": "interactions"
++      },
+       "Step": {
+         "description": "A step in the interaction.",
+         "type": "object",
+@@ -6356,13 +6765,6 @@
+       "StepDelta": {
+         "type": "object",
+         "properties": {
+-          "event_type": {
+-            "const": "step.delta"
+-          },
+-          "index": {
+-            "type": "integer",
+-            "format": "int32"
+-          },
+           "delta": {
+             "$ref": "#/components/schemas/StepDeltaData"
+           },
+@@ -6370,6 +6772,13 @@
+             "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+             "type": "string"
+           },
++          "event_type": {
++            "const": "step.delta"
++          },
++          "index": {
++            "type": "integer",
++            "format": "int32"
++          },
+           "metadata": {
+             "description": "Optional metadata accompanying ANY streamed event.",
+             "$ref": "#/components/schemas/StepDeltaMetadata"
+@@ -6451,6 +6860,9 @@
+           {
+             "$ref": "#/components/schemas/GoogleMapsCallDelta"
+           },
++          {
++            "$ref": "#/components/schemas/RetrievalCallDelta"
++          },
+           {
+             "$ref": "#/components/schemas/CodeExecutionResultDelta"
+           },
+@@ -6469,6 +6881,9 @@
+           {
+             "$ref": "#/components/schemas/GoogleMapsResultDelta"
+           },
++          {
++            "$ref": "#/components/schemas/RetrievalResultDelta"
++          },
+           {
+             "$ref": "#/components/schemas/FunctionResultDelta"
+           }
+@@ -6492,6 +6907,10 @@
+       "StepStart": {
+         "type": "object",
+         "properties": {
++          "event_id": {
++            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
++            "type": "string"
++          },
+           "event_type": {
+             "const": "step.start"
+           },
+@@ -6499,16 +6918,12 @@
+             "type": "integer",
+             "format": "int32"
+           },
+-          "step": {
+-            "$ref": "#/components/schemas/Step"
+-          },
+-          "event_id": {
+-            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+-            "type": "string"
+-          },
+           "metadata": {
+             "description": "Optional metadata accompanying ANY streamed event.",
+             "$ref": "#/components/schemas/StreamMetadata"
++          },
++          "step": {
++            "$ref": "#/components/schemas/Step"
+           }
+         },
+         "required": [
+@@ -6541,6 +6956,10 @@
+       "StepStop": {
+         "type": "object",
+         "properties": {
++          "event_id": {
++            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
++            "type": "string"
++          },
+           "event_type": {
+             "const": "step.stop"
+           },
+@@ -6548,13 +6967,17 @@
+             "type": "integer",
+             "format": "int32"
+           },
+-          "event_id": {
+-            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+-            "type": "string"
+-          },
+           "metadata": {
+             "description": "Optional metadata accompanying ANY streamed event.",
+             "$ref": "#/components/schemas/StreamMetadata"
++          },
++          "step_usage": {
++            "description": "Model usage stats for this specific step.",
++            "$ref": "#/components/schemas/Usage"
++          },
++          "usage": {
++            "description": "Cumulative model usage stats from the start of the session.",
++            "$ref": "#/components/schemas/Usage"
+           }
+         },
+         "required": [
+@@ -6592,15 +7015,15 @@
+       "TextAnnotationDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "text_annotation_delta"
+-          },
+           "annotations": {
+             "description": "Citation information for model-generated content.",
+             "type": "array",
+             "items": {
+               "$ref": "#/components/schemas/Annotation"
+             }
++          },
++          "type": {
++            "const": "text_annotation_delta"
+           }
+         },
+         "required": [
+@@ -6612,19 +7035,19 @@
+         "description": "A text content block.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "text"
+-          },
+-          "text": {
+-            "description": "Required. The text content.",
+-            "type": "string"
+-          },
+           "annotations": {
+             "description": "Citation information for model-generated content.",
+             "type": "array",
+             "items": {
+               "$ref": "#/components/schemas/Annotation"
+             }
++          },
++          "text": {
++            "description": "Required. The text content.",
++            "type": "string"
++          },
++          "type": {
++            "const": "text"
+           }
+         },
+         "required": [
+@@ -6653,11 +7076,11 @@
+       "TextDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "text"
+-          },
+           "text": {
+             "type": "string"
++          },
++          "type": {
++            "const": "text"
+           }
+         },
+         "required": [
+@@ -6670,9 +7093,6 @@
+         "description": "Configuration for text output format.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "text"
+-          },
+           "mime_type": {
+             "description": "The MIME type of the text output.",
+             "type": "string",
+@@ -6691,6 +7111,9 @@
+             "additionalProperties": {
+               "description": "Properties of the object."
+             }
++          },
++          "type": {
++            "const": "text"
+           }
+         },
+         "required": [
+@@ -6706,14 +7129,14 @@
+                 "schema": {
+                   "type": "object",
+                   "properties": {
+-                    "recipe_name": {
+-                      "type": "string"
+-                    },
+                     "ingredients": {
+                       "type": "array",
+                       "items": {
+                         "type": "string"
+                       }
++                    },
++                    "recipe_name": {
++                      "type": "string"
+                     }
+                   },
+                   "required": [
+@@ -6768,12 +7191,10 @@
+         "x-speakeasy-model-namespace": "interactions"
+       },
+       "ThoughtContent": {
++        "deprecated": true,
+         "description": "A thought content block.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "thought"
+-          },
+           "signature": {
+             "description": "Signature to match the backend source to be part of the generation.",
+             "type": "string",
+@@ -6786,6 +7207,9 @@
+             "items": {
+               "$ref": "#/components/schemas/ThoughtSummaryContent"
+             }
++          },
++          "type": {
++            "const": "thought"
+           }
+         },
+         "required": [
+@@ -6813,14 +7237,14 @@
+       "ThoughtSignatureDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "thought_signature"
+-          },
+           "signature": {
+             "description": "Signature to match the backend source to be part of the generation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "thought_signature"
+           }
+         },
+         "required": [
+@@ -6832,9 +7256,6 @@
+         "description": "A thought step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "thought"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+@@ -6847,6 +7268,9 @@
+             "items": {
+               "$ref": "#/components/schemas/ThoughtSummaryContent"
+             }
++          },
++          "type": {
++            "const": "thought"
+           }
+         },
+         "required": [
+@@ -6895,12 +7319,12 @@
+       "ThoughtSummaryDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "thought_summary"
+-          },
+           "content": {
+             "description": "A new summary item to be added to the thought.",
+             "$ref": "#/components/schemas/Content"
++          },
++          "type": {
++            "const": "thought_summary"
+           }
+         },
+         "required": [
+@@ -6980,10 +7404,6 @@
+         "deprecated": true,
+         "type": "object",
+         "properties": {
+-          "role": {
+-            "description": "The originator of this turn. Must be user for input or model for\nmodel output.",
+-            "type": "string"
+-          },
+           "content": {
+             "oneOf": [
+               {
+@@ -6997,6 +7417,10 @@
+                 "type": "string"
+               }
+             ]
++          },
++          "role": {
++            "description": "The originator of this turn. Must be user for input or model for\nmodel output.",
++            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+@@ -7005,26 +7429,26 @@
+         "description": "A URL citation annotation.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "url_citation"
++          "end_index": {
++            "description": "End of the attributed segment, exclusive.",
++            "type": "integer",
++            "format": "int32"
+           },
+-          "url": {
+-            "description": "The URL.",
+-            "type": "string"
++          "start_index": {
++            "description": "Start of segment of the response that is attributed to this source.\n\nIndex indicates the start of the segment, measured in bytes.",
++            "type": "integer",
++            "format": "int32"
+           },
+           "title": {
+             "description": "The title of the URL.",
+             "type": "string"
+           },
+-          "start_index": {
+-            "description": "Start of segment of the response that is attributed to this source.\n\nIndex indicates the start of the segment, measured in bytes.",
+-            "type": "integer",
+-            "format": "int32"
++          "type": {
++            "const": "url_citation"
+           },
+-          "end_index": {
+-            "description": "End of the attributed segment, exclusive.",
+-            "type": "integer",
+-            "format": "int32"
++          "url": {
++            "description": "The URL.",
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -7094,9 +7518,6 @@
+       "UrlContextCallDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "url_context_call"
+-          },
+           "arguments": {
+             "$ref": "#/components/schemas/UrlContextCallArguments"
+           },
+@@ -7105,6 +7526,9 @@
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "url_context_call"
+           }
+         },
+         "required": [
+@@ -7118,8 +7542,9 @@
+         "description": "URL context call step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "url_context_call"
++          "arguments": {
++            "description": "Required. The arguments to pass to the URL context.",
++            "$ref": "#/components/schemas/UrlContextCallArguments"
+           },
+           "id": {
+             "description": "Required. A unique ID for this specific tool call.",
+@@ -7131,13 +7556,8 @@
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "arguments": {
+-            "allOf": [
+-              {
+-                "$ref": "#/components/schemas/UrlContextCallArguments"
+-              }
+-            ],
+-            "description": "The arguments to pass to the URL context."
++          "type": {
++            "const": "url_context_call"
+           }
+         },
+         "required": [
+@@ -7174,10 +7594,6 @@
+         "description": "The result of the URL context.",
+         "type": "object",
+         "properties": {
+-          "url": {
+-            "description": "The URL that was fetched.",
+-            "type": "string"
+-          },
+           "status": {
+             "description": "The status of the URL retrieval.",
+             "type": "string",
+@@ -7193,6 +7609,10 @@
+               "paywall",
+               "unsafe"
+             ]
++          },
++          "url": {
++            "description": "The URL that was fetched.",
++            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions",
+@@ -7207,8 +7627,8 @@
+       "UrlContextResultDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "url_context_result"
++          "is_error": {
++            "type": "boolean"
+           },
+           "result": {
+             "type": "array",
+@@ -7216,14 +7636,14 @@
+               "$ref": "#/components/schemas/UrlContextResult"
+             }
+           },
+-          "is_error": {
+-            "type": "boolean"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "url_context_result"
+           }
+         },
+         "required": [
+@@ -7237,8 +7657,13 @@
+         "description": "URL context result step.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "url_context_result"
++          "call_id": {
++            "description": "Required. ID to match the ID from the function call block.",
++            "type": "string"
++          },
++          "is_error": {
++            "description": "Whether the URL context resulted in an error.",
++            "type": "boolean"
+           },
+           "result": {
+             "description": "Required. The results of the URL context.",
+@@ -7247,19 +7672,14 @@
+               "$ref": "#/components/schemas/UrlContextResult"
+             }
+           },
+-          "is_error": {
+-            "description": "Whether the URL context resulted in an error.",
+-            "type": "boolean"
+-          },
+-          "call_id": {
+-            "description": "Required. ID to match the ID from the function call block.",
+-            "type": "string"
+-          },
+           "signature": {
+             "description": "A signature hash for backend validation.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
++          },
++          "type": {
++            "const": "url_context_result"
+           }
+         },
+         "required": [
+@@ -7298,35 +7718,27 @@
+         "description": "Statistics on the interaction request's token usage.",
+         "type": "object",
+         "properties": {
+-          "total_input_tokens": {
+-            "description": "Number of tokens in the prompt (context).",
+-            "type": "integer",
+-            "format": "int32"
++          "cached_tokens_by_modality": {
++            "description": "A breakdown of cached token usage by modality.",
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/ModalityTokens"
++            }
+           },
+-          "input_tokens_by_modality": {
+-            "description": "A breakdown of input token usage by modality.",
++          "grounding_tool_count": {
++            "description": "Grounding tool count.",
+             "type": "array",
+             "items": {
+-              "$ref": "#/components/schemas/ModalityTokens"
++              "$ref": "#/components/schemas/GroundingToolCount"
+             }
+           },
+-          "total_cached_tokens": {
+-            "description": "Number of tokens in the cached part of the prompt (the cached content).",
+-            "type": "integer",
+-            "format": "int32"
+-          },
+-          "cached_tokens_by_modality": {
+-            "description": "A breakdown of cached token usage by modality.",
++          "input_tokens_by_modality": {
++            "description": "A breakdown of input token usage by modality.",
+             "type": "array",
+             "items": {
+               "$ref": "#/components/schemas/ModalityTokens"
+             }
+           },
+-          "total_output_tokens": {
+-            "description": "Total number of tokens across all the generated responses.",
+-            "type": "integer",
+-            "format": "int32"
+-          },
+           "output_tokens_by_modality": {
+             "description": "A breakdown of output token usage by modality.",
+             "type": "array",
+@@ -7334,11 +7746,6 @@
+               "$ref": "#/components/schemas/ModalityTokens"
+             }
+           },
+-          "total_tool_use_tokens": {
+-            "description": "Number of tokens present in tool-use prompt(s).",
+-            "type": "integer",
+-            "format": "int32"
+-          },
+           "tool_use_tokens_by_modality": {
+             "description": "A breakdown of tool-use token usage by modality.",
+             "type": "array",
+@@ -7346,6 +7753,21 @@
+               "$ref": "#/components/schemas/ModalityTokens"
+             }
+           },
++          "total_cached_tokens": {
++            "description": "Number of tokens in the cached part of the prompt (the cached content).",
++            "type": "integer",
++            "format": "int32"
++          },
++          "total_input_tokens": {
++            "description": "Number of tokens in the prompt (context).",
++            "type": "integer",
++            "format": "int32"
++          },
++          "total_output_tokens": {
++            "description": "Total number of tokens across all the generated responses.",
++            "type": "integer",
++            "format": "int32"
++          },
+           "total_thought_tokens": {
+             "description": "Number of tokens of thoughts for thinking models.",
+             "type": "integer",
+@@ -7356,12 +7778,10 @@
+             "type": "integer",
+             "format": "int32"
+           },
+-          "grounding_tool_count": {
+-            "description": "Grounding tool count.",
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/GroundingToolCount"
+-            }
++          "total_tool_use_tokens": {
++            "description": "Number of tokens present in tool-use prompt(s).",
++            "type": "integer",
++            "format": "int32"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions",
+@@ -7418,37 +7838,59 @@
+         "description": "Used to specify configuration for VertexAISearch.",
+         "type": "object",
+         "properties": {
+-          "engine": {
+-            "description": "Optional. Used to specify Vertex AI Search engine.",
+-            "type": "string"
+-          },
+           "datastores": {
+             "description": "Optional. Used to specify Vertex AI Search datastores.",
+             "type": "array",
+             "items": {
+               "type": "string"
+             }
++          },
++          "engine": {
++            "description": "Optional. Used to specify Vertex AI Search engine.",
++            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "interactions"
+       },
++      "VideoConfig": {
++        "description": "Configuration options for video generation.",
++        "type": "object",
++        "properties": {
++          "task": {
++            "description": "Optional task mode for video generation. If not specified, the model\nautomatically determines the appropriate mode based on the provided text\nprompt and input media.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "Generates video solely from a text prompt.",
++              "Generates video from one or two source images. The first image defines\nthe starting frame, and the optional second image defines the ending\nframe.",
++              "Generates video using reference media (such as images, audio, or video).",
++              "Modifies an existing input video."
++            ],
++            "enum": [
++              "text_to_video",
++              "image_to_video",
++              "reference_to_video",
++              "edit"
++            ]
++          }
++        },
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "VideoConfig"
++          }
++        ]
++      },
+       "VideoContent": {
+         "description": "A video content block.",
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "video"
+-          },
+           "data": {
+             "description": "The video content.",
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "uri": {
+-            "description": "The URI of the video.",
+-            "type": "string"
+-          },
+           "mime_type": {
+             "description": "The mime type of the video.",
+             "type": "string",
+@@ -7478,6 +7920,13 @@
+           "resolution": {
+             "description": "The resolution of the media.",
+             "$ref": "#/components/schemas/MediaResolution"
++          },
++          "type": {
++            "const": "video"
++          },
++          "uri": {
++            "description": "The URI of the video.",
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -7505,17 +7954,11 @@
+       "VideoDelta": {
+         "type": "object",
+         "properties": {
+-          "type": {
+-            "const": "video"
+-          },
+           "data": {
+             "type": "string",
+             "format": "byte",
+             "x-speakeasy-base64-input-mode": "file"
+           },
+-          "uri": {
+-            "type": "string"
+-          },
+           "mime_type": {
+             "type": "string",
+             "x-google-enum-descriptions": [
+@@ -7544,6 +7987,12 @@
+           "resolution": {
+             "description": "The resolution of the media.",
+             "$ref": "#/components/schemas/MediaResolution"
++          },
++          "type": {
++            "const": "video"
++          },
++          "uri": {
++            "type": "string"
+           }
+         },
+         "required": [
+@@ -7551,18 +8000,117 @@
+         ],
+         "x-speakeasy-model-namespace": "interactions"
+       },
++      "VideoResponseFormat": {
++        "description": "Configuration for video output format.",
++        "type": "object",
++        "properties": {
++          "aspect_ratio": {
++            "description": "The aspect ratio for the video output.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "16:9 aspect ratio.",
++              "9:16 aspect ratio."
++            ],
++            "enum": [
++              "16:9",
++              "9:16"
++            ]
++          },
++          "delivery": {
++            "description": "The delivery mode for the video output.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "Video data is returned inline in the response.",
++              "Video data is returned as a URI."
++            ],
++            "enum": [
++              "inline",
++              "uri"
++            ]
++          },
++          "duration": {
++            "description": "The duration for the video output.",
++            "type": "string",
++            "format": "google-duration"
++          },
++          "gcs_uri": {
++            "description": "The GCS URI to store the video output. Required for Vertex if delivery mode\nis URI.",
++            "type": "string"
++          },
++          "type": {
++            "const": "video"
++          }
++        },
++        "required": [
++          "type"
++        ],
++        "examples": [
++          {
++            "video_response_format": {
++              "summary": "Video Output",
++              "value": {
++                "type": "video",
++                "delivery": "inline",
++                "aspect_ratio": "16:9"
++              }
++            }
++          }
++        ],
++        "x-speakeasy-model-namespace": "interactions",
++        "x-speakeasy-exports": [
++          {
++            "group": "interactions",
++            "name": "VideoResponseFormat"
++          }
++        ]
++      },
+       "Webhook": {
+         "description": "A Webhook resource.",
+         "type": "object",
+         "properties": {
++          "create_time": {
++            "description": "Output only. The timestamp when the webhook was created.",
++            "readOnly": true,
++            "type": "string",
++            "format": "date-time"
++          },
++          "id": {
++            "description": "Output only. The ID of the webhook.",
++            "readOnly": true,
++            "type": "string"
++          },
+           "name": {
+             "description": "Optional. The user-provided name of the webhook.",
+             "type": "string"
+           },
+-          "uri": {
+-            "description": "Required. The URI to which webhook events will be sent.",
++          "new_signing_secret": {
++            "description": "Output only. The new signing secret for the webhook. Only populated on create.",
++            "readOnly": true,
+             "type": "string"
+           },
++          "signing_secrets": {
++            "description": "Output only. The signing secrets associated with this webhook.",
++            "readOnly": true,
++            "type": "array",
++            "items": {
++              "$ref": "#/components/schemas/SigningSecret"
++            }
++          },
++          "state": {
++            "description": "Output only. The state of the webhook.",
++            "readOnly": true,
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "The webhook is enabled.",
++              "The webhook is disabled by the user.",
++              "The webhook is disabled due to failed deliveries."
++            ],
++            "enum": [
++              "enabled",
++              "disabled",
++              "disabled_due_to_failed_deliveries"
++            ]
++          },
+           "subscribed_events": {
+             "description": "Required. The events that the webhook is subscribed to.\nAvailable events:\n- batch.succeeded\n- batch.expired\n- batch.failed\n- interaction.requires_action\n- interaction.completed\n- interaction.failed\n- video.generated",
+             "type": "array",
+@@ -7590,49 +8138,14 @@
+               ]
+             }
+           },
+-          "create_time": {
+-            "description": "Output only. The timestamp when the webhook was created.",
+-            "readOnly": true,
+-            "type": "string",
+-            "format": "date-time"
+-          },
+           "update_time": {
+             "description": "Output only. The timestamp when the webhook was last updated.",
+             "readOnly": true,
+             "type": "string",
+             "format": "date-time"
+           },
+-          "signing_secrets": {
+-            "description": "Output only. The signing secrets associated with this webhook.",
+-            "readOnly": true,
+-            "type": "array",
+-            "items": {
+-              "$ref": "#/components/schemas/SigningSecret"
+-            }
+-          },
+-          "state": {
+-            "description": "Output only. The state of the webhook.",
+-            "readOnly": true,
+-            "type": "string",
+-            "x-google-enum-descriptions": [
+-              "The webhook is enabled.",
+-              "The webhook is disabled by the user.",
+-              "The webhook is disabled due to failed deliveries."
+-            ],
+-            "enum": [
+-              "enabled",
+-              "disabled",
+-              "disabled_due_to_failed_deliveries"
+-            ]
+-          },
+-          "new_signing_secret": {
+-            "description": "Output only. The new signing secret for the webhook. Only populated on create.",
+-            "readOnly": true,
+-            "type": "string"
+-          },
+-          "id": {
+-            "description": "Output only. The ID of the webhook.",
+-            "readOnly": true,
++          "uri": {
++            "description": "Required. The URI to which webhook events will be sent.",
+             "type": "string"
+           }
+         },
+@@ -7687,9 +8200,19 @@
+             "description": "Optional. The user-provided name of the webhook.",
+             "type": "string"
+           },
+-          "uri": {
+-            "description": "Optional. The URI to which webhook events will be sent.",
+-            "type": "string"
++          "state": {
++            "description": "Optional. The state of the webhook.",
++            "type": "string",
++            "x-google-enum-descriptions": [
++              "The webhook is enabled.",
++              "The webhook is disabled by the user.",
++              "The webhook is disabled due to failed deliveries."
++            ],
++            "enum": [
++              "enabled",
++              "disabled",
++              "disabled_due_to_failed_deliveries"
++            ]
+           },
+           "subscribed_events": {
+             "description": "Optional. The events that the webhook is subscribed to.\nAvailable events:\n- batch.succeeded\n- batch.expired\n- batch.failed\n- interaction.requires_action\n- interaction.completed\n- interaction.failed\n- video.generated",
+@@ -7718,19 +8241,9 @@
+               ]
+             }
+           },
+-          "state": {
+-            "description": "Optional. The state of the webhook.",
+-            "type": "string",
+-            "x-google-enum-descriptions": [
+-              "The webhook is enabled.",
+-              "The webhook is disabled by the user.",
+-              "The webhook is disabled due to failed deliveries."
+-            ],
+-            "enum": [
+-              "enabled",
+-              "disabled",
+-              "disabled_due_to_failed_deliveries"
+-            ]
++          "uri": {
++            "description": "Optional. The URI to which webhook events will be sent.",
++            "type": "string"
+           }
+         },
+         "x-speakeasy-model-namespace": "webhooks",
+@@ -7770,9 +8283,6 @@
+       {
+         "$ref": "#/components/parameters/api_version"
+       },
+-      {
+-        "$ref": "#/components/parameters/google_genai_api_revision"
+-      },
+       {
+         "$ref": "#/components/parameters/google_genai_user_project"
+       }

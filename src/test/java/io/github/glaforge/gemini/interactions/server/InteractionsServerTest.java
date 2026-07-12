@@ -63,36 +63,26 @@ class InteractionsServerTest {
         server.createContext("/v1beta", new InteractionsHandler() {
             @Override
             public Interaction create(InteractionParams.Request request) {
-                return new Interaction(
-                    "interaction-123",
-                    "gemini-pro",
-                    null,
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Interaction.Status.COMPLETED,
-                    Collections.emptyList(),
-                    null,
-                    null,
-                    null,
-                    null
-                );
+                return Interaction.builder()
+                    .id("interaction-123")
+                    .model("gemini-pro")
+                    .created(Instant.parse("2025-01-01T00:00:00Z"))
+                    .updated(Instant.parse("2025-01-01T00:00:00Z"))
+                    .status(Interaction.Status.COMPLETED)
+                    .steps(Collections.emptyList())
+                    .build();
             }
 
             @Override
             public Interaction get(String id) {
-                 return new Interaction(
-                    id,
-                    "gemini-pro",
-                    null,
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Interaction.Status.COMPLETED,
-                    Collections.emptyList(),
-                    null,
-                    null,
-                    null,
-                    null
-                );
+                 return Interaction.builder()
+                    .id(id)
+                    .model("gemini-pro")
+                    .created(Instant.parse("2025-01-01T00:00:00Z"))
+                    .updated(Instant.parse("2025-01-01T00:00:00Z"))
+                    .status(Interaction.Status.COMPLETED)
+                    .steps(Collections.emptyList())
+                    .build();
             }
 
             @Override
@@ -102,19 +92,14 @@ class InteractionsServerTest {
 
             @Override
             public Interaction cancel(String id) {
-                 return new Interaction(
-                    id,
-                    "gemini-pro",
-                    null,
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Interaction.Status.CANCELLED,
-                    Collections.emptyList(),
-                    null,
-                    null,
-                    null,
-                    null
-                );
+                 return Interaction.builder()
+                    .id(id)
+                    .model("gemini-pro")
+                    .created(Instant.parse("2025-01-01T00:00:00Z"))
+                    .updated(Instant.parse("2025-01-01T00:00:00Z"))
+                    .status(Interaction.Status.CANCELLED)
+                    .steps(Collections.emptyList())
+                    .build();
             }
 
 
@@ -124,7 +109,14 @@ class InteractionsServerTest {
                     new Events.InteractionCreated(
                         Events.EventType.INTERACTION_CREATED,
                         "evt-1",
-                        new Interaction("interaction-123", "gemini-pro", null, Instant.parse("2025-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"), Interaction.Status.IN_PROGRESS, Collections.emptyList(), null, null, null, null),
+                        Interaction.builder()
+                            .id("interaction-123")
+                            .model("gemini-pro")
+                            .created(Instant.parse("2025-01-01T00:00:00Z"))
+                            .updated(Instant.parse("2025-01-01T00:00:00Z"))
+                            .status(Interaction.Status.IN_PROGRESS)
+                            .steps(Collections.emptyList())
+                            .build(),
                         null
                     ),
                     new Events.StepDelta(

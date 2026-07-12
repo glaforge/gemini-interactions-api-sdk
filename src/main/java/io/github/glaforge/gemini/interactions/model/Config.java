@@ -56,7 +56,8 @@ public class Config {
         @JsonProperty("max_output_tokens") Integer maxOutputTokens,
         @JsonProperty("speech_config") List<SpeechConfig> speechConfig,
         @JsonProperty("presence_penalty") Double presencePenalty,
-        @JsonProperty("frequency_penalty") Double frequencyPenalty
+        @JsonProperty("frequency_penalty") Double frequencyPenalty,
+        @JsonProperty("video_config") VideoConfig videoConfig
     ) {
         /**
          * Returns a new builder for GenerationConfig.
@@ -79,6 +80,7 @@ public class Config {
             private List<SpeechConfig> speechConfig;
             private Double presencePenalty;
             private Double frequencyPenalty;
+            private VideoConfig videoConfig;
 
             /** Creates a new Builder. */
             public Builder() {}
@@ -172,6 +174,14 @@ public class Config {
             public Builder frequencyPenalty(Double frequencyPenalty) { this.frequencyPenalty = frequencyPenalty; return this; }
 
             /**
+             * Sets video config.
+             *
+             * @param videoConfig Video config.
+             * @return This builder.
+             */
+            public Builder videoConfig(VideoConfig videoConfig) { this.videoConfig = videoConfig; return this; }
+
+            /**
              * Builds the GenerationConfig.
              *
              * @return The GenerationConfig.
@@ -180,7 +190,7 @@ public class Config {
                 return new GenerationConfig(
                     temperature, topP, seed, stopSequences, toolChoice,
                     thinkingLevel, thinkingSummaries, maxOutputTokens, speechConfig,
-                    presencePenalty, frequencyPenalty
+                    presencePenalty, frequencyPenalty, videoConfig
                 );
             }
         }

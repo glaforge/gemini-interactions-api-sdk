@@ -1,0 +1,519 @@
+--- EnvironmentConfig ---
+{
+  "type": "object",
+  "properties": {
+    "environment_id": {
+      "description": "Optional. The environment ID for the interaction. If specified, the request will\nupdate the existing environment instead of creating a new one.",
+      "type": "string"
+    },
+    "network": {
+      "description": "Network configuration for the environment.",
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/EnvironmentNetworkEgressAllowlist"
+        },
+        {
+          "type": "string",
+          "x-google-enum-descriptions": [
+            "All network egress is blocked."
+          ],
+          "enum": [
+            "disabled"
+          ]
+        }
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/Source"
+      }
+    },
+    "type": {
+      "const": "remote"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "description": "Configuration for a custom environment.",
+  "examples": [
+    {
+      "inline_sources": {
+        "summary": "Inline Sources",
+        "value": {
+          "type": "remote",
+          "sources": [
+            {
+              "type": "inline",
+              "target": ".agents/AGENTS.md",
+              "content": "You are a data analyst. Always include visualizations and export results as PDF."
+            },
+            {
+              "type": "inline",
+              "target": ".agents/skills/slide-maker/SKILL.md",
+              "content": "---\nname: slide-maker\ndescription: Create HTML slide decks\n---\n# Slide Maker\n\nWhen asked to create a presentation:\n1. Analyze the input data\n2. Create an HTML slide deck with reveal.js\n3. Save to /workspace/output/slides.html"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "external_sources": {
+        "summary": "External Sources",
+        "value": {
+          "type": "remote",
+          "sources": [
+            {
+              "type": "repository",
+              "source": "https://github.com/my-org/my-skills.git",
+              "target": ".agents/skills"
+            },
+            {
+              "type": "gcs",
+              "source": "gs://my-bucket/my-folder",
+              "target": "/workspace/data"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "network_allowlist": {
+        "summary": "Network Allowlist",
+        "value": {
+          "type": "remote",
+          "network": {
+            "allowlist": [
+              {
+                "domain": "pypi.org"
+              },
+              {
+                "domain": "*.github.com"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "proxy_credentials": {
+        "summary": "Proxy Credentials",
+        "value": {
+          "type": "remote",
+          "network": {
+            "allowlist": [
+              {
+                "domain": "api.github.com",
+                "transform": {
+                  "Authorization": "Bearer YOUR_GITHUB_TOKEN"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-name-override": "Environment",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "Environment"
+    }
+  ]
+}
+--- Interaction ---
+{
+  "description": "The Interaction resource.",
+  "properties": {
+    "agent": {
+      "$ref": "#/components/schemas/AgentOption",
+      "description": "The name of the `Agent` used for generating the interaction."
+    },
+    "agent_config": {
+      "description": "Configuration parameters for the agent interaction.",
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/DynamicAgentConfig"
+        },
+        {
+          "$ref": "#/components/schemas/DeepResearchAgentConfig"
+        }
+      ],
+      "discriminator": {
+        "propertyName": "type"
+      }
+    },
+    "cached_content": {
+      "description": "The name of the cached content used as context to serve the prediction.\nNote: only used in explicit caching, where users can have control over\ncaching (e.g. what content to cache) and enjoy guaranteed cost savings.\nFormat:\n`projects/{project}/locations/{location}/cachedContents/{cachedContent}`",
+      "type": "string"
+    },
+    "created": {
+      "description": "Output only. The time at which the response was created in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+      "readOnly": true,
+      "type": "string"
+    },
+    "environment": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/components/schemas/EnvironmentConfig"
+        }
+      ],
+      "description": "The environment configuration for the interaction. Can be an object specifying remote environment sources or a string referencing an existing environment ID."
+    },
+    "environment_id": {
+      "description": "Output only. The environment ID for the interaction. Only populated if environment\nconfig is set in the request.",
+      "readOnly": true,
+      "type": "string"
+    },
+    "generation_config": {
+      "$ref": "#/components/schemas/GenerationConfig",
+      "description": "Input only. Configuration parameters for the model interaction.",
+      "writeOnly": true
+    },
+    "id": {
+      "description": "Required. Output only. A unique identifier for the interaction completion.",
+      "readOnly": true,
+      "type": "string",
+      "default": ""
+    },
+    "input": {
+      "$ref": "#/components/schemas/InteractionsInput"
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "The labels with user-defined metadata for the request."
+    },
+    "model": {
+      "$ref": "#/components/schemas/ModelOption",
+      "description": "The name of the `Model` used for generating the interaction."
+    },
+    "output_audio": {
+      "description": "The last audio generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+      "$ref": "#/components/schemas/AudioContent"
+    },
+    "output_image": {
+      "description": "The last image generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+      "$ref": "#/components/schemas/ImageContent"
+    },
+    "output_text": {
+      "description": "Concatenated text from the last model output in response to the current request.\n\nNote: this is added by the SDK.",
+      "type": "string"
+    },
+    "output_video": {
+      "description": "The last video generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
+      "$ref": "#/components/schemas/VideoContent"
+    },
+    "previous_interaction_id": {
+      "description": "The ID of the previous interaction, if any.",
+      "type": "string"
+    },
+    "response_format": {
+      "description": "Enforces that the generated response is a JSON object that complies with the JSON schema specified in this field.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ResponseFormat"
+          },
+          "example": [
+            {
+              "type": "text",
+              "mime_type": "application/json"
+            }
+          ],
+          "x-speakeasy-model-namespace": "interactions"
+        },
+        {
+          "$ref": "#/components/schemas/ResponseFormat"
+        }
+      ]
+    },
+    "response_mime_type": {
+      "description": "The mime type of the response. This is required if response_format is set.",
+      "deprecated": true,
+      "type": "string"
+    },
+    "response_modalities": {
+      "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/ResponseModality"
+      }
+    },
+    "safety_settings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/SafetySetting"
+      },
+      "description": "Safety settings for the interaction."
+    },
+    "service_tier": {
+      "$ref": "#/components/schemas/ServiceTier",
+      "description": "The service tier for the interaction."
+    },
+    "status": {
+      "description": "Required. Output only. The status of the interaction.",
+      "readOnly": true,
+      "type": "string",
+      "x-google-enum-descriptions": [
+        "The interaction is in progress.",
+        "The interaction requires action/input from the user.",
+        "The interaction is completed.",
+        "The interaction failed.",
+        "The interaction was cancelled.",
+        "The interaction is completed, but contains incomplete results (e.g.\nhitting max_tokens).",
+        "The interaction was halted because the token budget was exceeded."
+      ],
+      "enum": [
+        "in_progress",
+        "requires_action",
+        "completed",
+        "failed",
+        "cancelled",
+        "incomplete",
+        "budget_exceeded"
+      ]
+    },
+    "steps": {
+      "description": "Output only. The steps that make up the interaction, when included in the response.",
+      "readOnly": true,
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/Step"
+      }
+    },
+    "system_instruction": {
+      "description": "System instruction for the interaction.",
+      "type": "string"
+    },
+    "tools": {
+      "description": "A list of tool declarations the model may call during interaction.",
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/Tool"
+      }
+    },
+    "updated": {
+      "description": "Output only. The time at which the response was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+      "readOnly": true,
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/components/schemas/Usage",
+      "description": "Output only. Statistics on the interaction request's token usage.",
+      "readOnly": true
+    },
+    "webhook_config": {
+      "$ref": "#/components/schemas/WebhookConfig",
+      "description": "Optional. Webhook configuration for receiving notifications when the\ninteraction completes."
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "example": {
+    "created": "2025-12-04T15:01:45Z",
+    "id": "v1_ChdXS0l4YWZXTk9xbk0xZThQczhEcmlROBIXV0tJeGFmV05PcW5NMWU4UHM4RHJpUTg",
+    "model": "gemini-3.5-flash",
+    "object": "interaction",
+    "steps": [
+      {
+        "type": "model_output",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hello! I'm doing well, functioning as expected. Thank you for asking! How are you doing today?"
+          }
+        ]
+      }
+    ],
+    "status": "completed",
+    "updated": "2025-12-04T15:01:45Z",
+    "usage": {
+      "input_tokens_by_modality": [
+        {
+          "modality": "text",
+          "tokens": 7
+        }
+      ],
+      "total_cached_tokens": 0,
+      "total_input_tokens": 7,
+      "total_output_tokens": 23,
+      "total_thought_tokens": 49,
+      "total_tokens": 79,
+      "total_tool_use_tokens": 0
+    }
+  },
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "Interaction"
+    }
+  ]
+}
+--- StepDeltaData ---
+{
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#/components/schemas/TextDelta"
+    },
+    {
+      "$ref": "#/components/schemas/ImageDelta"
+    },
+    {
+      "$ref": "#/components/schemas/AudioDelta"
+    },
+    {
+      "$ref": "#/components/schemas/DocumentDelta"
+    },
+    {
+      "$ref": "#/components/schemas/VideoDelta"
+    },
+    {
+      "$ref": "#/components/schemas/ThoughtSummaryDelta"
+    },
+    {
+      "$ref": "#/components/schemas/ThoughtSignatureDelta"
+    },
+    {
+      "$ref": "#/components/schemas/TextAnnotationDelta"
+    },
+    {
+      "$ref": "#/components/schemas/ArgumentsDelta"
+    },
+    {
+      "$ref": "#/components/schemas/CodeExecutionCallDelta"
+    },
+    {
+      "$ref": "#/components/schemas/UrlContextCallDelta"
+    },
+    {
+      "$ref": "#/components/schemas/GoogleSearchCallDelta"
+    },
+    {
+      "$ref": "#/components/schemas/McpServerToolCallDelta"
+    },
+    {
+      "$ref": "#/components/schemas/FileSearchCallDelta"
+    },
+    {
+      "$ref": "#/components/schemas/GoogleMapsCallDelta"
+    },
+    {
+      "$ref": "#/components/schemas/RetrievalCallDelta"
+    },
+    {
+      "$ref": "#/components/schemas/CodeExecutionResultDelta"
+    },
+    {
+      "$ref": "#/components/schemas/UrlContextResultDelta"
+    },
+    {
+      "$ref": "#/components/schemas/GoogleSearchResultDelta"
+    },
+    {
+      "$ref": "#/components/schemas/McpServerToolResultDelta"
+    },
+    {
+      "$ref": "#/components/schemas/FileSearchResultDelta"
+    },
+    {
+      "$ref": "#/components/schemas/GoogleMapsResultDelta"
+    },
+    {
+      "$ref": "#/components/schemas/RetrievalResultDelta"
+    },
+    {
+      "$ref": "#/components/schemas/FunctionResultDelta"
+    }
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "discriminator": {
+    "propertyName": "type"
+  }
+}
+--- StepStop ---
+{
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
+      "type": "string"
+    },
+    "event_type": {
+      "const": "step.stop"
+    },
+    "index": {
+      "type": "integer",
+      "format": "int32"
+    },
+    "metadata": {
+      "description": "Optional metadata accompanying ANY streamed event.",
+      "$ref": "#/components/schemas/StreamMetadata"
+    },
+    "step_usage": {
+      "description": "Model usage stats for this specific step.",
+      "$ref": "#/components/schemas/Usage"
+    },
+    "usage": {
+      "description": "Cumulative model usage stats from the start of the session.",
+      "$ref": "#/components/schemas/Usage"
+    }
+  },
+  "required": [
+    "event_type",
+    "index"
+  ],
+  "examples": [
+    {
+      "step_stop": {
+        "summary": "Step Stop",
+        "value": {
+          "event_type": "step.stop",
+          "index": 0
+        }
+      }
+    }
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "StepStop"
+    }
+  ]
+}
+--- ResponseFormat ---
+{
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#/components/schemas/AudioResponseFormat"
+    },
+    {
+      "$ref": "#/components/schemas/TextResponseFormat"
+    },
+    {
+      "$ref": "#/components/schemas/ImageResponseFormat"
+    },
+    {
+      "$ref": "#/components/schemas/VideoResponseFormat"
+    },
+    {
+      "type": "object",
+      "additionalProperties": true
+    }
+  ],
+  "x-speakeasy-model-namespace": "interactions"
+}

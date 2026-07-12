@@ -225,6 +225,30 @@ while (!interaction.status().isFinished()) {
 System.out.println(interaction.steps());
 ```
 
+### Safety Settings
+
+Customize safety settings to control harmful content generation.
+
+```java
+import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+import io.github.glaforge.gemini.interactions.model.SafetySetting;
+import io.github.glaforge.gemini.interactions.model.HarmCategory;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import java.util.List;
+
+GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
+
+ModelInteractionParams params = ModelInteractionParams.builder()
+    .model("gemini-2.5-flash")
+    .input("Tell me a dangerous secret.")
+    .safetySettings(List.of(
+        new SafetySetting(HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, "BLOCK_LOW_AND_ABOVE", null)
+    ))
+    .build();
+
+client.create(params);
+```
+
 ### Streaming Interactions
 
 For long-running tasks or to see real-time updates (thoughts, code execution, text output), you can use the streaming API.

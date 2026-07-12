@@ -49,7 +49,9 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Step.FileSearchCallStep.class, name = "file_search_call"),
     @JsonSubTypes.Type(value = Step.FileSearchResultStep.class, name = "file_search_result"),
     @JsonSubTypes.Type(value = Step.GoogleMapsCallStep.class, name = "google_maps_call"),
-    @JsonSubTypes.Type(value = Step.GoogleMapsResultStep.class, name = "google_maps_result")
+    @JsonSubTypes.Type(value = Step.GoogleMapsResultStep.class, name = "google_maps_result"),
+    @JsonSubTypes.Type(value = Step.RetrievalCallStep.class, name = "retrieval_call"),
+    @JsonSubTypes.Type(value = Step.RetrievalResultStep.class, name = "retrieval_result")
 })
 public sealed interface Step permits
     Step.UserInputStep,
@@ -68,7 +70,9 @@ public sealed interface Step permits
     Step.FileSearchCallStep,
     Step.FileSearchResultStep,
     Step.GoogleMapsCallStep,
-    Step.GoogleMapsResultStep {
+    Step.GoogleMapsResultStep,
+    Step.RetrievalCallStep,
+    Step.RetrievalResultStep {
 
     /**
      * Gets the type.
@@ -95,11 +99,13 @@ public sealed interface Step permits
      *
      * @param type type parameter.
      * @param content content parameter.
+     * @param error error parameter.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ModelOutputStep(
         String type,
-        List<Content> content
+        List<Content> content,
+        Status error
     ) implements Step {}
 
     // --- Thinking ---
@@ -471,4 +477,40 @@ public sealed interface Step permits
         String url,
         @JsonProperty("review_snippets") List<Content.ReviewSnippet> reviewSnippets
     ) {}
+
+    // --- Retrieval ---
+
+    /**
+     * RetrievalCallStep.
+     *
+     * @param type type parameter.
+     * @param id id parameter.
+     * @param arguments arguments parameter.
+     * @param retrievalType retrievalType parameter.
+     * @param signature signature parameter.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record RetrievalCallStep(
+        String type,
+        String id,
+        RetrievalStepArguments arguments,
+        @JsonProperty("retrieval_type") String retrievalType,
+        String signature
+    ) implements Step {}
+
+    /**
+     * RetrievalResultStep.
+     *
+     * @param type type parameter.
+     * @param callId callId parameter.
+     * @param isError isError parameter.
+     * @param signature signature parameter.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record RetrievalResultStep(
+        String type,
+        @JsonProperty("call_id") String callId,
+        @JsonProperty("is_error") Boolean isError,
+        String signature
+    ) implements Step {}
 }

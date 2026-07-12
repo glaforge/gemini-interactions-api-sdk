@@ -1,0 +1,366 @@
+--- RetrievalStepArguments ---
+{
+  "description": "The arguments to pass to Retrieval tools.",
+  "type": "object",
+  "properties": {
+    "queries": {
+      "description": "Queries for Retrieval information.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-name-override": "RetrievalCallArguments",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "RetrievalCallArguments"
+    }
+  ]
+}
+--- HarmCategory ---
+{
+  "type": "string",
+  "x-google-enum-descriptions": [
+    "Content that promotes violence or incites hatred against individuals or\ngroups based on certain attributes.",
+    "Content that promotes, facilitates, or enables dangerous activities.",
+    "Abusive, threatening, or content intended to bully, torment, or ridicule.",
+    "Content that contains sexually explicit material.",
+    "Deprecated: Election filter is not longer supported.\nThe harm category is civic integrity.",
+    "Images that contain hate speech.",
+    "Images that contain dangerous content.",
+    "Images that contain harassment.",
+    "Images that contain sexually explicit content.",
+    "Prompts designed to bypass safety filters."
+  ],
+  "x-google-enum-deprecated": [
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "enum": [
+    "hate_speech",
+    "dangerous_content",
+    "harassment",
+    "sexually_explicit",
+    "civic_integrity",
+    "image_hate",
+    "image_dangerous_content",
+    "image_harassment",
+    "image_sexually_explicit",
+    "jailbreak"
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "HarmCategory"
+    }
+  ]
+}
+--- VideoConfig ---
+{
+  "description": "Configuration options for video generation.",
+  "type": "object",
+  "properties": {
+    "task": {
+      "description": "Optional task mode for video generation. If not specified, the model\nautomatically determines the appropriate mode based on the provided text\nprompt and input media.",
+      "type": "string",
+      "x-google-enum-descriptions": [
+        "Generates video solely from a text prompt.",
+        "Generates video from one or two source images. The first image defines\nthe starting frame, and the optional second image defines the ending\nframe.",
+        "Generates video using reference media (such as images, audio, or video).",
+        "Modifies an existing input video."
+      ],
+      "enum": [
+        "text_to_video",
+        "image_to_video",
+        "reference_to_video",
+        "edit"
+      ]
+    }
+  },
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "VideoConfig"
+    }
+  ]
+}
+--- Status ---
+{
+  "description": "The `Status` type defines a logical error model that is suitable for\ndifferent programming environments, including REST APIs and RPC APIs. It is\nused by [gRPC](https://github.com/grpc). Each `Status` message contains\nthree pieces of data: error code, error message, and error details.\n\nYou can find out more about this error model and how to work with it in the\n[API Design Guide](https://cloud.google.com/apis/design/errors).",
+  "type": "object",
+  "properties": {
+    "code": {
+      "description": "The status code, which should be an enum value of google.rpc.Code.",
+      "type": "integer",
+      "format": "int32"
+    },
+    "details": {
+      "description": "A list of messages that carry the error details.  There is a common set of\nmessage types for APIs to use.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "Properties of the object. Contains field @type with type URL."
+        }
+      }
+    },
+    "message": {
+      "description": "A developer-facing error message, which should be in English. Any\nuser-facing error message should be localized and sent in the\ngoogle.rpc.Status.details field, or localized by the client.",
+      "type": "string"
+    }
+  },
+  "x-speakeasy-model-namespace": "interactions"
+}
+--- RetrievalCallDelta ---
+{
+  "description": "Used by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc. RetrievalType decides which tool is used.",
+  "type": "object",
+  "properties": {
+    "arguments": {
+      "description": "Required. The arguments to pass to the Retrieval tool.",
+      "allOf": [
+        {
+          "$ref": "#/components/schemas/RetrievalStepArguments"
+        }
+      ],
+      "$ref": "#/components/schemas/RetrievalStepArguments"
+    },
+    "retrieval_type": {
+      "description": "The type of retrieval tools.",
+      "type": "string",
+      "x-google-enum-descriptions": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "enum": [
+        "vertex_ai_search",
+        "rag_store",
+        "exa_ai_search",
+        "parallel_ai_search"
+      ]
+    },
+    "signature": {
+      "description": "A signature hash for backend validation.",
+      "type": "string",
+      "format": "byte",
+      "x-speakeasy-base64-input-mode": "file"
+    },
+    "type": {
+      "const": "retrieval_call"
+    }
+  },
+  "required": [
+    "arguments",
+    "type"
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "RetrievalCallDelta"
+    }
+  ]
+}
+--- RetrievalCallStep ---
+{
+  "description": "Retrieval call step.\nUsed by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc. RetrievalType decides which tool is used.",
+  "type": "object",
+  "properties": {
+    "arguments": {
+      "description": "Required. The arguments to pass to the retrieval tool.",
+      "allOf": [
+        {
+          "$ref": "#/components/schemas/RetrievalStepArguments"
+        }
+      ],
+      "$ref": "#/components/schemas/RetrievalStepArguments"
+    },
+    "id": {
+      "description": "Required. A unique ID for this specific tool call.",
+      "type": "string"
+    },
+    "retrieval_type": {
+      "description": "The type of retrieval tools.",
+      "type": "string",
+      "x-google-enum-descriptions": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "enum": [
+        "vertex_ai_search",
+        "rag_store",
+        "exa_ai_search",
+        "parallel_ai_search"
+      ]
+    },
+    "signature": {
+      "description": "A signature hash for backend validation.",
+      "type": "string",
+      "format": "byte",
+      "x-speakeasy-base64-input-mode": "file"
+    },
+    "type": {
+      "const": "retrieval_call"
+    }
+  },
+  "required": [
+    "arguments",
+    "id",
+    "type"
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "RetrievalCallStep"
+    }
+  ]
+}
+--- SafetySetting ---
+{
+  "description": "A safety setting that affects the safety-blocking behavior.\n\nA SafetySetting consists of a\nharm category and a\nthreshold for that\ncategory.",
+  "type": "object",
+  "properties": {
+    "method": {
+      "description": "Optional. The method for blocking content. If not specified, the default\nbehavior is to use the probability score.",
+      "type": "string",
+      "x-google-enum-descriptions": [
+        "The harm block method uses both probability and severity scores.",
+        "The harm block method uses the probability score."
+      ],
+      "enum": [
+        "severity",
+        "probability"
+      ]
+    },
+    "threshold": {
+      "description": "Required. The threshold for blocking content. If the harm probability\nexceeds this threshold, the content will be blocked.",
+      "type": "string",
+      "x-google-enum-descriptions": [
+        "Block content with a low harm probability or higher.",
+        "Block content with a medium harm probability or higher.",
+        "Block content with a high harm probability.",
+        "Do not block any content, regardless of its harm probability.",
+        "Turn off the safety filter entirely."
+      ],
+      "enum": [
+        "block_low_and_above",
+        "block_medium_and_above",
+        "block_only_high",
+        "block_none",
+        "off"
+      ]
+    },
+    "type": {
+      "description": "Required. The type of harm category to be blocked.",
+      "$ref": "#/components/schemas/HarmCategory"
+    }
+  },
+  "required": [
+    "threshold",
+    "type"
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "SafetySetting"
+    }
+  ]
+}
+--- RetrievalResultDelta ---
+{
+  "description": "Used by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc.\nToolResultDelta.type",
+  "type": "object",
+  "properties": {
+    "is_error": {
+      "description": "Whether the retrieval resulted in an error.",
+      "type": "boolean"
+    },
+    "signature": {
+      "description": "A signature hash for backend validation.",
+      "type": "string",
+      "format": "byte",
+      "x-speakeasy-base64-input-mode": "file"
+    },
+    "type": {
+      "const": "retrieval_result"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "RetrievalResultDelta"
+    }
+  ]
+}
+--- LocalEnvironmentConfig ---
+{
+  "description": "Configuration for an environment that lives on the client connection rather\nthan in a server-managed sandbox.\n\nWhen set (via Interaction.local_environment), the agent's filesystem and\nshell are treated as living on the client: the agent's built-in environment\noperations (e.g. reading/listing/editing files and running commands) are\nsuspended on the server and yielded back to the client to execute, with their\nresults returned on a subsequent turn. This is mutually exclusive with a\nserver-managed `EnvironmentConfig` (remote_environment), since the\nenvironment is either on the client or in a server sandbox, never both.\n\nThis governs only the agent's built-in environment. Client-declared function\ntools are always executed on the client regardless of this field.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "local"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "x-speakeasy-model-namespace": "interactions"
+}
+--- RetrievalResultStep ---
+{
+  "description": "Vertex Retrieval result step.\nUsed by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc.",
+  "type": "object",
+  "properties": {
+    "call_id": {
+      "description": "Required. ID to match the ID from the function call block.",
+      "type": "string"
+    },
+    "is_error": {
+      "description": "Whether the retrieval resulted in an error.",
+      "type": "boolean"
+    },
+    "signature": {
+      "description": "A signature hash for backend validation.",
+      "type": "string",
+      "format": "byte",
+      "x-speakeasy-base64-input-mode": "file"
+    },
+    "type": {
+      "const": "retrieval_result"
+    }
+  },
+  "required": [
+    "call_id",
+    "type"
+  ],
+  "x-speakeasy-model-namespace": "interactions",
+  "x-speakeasy-exports": [
+    {
+      "group": "interactions",
+      "name": "RetrievalResultStep"
+    }
+  ]
+}
