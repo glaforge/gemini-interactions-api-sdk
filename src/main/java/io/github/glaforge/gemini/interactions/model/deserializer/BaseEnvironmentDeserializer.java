@@ -32,6 +32,13 @@ import io.github.glaforge.gemini.interactions.model.LocalEnvironmentConfig;
  */
 public class BaseEnvironmentDeserializer extends ValueDeserializer<Object> {
 
+    /**
+     * Default constructor.
+     */
+    public BaseEnvironmentDeserializer() {
+        super(Object.class);
+    }
+
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_STRING) {

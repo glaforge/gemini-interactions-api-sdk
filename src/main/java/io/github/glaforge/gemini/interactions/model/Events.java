@@ -134,6 +134,7 @@ public sealed interface Events permits
      * @param eventType   The type of event ("interaction.created").
      * @param eventId     The unique identifier for the event.
      * @param interaction The interaction object.
+     * @param metadata    Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record InteractionCreated(
@@ -149,6 +150,7 @@ public sealed interface Events permits
      * @param eventType   The type of event ("interaction.completed").
      * @param eventId     The unique identifier for the event.
      * @param interaction The interaction object.
+     * @param metadata    Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record InteractionCompleted(
@@ -165,6 +167,7 @@ public sealed interface Events permits
      * @param eventId       The unique identifier for the event.
      * @param interactionId The ID of the interaction.
      * @param status        The new status of the interaction.
+     * @param metadata      Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record InteractionStatusUpdate(
@@ -182,6 +185,7 @@ public sealed interface Events permits
      * @param eventId   The unique identifier for the event.
      * @param index     The index of the step.
      * @param step      The step that is starting.
+     * @param metadata  Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record StepStart(
@@ -198,6 +202,7 @@ public sealed interface Events permits
      * @param eventType The type of event ("step.stop").
      * @param eventId   The unique identifier for the event.
      * @param index     The index of the step.
+     * @param metadata  Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record StepStop(
@@ -213,6 +218,7 @@ public sealed interface Events permits
      * @param eventType The type of event ("error").
      * @param eventId   The unique identifier for the event.
      * @param error     The error details.
+     * @param metadata  Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ErrorEvent(
@@ -251,6 +257,7 @@ public sealed interface Events permits
      * @param eventId   The unique identifier for the event.
      * @param index     The index of the step.
      * @param delta     The delta update.
+     * @param metadata  Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record StepDelta(
@@ -268,6 +275,7 @@ public sealed interface Events permits
      * @param eventId   The unique identifier for the event.
      * @param index     The index of the content block.
      * @param delta     The delta update.
+     * @param metadata  Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ContentDelta(
@@ -285,6 +293,7 @@ public sealed interface Events permits
      * @param eventId   The unique identifier for the event.
      * @param index     The index of the content block.
      * @param content   The content that is starting.
+     * @param metadata  Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ContentStart(
@@ -301,6 +310,7 @@ public sealed interface Events permits
      * @param eventType The type of event ("content.stop").
      * @param eventId   The unique identifier for the event.
      * @param index     The index of the content block.
+     * @param metadata  Stream metadata.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ContentStop(

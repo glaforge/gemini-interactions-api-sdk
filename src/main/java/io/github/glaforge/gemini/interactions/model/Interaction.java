@@ -35,6 +35,7 @@ import java.time.Instant;
  * @param previousInteractionId ID of the previous interaction in the conversation.
  * @param environmentId         ID of the environment.
  * @param cachedContent         URI of the cached content used.
+ * @param safetySettings        The safety settings to apply.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Interaction(
@@ -181,6 +182,7 @@ public record Interaction(
      * @param toolUseTokensByModality Tool use tokens broken down by modality.
      * @param totalThoughtTokens      Total thought (reasoning) tokens.
      * @param totalTokens             Total tokens.
+     * @param groundingToolCount      Grounding tool counts.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Usage(
@@ -300,32 +302,94 @@ public record Interaction(
         /** Creates a new Builder. */
         public Builder() {}
 
-        /** Sets the ID. @param id the id. @return this builder. */
+        /**
+         * Sets the ID.
+         * @param id the id.
+         * @return this builder.
+         */
         public Builder id(String id) { this.id = id; return this; }
-        /** Sets the model. @param model the model. @return this builder. */
+
+        /**
+         * Sets the model.
+         * @param model the model.
+         * @return this builder.
+         */
         public Builder model(String model) { this.model = model; return this; }
-        /** Sets the agent. @param agent the agent. @return this builder. */
+
+        /**
+         * Sets the agent.
+         * @param agent the agent.
+         * @return this builder.
+         */
         public Builder agent(String agent) { this.agent = agent; return this; }
-        /** Sets the created time. @param created the created time. @return this builder. */
+
+        /**
+         * Sets the created time.
+         * @param created the created time.
+         * @return this builder.
+         */
         public Builder created(Instant created) { this.created = created; return this; }
-        /** Sets the updated time. @param updated the updated time. @return this builder. */
+
+        /**
+         * Sets the updated time.
+         * @param updated the updated time.
+         * @return this builder.
+         */
         public Builder updated(Instant updated) { this.updated = updated; return this; }
-        /** Sets the status. @param status the status. @return this builder. */
+
+        /**
+         * Sets the status.
+         * @param status the status.
+         * @return this builder.
+         */
         public Builder status(Status status) { this.status = status; return this; }
-        /** Sets the steps. @param steps the steps. @return this builder. */
+
+        /**
+         * Sets the steps.
+         * @param steps the steps.
+         * @return this builder.
+         */
         public Builder steps(List<Step> steps) { this.steps = steps; return this; }
-        /** Sets the usage. @param usage the usage. @return this builder. */
+
+        /**
+         * Sets the usage.
+         * @param usage the usage.
+         * @return this builder.
+         */
         public Builder usage(Usage usage) { this.usage = usage; return this; }
-        /** Sets the previous interaction ID. @param previousInteractionId the ID. @return this builder. */
+
+        /**
+         * Sets the previous interaction ID.
+         * @param previousInteractionId the ID.
+         * @return this builder.
+         */
         public Builder previousInteractionId(String previousInteractionId) { this.previousInteractionId = previousInteractionId; return this; }
-        /** Sets the environment ID. @param environmentId the environment ID. @return this builder. */
+
+        /**
+         * Sets the environment ID.
+         * @param environmentId the environment ID.
+         * @return this builder.
+         */
         public Builder environmentId(String environmentId) { this.environmentId = environmentId; return this; }
-        /** Sets the cached content. @param cachedContent the cached content. @return this builder. */
+
+        /**
+         * Sets the cached content.
+         * @param cachedContent the cached content.
+         * @return this builder.
+         */
         public Builder cachedContent(String cachedContent) { this.cachedContent = cachedContent; return this; }
-        /** Sets the safety settings. @param safetySettings the safety settings. @return this builder. */
+
+        /**
+         * Sets the safety settings.
+         * @param safetySettings the safety settings.
+         * @return this builder.
+         */
         public Builder safetySettings(List<SafetySetting> safetySettings) { this.safetySettings = safetySettings; return this; }
 
-        /** Builds the Interaction. @return the new Interaction. */
+        /**
+         * Builds the Interaction.
+         * @return the new Interaction.
+         */
         public Interaction build() {
             return new Interaction(id, model, agent, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings);
         }

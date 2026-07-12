@@ -63,6 +63,7 @@ public sealed interface Content permits
         @JsonProperty("low") LOW,
         /** Medium resolution. */
         @JsonProperty("medium") MEDIUM,
+        /** High resolution. */
         @JsonProperty("high") HIGH,
         /** Ultra high resolution. */
         @JsonProperty("ultra_high") ULTRA_HIGH

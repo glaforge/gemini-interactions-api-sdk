@@ -22,14 +22,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A harm category for safety settings.
  */
 public enum HarmCategory {
+    /** Hate speech. */
     @JsonProperty("hate_speech") HATE_SPEECH,
+    /** Dangerous content. */
     @JsonProperty("dangerous_content") DANGEROUS_CONTENT,
+    /** Harassment. */
     @JsonProperty("harassment") HARASSMENT,
+    /** Sexually explicit. */
     @JsonProperty("sexually_explicit") SEXUALLY_EXPLICIT,
+    /** Civic integrity. */
     @JsonProperty("civic_integrity") CIVIC_INTEGRITY,
+    /** Image hate. */
     @JsonProperty("image_hate") IMAGE_HATE,
+    /** Image dangerous content. */
     @JsonProperty("image_dangerous_content") IMAGE_DANGEROUS_CONTENT,
+    /** Image harassment. */
     @JsonProperty("image_harassment") IMAGE_HARASSMENT,
+    /** Image sexually explicit. */
     @JsonProperty("image_sexually_explicit") IMAGE_SEXUALLY_EXPLICIT,
+    /** Jailbreak. */
     @JsonProperty("jailbreak") JAILBREAK
 }

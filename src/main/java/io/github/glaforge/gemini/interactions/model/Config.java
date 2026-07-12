@@ -43,6 +43,9 @@ public class Config {
      * @param thinkingSummaries Configuration for thinking summaries.
      * @param maxOutputTokens  The maximum number of tokens to include in a candidate.
      * @param speechConfig     Configuration for speech generation.
+     * @param presencePenalty  The presence penalty.
+     * @param frequencyPenalty The frequency penalty.
+     * @param videoConfig      The video configuration.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GenerationConfig(
@@ -426,6 +429,7 @@ public class Config {
      * @param thinkingSummaries     Configuration for thinking summaries.
      * @param visualization         Configuration for visualization.
      * @param collaborativePlanning Whether human-in-the-loop planning is enabled.
+     * @param enableBigqueryTool    Whether the BigQuery tool is enabled.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record DeepResearchAgentConfig(

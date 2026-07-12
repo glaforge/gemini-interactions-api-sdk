@@ -71,6 +71,8 @@ public class InteractionParams {
      * @param responseFormat        Requested response format (JSON Schema).
      * @param previousInteractionId ID of the previous interaction to continue.
      * @param serviceTier           The service tier for the interaction.
+     * @param cachedContent         The cached content to use.
+     * @param safetySettings        The safety settings to apply.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ModelInteractionParams(
@@ -395,6 +397,8 @@ public class InteractionParams {
      * @param responseFormat        Requested response format.
      * @param previousInteractionId ID of the previous interaction.
      * @param serviceTier           The service tier for the interaction.
+     * @param environment           The environment to use.
+     * @param safetySettings        The safety settings to apply.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AgentInteractionParams(
