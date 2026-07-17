@@ -2,9 +2,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <description>Google Gemini Interactions API SDK</description>
+    <groupId>io.github.glaforge</groupId>
+    <artifactId>gemini-interactions-parent</artifactId>
+    <version>1.0.0-RC5-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    
+    <name>Gemini Interactions API Parent</name>
+    <description>Google Gemini Interactions API SDK and Server Parent POM</description>
     <url>https://github.com/glaforge/gemini-interactions-api-sdk</url>
     <inceptionYear>2025</inceptionYear>
+
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -12,6 +19,7 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
     <developers>
         <developer>
             <id>glaforge</id>
@@ -19,70 +27,75 @@
         </developer>
     </developers>
 
-    <groupId>io.github.glaforge</groupId>
-    <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>1.0.0-RC5-SNAPSHOT</version>
-    <name>Gemini Interactions API SDK</name>
+    <modules>
+        <module>gemini-interactions-api-sdk</module>
+        <module>gemini-interactions-server</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jackson.version>3.0.0</jackson.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Inter-module dependencies -->
+            <dependency>
+                <groupId>io.github.glaforge</groupId>
+                <artifactId>gemini-interactions-api-sdk</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.glaforge</groupId>
+                <artifactId>gemini-interactions-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- JSON Processing -->
             <dependency>
                 <groupId>tools.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>3.0.0</version>
+                <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!-- Google Cloud Auth -->
+            <dependency>
+                <groupId>com.google.auth</groupId>
+                <artifactId>google-auth-library-oauth2-http</artifactId>
+                <version>1.48.0</version>
+            </dependency>
+
+            <!-- Testing -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>6.0.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>4.12.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.javelit</groupId>
+                <artifactId>javelit</artifactId>
+                <version>0.89.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <artifactId>ansiren</artifactId>
+                <groupId>io.github.glaforge</groupId>
+                <version>0.1.0</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <dependencies>
-        <!-- JSON Processing -->
-        <dependency>
-            <groupId>tools.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-
-        <!-- Google Cloud Auth -->
-        <dependency>
-            <groupId>com.google.auth</groupId>
-            <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.48.0</version>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Testing -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>6.0.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>mockwebserver</artifactId>
-            <version>4.12.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.javelit</groupId>
-            <artifactId>javelit</artifactId>
-            <version>0.89.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <artifactId>ansiren</artifactId>
-            <groupId>io.github.glaforge</groupId>
-            <version>0.1.0</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 
     <build>
         <plugins>
@@ -220,37 +233,6 @@
                             <scmShallowClone>false</scmShallowClone>
                             <releaseProfiles>deployment,publication</releaseProfiles>
                         </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>deploy-frontend</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <version>3.6.0</version>
-                        <configuration>
-                            <archive>
-                                <manifest>
-                                    <mainClass>io.github.glaforge.gemini.interactions.ResearchFrontend</mainClass>
-                                </manifest>
-                            </archive>
-                            <descriptors>
-                                <descriptor>src/assembly/frontend-deployment.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>make-assembly</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>

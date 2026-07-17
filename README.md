@@ -20,7 +20,7 @@ A modern Java SDK for the [Google Gemini Interactions API](https://ai.google.dev
 
 ## Installation
 
-Add the dependency to your `pom.xml`:
+To use the core client SDK, add the following dependency to your `pom.xml`:
 
 ```xml
 <dependency>
@@ -30,8 +30,18 @@ Add the dependency to your `pom.xml`:
 </dependency>
 ```
 
+If you are implementing the server-side webhook handler (`InteractionsHandler`), add the server integration module:
+
+```xml
+<dependency>
+    <groupId>io.github.glaforge</groupId>
+    <artifactId>gemini-interactions-server</artifactId>
+    <version>0.11.0</version>
+</dependency>
+```
+
 > [!NOTE]
-> Check [Maven Central](https://central.sonatype.com/artifact/io.github.glaforge/gemini-interactions-api-sdk) to find the latest available version of the SDK.
+> Check [Maven Central](https://central.sonatype.com/artifact/io.github.glaforge/gemini-interactions-api-sdk) to find the latest available version of these artifacts.
 
 ## AI Agent Skill
 [![skills.sh](https://skills.sh/b/glaforge/gemini-interactions-api-sdk)](https://skills.sh/glaforge/gemini-interactions-api-sdk)
@@ -442,6 +452,10 @@ client.deleteAgent("my-concise-coder-agent");
 ```
 
 #### 5. Server-Side Handling (InteractionsHandler)
+
+> [!NOTE]
+> To use `InteractionsHandler`, make sure you have added the `gemini-interactions-server` dependency to your project.
+
 If you are exposing interactions endpoints or webhooks using `InteractionsHandler`, you can seamlessly plug in agent management support. Simply extend the handler and override the default concrete agent methods:
 
 ```java

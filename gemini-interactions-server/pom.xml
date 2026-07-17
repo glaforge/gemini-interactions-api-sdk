@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.glaforge</groupId>
+        <artifactId>gemini-interactions-parent</artifactId>
+        <version>1.0.0-RC5-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>gemini-interactions-server</artifactId>
+    <name>Gemini Interactions API Server</name>
+    <description>Webhook Handler for Google Gemini Interactions API</description>
+
+    <dependencies>
+        <!-- Dependency on SDK Core -->
+        <dependency>
+            <groupId>io.github.glaforge</groupId>
+            <artifactId>gemini-interactions-api-sdk</artifactId>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

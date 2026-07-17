@@ -29,12 +29,16 @@ These agents can be equipped with complex tools (Google Search, Code Execution, 
 - Ensure proper Javadoc for all public API surfaces (including builder classes and enums). Always verify that there are no Javadoc warnings by running `./mvnw clean javadoc:javadoc`.
 
 ## Project Structure
-- `model/` — Java records representing API resources (`Agent`, `Interaction`, `InteractionParams`, `Tool`, `Config`, `Events`, `Step`, etc.). Most are immutable records with nested `Builder` classes.
-- `server/` — `InteractionsHandler` for server-side webhook handling.
-- `GeminiInteractionsClient` — The main SDK entry point. Handles all HTTP communication with the Gemini API (CRUD for agents, interactions, webhooks, environment downloads).
-- `AgentEnvironment` — Stateful wrapper for downloading and inspecting a remote agent's sandbox filesystem (TAR archive).
-- `deserializer/` — Custom Jackson deserializers for polymorphic API responses.
-- `ResearchFrontend` (in `src/test/java`) — A standalone demo web application for the Deep Research agent, deployable to Google Cloud Run. See `researcher-deployment.md` for deployment instructions.
+
+The project is structured as a Maven multi-module reactor:
+- **`gemini-interactions-api-sdk/`** — The core client SDK:
+  - `model/` — Java records representing API resources (`Agent`, `Interaction`, `InteractionParams`, `Tool`, `Config`, `Events`, `Step`, etc.). Most are immutable records with nested `Builder` classes.
+  - `GeminiInteractionsClient` — The main SDK entry point. Handles all HTTP communication with the Gemini API (CRUD for agents, interactions, webhooks, environment downloads).
+  - `AgentEnvironment` — Stateful wrapper for downloading and inspecting a remote agent's sandbox filesystem (TAR archive).
+  - `deserializer/` — Custom Jackson deserializers for polymorphic API responses.
+  - `ResearchFrontend` (in `src/test/java`) — A standalone demo web application for the Deep Research agent, deployable to Google Cloud Run. See `researcher-deployment.md` for deployment instructions.
+- **`gemini-interactions-server/`** — The server-side integration:
+  - `server/` — Contains `InteractionsHandler` for server-side webhook handling.
 
 ## Key Documents
 - `UPDATING_SDK.md` — Instructions for keeping the SDK implementation in sync with the remote Gemini Interactions API contract via its OpenAPI JSON definition (`openapi.json`). Read this before adding or modifying API models, and remember to update `README.md` and `skills/gemini-interactions-java-api/SKILL.md` to reflect the new capabilities.
