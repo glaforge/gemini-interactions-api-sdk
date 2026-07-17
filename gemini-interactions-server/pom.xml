@@ -12,6 +12,13 @@
     <artifactId>gemini-interactions-server</artifactId>
     <name>Gemini Interactions API Server</name>
     <description>Webhook Handler for Google Gemini Interactions API</description>
+    <url>https://github.com/glaforge/gemini-interactions-api-sdk</url>
+
+    <scm>
+        <connection>scm:git:git://github.com/glaforge/gemini-interactions-api-sdk.git</connection>
+        <developerConnection>scm:git:git@github.com:glaforge/gemini-interactions-api-sdk.git</developerConnection>
+        <url>https://github.com/glaforge/gemini-interactions-api-sdk/tree/main</url>
+    </scm>
 
     <dependencies>
         <!-- Dependency on SDK Core -->

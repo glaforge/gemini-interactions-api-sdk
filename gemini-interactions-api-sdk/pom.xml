@@ -12,6 +12,13 @@
     <artifactId>gemini-interactions-api-sdk</artifactId>
     <name>Gemini Interactions API SDK</name>
     <description>Google Gemini Interactions API SDK</description>
+    <url>https://github.com/glaforge/gemini-interactions-api-sdk</url>
+
+    <scm>
+        <connection>scm:git:git://github.com/glaforge/gemini-interactions-api-sdk.git</connection>
+        <developerConnection>scm:git:git@github.com:glaforge/gemini-interactions-api-sdk.git</developerConnection>
+        <url>https://github.com/glaforge/gemini-interactions-api-sdk/tree/main</url>
+    </scm>
 
     <dependencies>
         <!-- JSON Processing -->
