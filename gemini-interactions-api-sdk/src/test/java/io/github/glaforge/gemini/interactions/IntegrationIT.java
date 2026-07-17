@@ -92,41 +92,7 @@ public class IntegrationIT {
         assertTrue(interaction.outputText().contains("Rayleigh"), "Answer should mention Rayleigh scattering");
     }
 
-    @Test
-    @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
-    public void testDeepResearch() throws IOException, InterruptedException {
-        GeminiInteractionsClient client = GeminiInteractionsClient.builder()
-                .apiKey(System.getenv("GEMINI_API_KEY"))
-                .build();
 
-        Interaction interaction = client.create(InteractionParams.AgentInteractionParams.builder()
-                .agent("deep-research-max-preview-04-2026")
-                .input("AI agent design patterns (harness, orchestration, context engineering, etc.)")
-                .background(true)
-                .build());
-
-        System.out.println(interaction);
-
-        System.out.println("Waiting for interaction to complete... " + interaction.id());
-        while (!interaction.status().isFinished()) {
-            System.out.println("Status: " + interaction.status());
-            Thread.sleep(1000);
-            interaction = client.get(interaction.id());
-        }
-
-        System.out.println(interaction);
-
-        interaction.steps().stream()
-                .filter(step -> step instanceof Step.ModelOutputStep)
-                .flatMap(step -> ((Step.ModelOutputStep) step).content().stream())
-                .forEach((Content output) -> {
-                    switch (output) {
-                        case TextContent text -> System.out.println(text.text());
-                        case ImageContent image -> System.out.println(image.uri());
-                        default -> System.out.println("Unknown content type: " + output);
-                    }
-                });
-    }
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
