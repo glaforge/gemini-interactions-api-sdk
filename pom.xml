@@ -37,6 +37,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jackson.version>3.0.0</jackson.version>
+        <jreleaser.skip>false</jreleaser.skip>
     </properties>
 
     <dependencyManagement>
@@ -174,8 +175,8 @@
                         <groupId>org.jreleaser</groupId>
                         <artifactId>jreleaser-maven-plugin</artifactId>
                         <version>1.22.0</version>
-                        <inherited>false</inherited>
                         <configuration>
+                            <skip>${jreleaser.skip}</skip>
                             <jreleaser>
                                 <release>
                                     <github>

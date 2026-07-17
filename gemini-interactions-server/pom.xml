@@ -21,6 +21,10 @@
       <tag>HEAD</tag>
   </scm>
 
+    <properties>
+        <jreleaser.skip>true</jreleaser.skip>
+    </properties>
+
     <dependencies>
         <!-- Dependency on SDK Core -->
         <dependency>
