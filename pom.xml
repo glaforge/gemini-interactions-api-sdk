@@ -4,7 +4,7 @@
 
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-parent</artifactId>
-    <version>1.0.0-RC6</version>
+    <version>1.0.0-RC7-SNAPSHOT</version>
     <packaging>pom</packaging>
     
     <name>Gemini Interactions API Parent</name>
@@ -119,7 +119,7 @@
         <connection>scm:git:git://github.com/glaforge/gemini-interactions-api-sdk.git</connection>
         <developerConnection>scm:git:git@github.com:glaforge/gemini-interactions-api-sdk.git</developerConnection>
         <url>https://github.com/glaforge/gemini-interactions-api-sdk/tree/main</url>
-        <tag>v1.0.0-RC6</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <profiles>
