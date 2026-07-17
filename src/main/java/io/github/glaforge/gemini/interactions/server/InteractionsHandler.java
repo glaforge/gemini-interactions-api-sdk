@@ -32,8 +32,13 @@ import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretResponse;
 import io.github.glaforge.gemini.interactions.model.Webhook;
 import io.github.glaforge.gemini.interactions.model.WebhookUpdate;
-import java.util.stream.Stream;
+import io.github.glaforge.gemini.interactions.model.Trigger;
+import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
+import io.github.glaforge.gemini.interactions.model.TriggerUpdate;
+import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
+import io.github.glaforge.gemini.interactions.model.ListTriggerExecutionsResponse;
 
+import java.util.stream.Stream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -69,6 +74,10 @@ public abstract class InteractionsHandler implements HttpHandler {
     private static final Pattern ROTATE_SECRET_PATTERN = Pattern.compile(".*/webhooks/([^/]+):rotateSigningSecret$");
     // /v1beta/agents/{id}
     private static final Pattern AGENT_ID_PATTERN = Pattern.compile(".*/agents/([^/]+)$");
+    // /v1beta/triggers/{id}
+    private static final Pattern TRIGGER_ID_PATTERN = Pattern.compile(".*/triggers/([^/]+)$");
+    // /v1beta/triggers/{id}/executions
+    private static final Pattern TRIGGER_EXECUTIONS_PATTERN = Pattern.compile(".*/triggers/([^/]+)/executions$");
     // /v1beta/files/environment-{id}:download
     private static final Pattern ENVIRONMENT_DOWNLOAD_PATTERN = Pattern.compile(".*/files/environment-([^/:]+):download$");
 
@@ -170,6 +179,39 @@ public abstract class InteractionsHandler implements HttpHandler {
                         handleGetAgent(exchange, id);
                     } else if (method.equalsIgnoreCase("DELETE")) {
                         handleDeleteAgent(exchange, id);
+                    } else {
+                        sendResponse(exchange, 405, "Method Not Allowed");
+                    }
+                    return;
+                }
+
+                // Triggers routing
+                if (path.endsWith("/triggers")) {
+                    if (method.equalsIgnoreCase("POST")) {
+                        handleCreateTrigger(exchange);
+                    } else if (method.equalsIgnoreCase("GET")) {
+                        handleListTriggers(exchange);
+                    } else {
+                        sendResponse(exchange, 405, "Method Not Allowed");
+                    }
+                    return;
+                }
+
+                Matcher triggerExecutionsMatcher = TRIGGER_EXECUTIONS_PATTERN.matcher(path);
+                if (triggerExecutionsMatcher.matches() && method.equalsIgnoreCase("GET")) {
+                    handleListTriggerExecutions(exchange, triggerExecutionsMatcher.group(1));
+                    return;
+                }
+
+                Matcher triggerIdMatcher = TRIGGER_ID_PATTERN.matcher(path);
+                if (triggerIdMatcher.matches()) {
+                    String id = triggerIdMatcher.group(1);
+                    if (method.equalsIgnoreCase("GET")) {
+                        handleGetTrigger(exchange, id);
+                    } else if (method.equalsIgnoreCase("PATCH")) {
+                        handleUpdateTrigger(exchange, id);
+                    } else if (method.equalsIgnoreCase("DELETE")) {
+                        handleDeleteTrigger(exchange, id);
                     } else {
                         sendResponse(exchange, 405, "Method Not Allowed");
                     }
@@ -414,6 +456,96 @@ public abstract class InteractionsHandler implements HttpHandler {
         }
     }
 
+    private void handleCreateTrigger(HttpExchange exchange) throws IOException {
+        try {
+            TriggerCreateParams params = objectMapper.readValue(exchange.getRequestBody(), TriggerCreateParams.class);
+            Trigger created = createTrigger(params);
+            sendResponse(exchange, 200, created);
+        } catch (Exception e) {
+            sendResponse(exchange, 400, "Invalid Request: " + e.getMessage());
+        }
+    }
+
+    private void handleGetTrigger(HttpExchange exchange, String id) throws IOException {
+        try {
+            Trigger trigger = getTrigger(id);
+            if (trigger != null) {
+                sendResponse(exchange, 200, trigger);
+            } else {
+                sendResponse(exchange, 404, "Trigger not found");
+            }
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
+    private void handleListTriggers(HttpExchange exchange) throws IOException {
+        try {
+            String query = exchange.getRequestURI().getQuery();
+            Integer pageSize = null;
+            String pageToken = null;
+            if (query != null) {
+                for (String param : query.split("&")) {
+                    String[] pair = param.split("=");
+                    if (pair.length > 1) {
+                        if (pair[0].equals("page_size")) {
+                            pageSize = Integer.parseInt(pair[1]);
+                        } else if (pair[0].equals("page_token")) {
+                            pageToken = pair[1];
+                        }
+                    }
+                }
+            }
+            ListTriggersResponse response = listTriggers(pageSize, pageToken);
+            sendResponse(exchange, 200, response);
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
+    private void handleUpdateTrigger(HttpExchange exchange, String id) throws IOException {
+        try {
+            TriggerUpdate update = objectMapper.readValue(exchange.getRequestBody(), TriggerUpdate.class);
+            Trigger updated = updateTrigger(id, update);
+            sendResponse(exchange, 200, updated);
+        } catch (Exception e) {
+            sendResponse(exchange, 400, "Invalid Request: " + e.getMessage());
+        }
+    }
+
+    private void handleDeleteTrigger(HttpExchange exchange, String id) throws IOException {
+        try {
+            deleteTrigger(id);
+            exchange.sendResponseHeaders(204, -1);
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
+    private void handleListTriggerExecutions(HttpExchange exchange, String triggerId) throws IOException {
+        try {
+            String query = exchange.getRequestURI().getQuery();
+            Integer pageSize = null;
+            String pageToken = null;
+            if (query != null) {
+                for (String param : query.split("&")) {
+                    String[] pair = param.split("=");
+                    if (pair.length > 1) {
+                        if (pair[0].equals("page_size")) {
+                            pageSize = Integer.parseInt(pair[1]);
+                        } else if (pair[0].equals("page_token")) {
+                            pageToken = pair[1];
+                        }
+                    }
+                }
+            }
+            ListTriggerExecutionsResponse response = listTriggerExecutions(triggerId, pageSize, pageToken);
+            sendResponse(exchange, 200, response);
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
     private void sendResponse(HttpExchange exchange, int statusCode, Object body) throws IOException {
         String jsonResponse = "";
         if (body instanceof String) {
@@ -604,6 +736,65 @@ public abstract class InteractionsHandler implements HttpHandler {
      * @return The environment TAR content.
      */
     public byte[] downloadEnvironment(String id) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    // --- Trigger methods ---
+
+    /**
+     * Creates a new Trigger.
+     * @param params The trigger creation parameters.
+     * @return The created Trigger.
+     */
+    public Trigger createTrigger(TriggerCreateParams params) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Retrieves a Trigger by ID.
+     * @param id The trigger ID.
+     * @return The Trigger, or null if not found.
+     */
+    public Trigger getTrigger(String id) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Lists Triggers.
+     * @param pageSize  The maximum number of triggers to return.
+     * @param pageToken A page token.
+     * @return The ListTriggersResponse.
+     */
+    public ListTriggersResponse listTriggers(Integer pageSize, String pageToken) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Updates a Trigger.
+     * @param id     The trigger ID.
+     * @param update The trigger update payload.
+     * @return The updated Trigger.
+     */
+    public Trigger updateTrigger(String id, TriggerUpdate update) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Deletes a Trigger by ID.
+     * @param id The trigger ID.
+     */
+    public void deleteTrigger(String id) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Lists Trigger Executions.
+     * @param triggerId The trigger ID.
+     * @param pageSize  The maximum number of executions to return.
+     * @param pageToken A page token.
+     * @return The ListTriggerExecutionsResponse.
+     */
+    public ListTriggerExecutionsResponse listTriggerExecutions(String triggerId, Integer pageSize, String pageToken) {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

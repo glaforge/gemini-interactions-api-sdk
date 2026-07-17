@@ -385,30 +385,48 @@ public class Config {
     )
     @JsonSubTypes({
         @JsonSubTypes.Type(value = DynamicAgentConfig.class, name = "dynamic"),
-        @JsonSubTypes.Type(value = DeepResearchAgentConfig.class, name = "deep-research") // mapping key from spec
+        @JsonSubTypes.Type(value = DeepResearchAgentConfig.class, name = "deep-research"), // mapping key from spec
+        @JsonSubTypes.Type(value = CodeMenderAgentConfig.class, name = "code_mender"),
+        @JsonSubTypes.Type(value = AntigravityAgentConfig.class, name = "antigravity")
     })
-    public sealed interface AgentConfig permits DynamicAgentConfig, DeepResearchAgentConfig {
+    public sealed interface AgentConfig permits DynamicAgentConfig, DeepResearchAgentConfig, CodeMenderAgentConfig, AntigravityAgentConfig {
         /**
          * Returns the type of the agent.
          *
          * @return The agent type.
          */
         String type();
+
+        /**
+         * Returns the maximum total tokens for the agent run.
+         *
+         * @return the max total tokens.
+         */
+        Long maxTotalTokens();
     }
 
     /**
      * Configuration for dynamic agents.
      *
-     * @param type The type of agent (must be "dynamic").
+     * @param type           The type of agent (must be "dynamic").
+     * @param maxTotalTokens Max total tokens.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record DynamicAgentConfig(
-        String type
-        // additionalProperties
+        String type,
+        @JsonProperty("max_total_tokens") Long maxTotalTokens
     ) implements AgentConfig {
         /** Creates a new DynamicAgentConfig with default type "dynamic". */
         public DynamicAgentConfig() {
-            this("dynamic");
+            this("dynamic", null);
+        }
+
+        /** 
+         * Creates a new DynamicAgentConfig with a token limit. 
+         * @param maxTotalTokens Max total tokens.
+         */
+        public DynamicAgentConfig(Long maxTotalTokens) {
+            this("dynamic", maxTotalTokens);
         }
     }
 
@@ -426,6 +444,7 @@ public class Config {
      * Configuration for deep research agents.
      *
      * @param type                  The type of agent (must be "deep-research").
+     * @param maxTotalTokens        Max total tokens.
      * @param thinkingSummaries     Configuration for thinking summaries.
      * @param visualization         Configuration for visualization.
      * @param collaborativePlanning Whether human-in-the-loop planning is enabled.
@@ -434,6 +453,7 @@ public class Config {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record DeepResearchAgentConfig(
         String type,
+        @JsonProperty("max_total_tokens") Long maxTotalTokens,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("visualization") Visualization visualization,
         @JsonProperty("collaborative_planning") Boolean collaborativePlanning,
@@ -441,7 +461,7 @@ public class Config {
     ) implements AgentConfig {
         /** Creates a new DeepResearchAgentConfig with default type and no summaries. */
         public DeepResearchAgentConfig() {
-            this("deep-research", null, null, null, null);
+            this("deep-research", null, null, null, null, null);
         }
         /**
          * Creates a new DeepResearchAgentConfig with default type.
@@ -449,7 +469,7 @@ public class Config {
          * @param thinkingSummaries The thinking summaries configuration.
          */
         public DeepResearchAgentConfig(ThinkingSummaries thinkingSummaries) {
-            this("deep-research", thinkingSummaries, null, null, null);
+            this("deep-research", null, thinkingSummaries, null, null, null);
         }
 
 
@@ -463,6 +483,7 @@ public class Config {
         /** Builder for DeepResearchAgentConfig. */
         public static class Builder {
             private String type = "deep-research";
+            private Long maxTotalTokens;
             private ThinkingSummaries thinkingSummaries;
             private Visualization visualization;
             private Boolean collaborativePlanning;
@@ -470,6 +491,14 @@ public class Config {
 
             /** Creates a new Builder. */
             public Builder() {}
+
+            /**
+             * Sets max total tokens.
+             *
+             * @param maxTotalTokens max tokens.
+             * @return This builder.
+             */
+            public Builder maxTotalTokens(Long maxTotalTokens) { this.maxTotalTokens = maxTotalTokens; return this; }
 
             /**
              * Sets the thinking summaries configuration.
@@ -509,8 +538,56 @@ public class Config {
              * @return The DeepResearchAgentConfig.
              */
             public DeepResearchAgentConfig build() {
-                return new DeepResearchAgentConfig(type, thinkingSummaries, visualization, collaborativePlanning, enableBigqueryTool);
+                return new DeepResearchAgentConfig(type, maxTotalTokens, thinkingSummaries, visualization, collaborativePlanning, enableBigqueryTool);
             }
+        }
+    }
+
+    /**
+     * Configuration for the Code Mender agent runtime.
+     *
+     * @param type           The type ("code_mender").
+     * @param maxTotalTokens Max total tokens.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record CodeMenderAgentConfig(
+        String type,
+        @JsonProperty("max_total_tokens") Long maxTotalTokens
+    ) implements AgentConfig {
+        /** Creates a CodeMenderAgentConfig. */
+        public CodeMenderAgentConfig() {
+            this("code_mender", null);
+        }
+        /** 
+         * Creates a CodeMenderAgentConfig with token limit. 
+         * @param maxTotalTokens Max total tokens.
+         */
+        public CodeMenderAgentConfig(Long maxTotalTokens) {
+            this("code_mender", maxTotalTokens);
+        }
+    }
+
+    /**
+     * Configuration for the Antigravity agent runtime.
+     *
+     * @param type           The type ("antigravity").
+     * @param maxTotalTokens Max total tokens.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record AntigravityAgentConfig(
+        String type,
+        @JsonProperty("max_total_tokens") Long maxTotalTokens
+    ) implements AgentConfig {
+        /** Creates a AntigravityAgentConfig. */
+        public AntigravityAgentConfig() {
+            this("antigravity", null);
+        }
+        /** 
+         * Creates a AntigravityAgentConfig with token limit. 
+         * @param maxTotalTokens Max total tokens.
+         */
+        public AntigravityAgentConfig(Long maxTotalTokens) {
+            this("antigravity", maxTotalTokens);
         }
     }
 }

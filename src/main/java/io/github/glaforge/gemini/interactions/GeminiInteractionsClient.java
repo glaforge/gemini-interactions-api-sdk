@@ -32,6 +32,11 @@ import io.github.glaforge.gemini.interactions.model.ListAgentsResponse;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretResponse;
 import io.github.glaforge.gemini.interactions.model.Webhook;
 import io.github.glaforge.gemini.interactions.model.WebhookUpdate;
+import io.github.glaforge.gemini.interactions.model.Trigger;
+import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
+import io.github.glaforge.gemini.interactions.model.TriggerUpdate;
+import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
+import io.github.glaforge.gemini.interactions.model.ListTriggerExecutionsResponse;
 
 import java.io.IOException;
 import java.net.URI;
@@ -630,6 +635,179 @@ public class GeminiInteractionsClient {
      */
     public AgentEnvironment getEnvironment(String interactionId) {
         return new AgentEnvironment(interactionId, this);
+    }
+
+    // --- Trigger Operations ---
+
+    /**
+     * Creates a new Trigger.
+     *
+     * @param params The trigger creation parameters.
+     * @return The created Trigger.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Trigger createTrigger(TriggerCreateParams params) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(params);
+            String url = buildUrl("triggers");
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Trigger.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Retrieves a Trigger by ID.
+     *
+     * @param id The trigger ID.
+     * @return The Trigger.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Trigger getTrigger(String id) {
+        try {
+            String url = String.format("%s/%s/triggers/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Trigger.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Lists Triggers.
+     *
+     * @param pageSize  The maximum number of triggers to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @return The ListTriggersResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListTriggersResponse listTriggers(Integer pageSize, String pageToken) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("triggers"));
+            boolean hasParam = false;
+            if (pageSize != null) {
+                urlBuilder.append("?page_size=").append(pageSize);
+                hasParam = true;
+            }
+            if (pageToken != null && !pageToken.isEmpty()) {
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+            }
+
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), ListTriggersResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Updates a Trigger.
+     *
+     * @param id     The trigger ID.
+     * @param update The trigger update payload.
+     * @return The updated Trigger.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Trigger updateTrigger(String id, TriggerUpdate update) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(update);
+            String url = String.format("%s/%s/triggers/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Trigger.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Deletes a Trigger by ID.
+     *
+     * @param id The trigger ID.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void deleteTrigger(String id) {
+        try {
+            String url = String.format("%s/%s/triggers/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .DELETE()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Lists Executions of a Trigger.
+     *
+     * @param triggerId The trigger ID.
+     * @param pageSize  The maximum number of executions to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @return The ListTriggerExecutionsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListTriggerExecutionsResponse listTriggerExecutions(String triggerId, Integer pageSize, String pageToken) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/triggers/%s/executions", baseUrl, version, triggerId));
+            boolean hasParam = false;
+            if (pageSize != null) {
+                urlBuilder.append("?page_size=").append(pageSize);
+                hasParam = true;
+            }
+            if (pageToken != null && !pageToken.isEmpty()) {
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+            }
+
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), ListTriggerExecutionsResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
     }
 
 

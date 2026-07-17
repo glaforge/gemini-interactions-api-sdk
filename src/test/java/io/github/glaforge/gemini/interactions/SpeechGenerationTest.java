@@ -16,7 +16,9 @@
 
 package io.github.glaforge.gemini.interactions;
 
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
 import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+import java.util.List;
 import io.github.glaforge.gemini.interactions.model.Content.AudioContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
@@ -52,7 +54,7 @@ public class SpeechGenerationTest {
                 .model("gemini-2.5-flash-preview-tts")
                 .input("Say the following: WOOHOO This is so much fun!")
                 .responseModalities(Interaction.Modality.AUDIO)
-                .speechConfig(new SpeechConfig("kore", "en-us"))
+                .generationConfig(GenerationConfig.builder().speechConfig(List.of(new SpeechConfig("kore", "en-us"))).build())
                 .build();
 
         Interaction interaction = client.create(request);

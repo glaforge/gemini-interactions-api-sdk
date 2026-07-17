@@ -36,7 +36,7 @@ public class BaseEnvironmentDeserializer extends ValueDeserializer<Object> {
      * Default constructor.
      */
     public BaseEnvironmentDeserializer() {
-        super(Object.class);
+        super();
     }
 
     @Override

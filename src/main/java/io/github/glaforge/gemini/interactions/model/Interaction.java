@@ -27,6 +27,7 @@ import java.time.Instant;
  * @param id                    The unique identifier for the interaction.
  * @param model                 The model used for the interaction.
  * @param agent                 The agent used for the interaction.
+ * @param agentConfig           The agent configuration.
  * @param created               Creation timestamp.
  * @param updated               Last update timestamp.
  * @param status                The status of the interaction.
@@ -42,6 +43,7 @@ public record Interaction(
     String id,
     String model,
     String agent,
+    @JsonProperty("agent_config") Config.AgentConfig agentConfig,
     Instant created,
     Instant updated,
     Status status,
@@ -250,7 +252,9 @@ public record Interaction(
         /** Interaction failed. */
         @JsonProperty("failed") FAILED,
         /** Interaction cancelled. */
-        @JsonProperty("cancelled") CANCELLED;
+        @JsonProperty("cancelled") CANCELLED,
+        /** Interaction incomplete. */
+        @JsonProperty("incomplete") INCOMPLETE;
         
         /**
          * Checks whether the status represents a finished state.
@@ -289,6 +293,7 @@ public record Interaction(
         private String id;
         private String model;
         private String agent;
+        private Config.AgentConfig agentConfig;
         private Instant created;
         private Instant updated;
         private Status status;
@@ -322,6 +327,13 @@ public record Interaction(
          * @return this builder.
          */
         public Builder agent(String agent) { this.agent = agent; return this; }
+
+        /**
+         * Sets the agent config.
+         * @param agentConfig the agent config.
+         * @return this builder.
+         */
+        public Builder agentConfig(Config.AgentConfig agentConfig) { this.agentConfig = agentConfig; return this; }
 
         /**
          * Sets the created time.
@@ -391,7 +403,7 @@ public record Interaction(
          * @return the new Interaction.
          */
         public Interaction build() {
-            return new Interaction(id, model, agent, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings);
+            return new Interaction(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings);
         }
     }
 }

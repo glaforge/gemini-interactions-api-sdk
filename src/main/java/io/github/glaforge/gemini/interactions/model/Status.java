@@ -45,25 +45,47 @@ public record Status(
      * Builder for Status.
      */
     public static class Builder {
+        /** Creates a new Builder. */
+        public Builder() {}
+        
         private Integer code;
         private String message;
         private List<Map<String, Object>> details;
 
+        /**
+         * Sets the code.
+         * @param code The status code.
+         * @return This builder.
+         */
         public Builder code(Integer code) {
             this.code = code;
             return this;
         }
 
+        /**
+         * Sets the message.
+         * @param message The status message.
+         * @return This builder.
+         */
         public Builder message(String message) {
             this.message = message;
             return this;
         }
 
+        /**
+         * Sets the details.
+         * @param details The status details.
+         * @return This builder.
+         */
         public Builder details(List<Map<String, Object>> details) {
             this.details = details;
             return this;
         }
 
+        /**
+         * Builds the Status.
+         * @return The Status.
+         */
         public Status build() {
             return new Status(code, message, details);
         }

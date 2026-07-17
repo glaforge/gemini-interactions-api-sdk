@@ -330,3 +330,38 @@ Interaction interaction = client.create(params);
 // Delete custom agent when done
 client.deleteAgent(provisioned.id());
 ```
+
+### Budget & Token Controls
+
+For specialized agents like `antigravity` or `deep-research`, set a strict token budget using `agentConfig`:
+
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Config.AntigravityAgentConfig;
+
+AgentInteractionParams params = AgentInteractionParams.builder()
+    .agent("antigravity-preview-05-2026")
+    .input("Review recent commits.")
+    .agentConfig(new AntigravityAgentConfig(10000L))
+    .build();
+```
+
+### Triggers (Scheduling & Automation)
+
+Set up CRON schedules to automatically run agents in the background:
+
+```java
+import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+
+TriggerCreateParams params = TriggerCreateParams.builder()
+    .displayName("Daily Audit")
+    .schedule("0 0 * * *")
+    .interaction(AgentInteractionParams.builder()
+        .agent("antigravity-preview-05-2026")
+        .input("Audit the codebase.")
+        .build())
+    .build();
+
+client.createTrigger(params);
+```

@@ -264,13 +264,15 @@ interaction.steps().forEach(step -> {
 import io.github.glaforge.gemini.interactions.model.Content.*;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
 import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+import java.util.List;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
     .model("gemini-2.5-flash-preview-tts")
     .input("Hey, we can generate audio too!")
     .responseModalities(Modality.AUDIO, Modality.TEXT)
-    .speechConfig(new SpeechConfig("Puck", "en-US"))
+    .generationConfig(GenerationConfig.builder().speechConfig(List.of(new SpeechConfig("Puck", "en-US"))).build())
     .build();
 
 Interaction interaction = client.create(request);
@@ -458,6 +460,47 @@ public class MyInteractionsServer extends InteractionsHandler {
         return fetchAgentFromDB(id);
     }
 }
+```
+
+### Budget & Token Controls
+
+For specialized agents like `antigravity` or `deep-research`, you can set a strict token budget to cap resource usage using `agentConfig` in `AgentInteractionParams`:
+
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Config.AntigravityAgentConfig;
+
+AgentInteractionParams params = AgentInteractionParams.builder()
+    .agent("antigravity-preview-05-2026")
+    .input("Review recent commits.")
+    .agentConfig(new AntigravityAgentConfig(10000L)) // strict cap
+    .build();
+
+Interaction response = client.create(params);
+```
+
+### Triggers (Scheduling & Automation)
+
+You can set up CRON-like schedules to automatically run agents in the background. This is useful for periodic auditing, continuous integration, or recurring tasks.
+
+```java
+import io.github.glaforge.gemini.interactions.model.Trigger;
+import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Config.AntigravityAgentConfig;
+
+TriggerCreateParams params = TriggerCreateParams.builder()
+    .displayName("Daily Security Audit")
+    .schedule("0 0 * * *") // Run daily at midnight
+    .interaction(AgentInteractionParams.builder()
+        .agent("antigravity-preview-05-2026")
+        .input("Audit the codebase for hardcoded secrets.")
+        .agentConfig(new AntigravityAgentConfig(50000L)) // Budget cap: 50K tokens
+        .build())
+    .build();
+
+Trigger trigger = client.createTrigger(params);
+System.out.println("Created Trigger ID: " + trigger.id());
 ```
 
 ### Function Calling

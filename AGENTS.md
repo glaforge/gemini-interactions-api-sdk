@@ -14,19 +14,19 @@ These agents can be equipped with complex tools (Google Search, Code Execution, 
 ## Commands
 
 ### File-scoped (preferred - fast feedback)
-- **Run a specific unit test:** `mvn test -Dtest=ClassNameTest`
-- **Run a specific integration test:** `mvn verify -Dtest=ClassNameIT`
+- **Run a specific unit test:** `./mvnw test -Dtest=ClassNameTest`
+- **Run a specific integration test:** `./mvnw verify -Dtest=ClassNameIT`
 
 ### Full suite (only when explicitly requested)
-- **Build and package:** `mvn clean package`
-- **Run all fast tests:** `mvn test`
-- **Run all integration tests:** `mvn verify`
+- **Build and package:** `./mvnw clean package`
+- **Run all fast tests:** `./mvnw test`
+- **Run all integration tests:** `./mvnw verify`
 
 ## Code style
 - Use standard Java formatting conventions.
 - Organize imports systematically. **Always import classes instead of using Fully Qualified Names (FQN). Never use star imports (`import java.util.*;`).**
 - Favor records (`public record ...`) over traditional POJOs for immutable configuration models.
-- Ensure proper Javadoc for all public API surfaces.
+- Ensure proper Javadoc for all public API surfaces (including builder classes and enums). Always verify that there are no Javadoc warnings by running `./mvnw clean javadoc:javadoc`.
 
 ## Project Structure
 - `model/` — Java records representing API resources (`Agent`, `Interaction`, `InteractionParams`, `Tool`, `Config`, `Events`, `Step`, etc.). Most are immutable records with nested `Builder` classes.
@@ -59,12 +59,12 @@ This project uses Maven with both the **Surefire** (unit tests) and **Failsafe**
 
 ### Fast Tests (Unit Tests)
 - **Convention:** Files ending in `*Test.java`
-- **Execution:** Run using `mvn test`
+- **Execution:** Run using `./mvnw test`
 - **When to run:** Run these frequently while iterating on code. They execute mock-based tests and basic assertions that complete in milliseconds.
 
 ### Slow Tests (Integration Tests)
 - **Convention:** Files ending in `*IT.java` (e.g., `ResearchAgentIT.java`, `IntegrationIT.java`)
-- **Execution:** Run using `mvn verify` (or `mvn integration-test`)
+- **Execution:** Run using `./mvnw verify` (or `./mvnw integration-test`)
 - **When to run:** Run these before making commits, finalizing a pull request, or validating end-to-end functionality. They often instantiate actual agents, connect to external endpoints, and can take up to 10 minutes to complete.
 
 ### Writing New Tests
@@ -80,7 +80,7 @@ This project uses Maven with both the **Surefire** (unit tests) and **Failsafe**
 
 ### Require approval first
 - Making large structural architectural changes.
-- Running the full 10-minute integration test suite (`mvn verify`).
+- Running the full 10-minute integration test suite (`./mvnw verify`).
 - Committing or pushing to the repository.
 
 ## PR Requirements

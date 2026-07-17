@@ -1,6 +1,8 @@
 package io.github.glaforge.gemini.interactions;
 
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
 import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+import java.util.List;
 import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
@@ -62,7 +64,7 @@ public class Gemini31SpeechGenerationTest {
                 .model("gemini-3.1-flash-tts-preview")
                 .input(prompt)
                 .responseModalities(Interaction.Modality.AUDIO)
-                .speechConfig(new SpeechConfig("Algenib", "en-GB"))
+                .generationConfig(GenerationConfig.builder().speechConfig(List.of(new SpeechConfig("Algenib", "en-GB"))).build())
                 .stream(true)
                 .build();
 

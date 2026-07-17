@@ -29,6 +29,9 @@ import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllo
  */
 public class NetworkConfigDeserializer extends ValueDeserializer<Object> {
 
+    /** Creates a NetworkConfigDeserializer. */
+    public NetworkConfigDeserializer() {}
+
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_STRING) {
