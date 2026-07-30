@@ -153,15 +153,7 @@ public class LyriaIT {
         System.out.println("Running testInstrumentalMusicGeneration");
         ModelInteractionParams request = ModelInteractionParams.builder()
                 .model("models/lyria-3-clip-preview")
-                // Lyria supports instrumental generation implicitly through prompts
-                // In python notebook, creating instrumental only is mentioned as:
-                // For background music, soundtracks, or game loops where vocals aren't needed,
-                // you can use the instrumental_only parameter.
-                // Wait, interactions API currently might not expose instrumental_only parameter
-                // directly on the top-level.
-                // Using a strong prompt indicating instrumental only instead, as shown in
-                // notebook's example prompt.
-                .input("Create a looping meditation music that feels like the wind. instrumental only.")
+                .input("Create a looping meditation music that feels like the wind. Instrumental only, no vocals.")
                 .responseModalities(Interaction.Modality.AUDIO)
                 .build();
 
