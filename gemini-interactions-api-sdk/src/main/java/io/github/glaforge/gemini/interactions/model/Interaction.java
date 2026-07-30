@@ -243,6 +243,8 @@ public record Interaction(
      * Interaction status.
      */
     public enum Status {
+        /** Interaction queued for execution. */
+        @JsonProperty("queued") QUEUED,
         /** Interaction in progress. */
         @JsonProperty("in_progress") IN_PROGRESS,
         /** Interaction requires usage action. */
@@ -254,7 +256,9 @@ public record Interaction(
         /** Interaction cancelled. */
         @JsonProperty("cancelled") CANCELLED,
         /** Interaction incomplete. */
-        @JsonProperty("incomplete") INCOMPLETE;
+        @JsonProperty("incomplete") INCOMPLETE,
+        /** Interaction budget exceeded. */
+        @JsonProperty("budget_exceeded") BUDGET_EXCEEDED;
         
         /**
          * Checks whether the status represents a finished state.

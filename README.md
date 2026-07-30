@@ -243,6 +243,36 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 Interaction response = client.create(request);
 ```
 
+### Speech Recognition & Transcription (ASR)
+```java
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.Config.TranscriptionConfig;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import java.util.List;
+
+TranscriptionConfig transcriptionConfig = TranscriptionConfig.builder()
+    .languageHints(List.of("en-US", "auto"))
+    .diarizationMode("speaker")
+    .timestampGranularities(List.of("word"))
+    .build();
+
+GenerationConfig generationConfig = GenerationConfig.builder()
+    .transcriptionConfig(transcriptionConfig)
+    .build();
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_6_FLASH)
+    .input(
+        new TextContent("Transcribe and annotate speaker labels"),
+        new AudioContent(audioBytes, "audio/wav")
+    )
+    .generationConfig(generationConfig)
+    .build();
+
+Interaction response = client.create(request);
+```
+
 ### Image Generation (Nano Banana Pro)
 ```java
 import io.github.glaforge.gemini.interactions.model.Content.*;

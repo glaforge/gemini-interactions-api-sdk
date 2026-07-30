@@ -46,6 +46,7 @@ public class Config {
      * @param presencePenalty  The presence penalty.
      * @param frequencyPenalty The frequency penalty.
      * @param videoConfig      The video configuration.
+     * @param transcriptionConfig Configuration for speech recognition (transcription).
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GenerationConfig(
@@ -60,7 +61,8 @@ public class Config {
         @JsonProperty("speech_config") List<SpeechConfig> speechConfig,
         @JsonProperty("presence_penalty") Double presencePenalty,
         @JsonProperty("frequency_penalty") Double frequencyPenalty,
-        @JsonProperty("video_config") VideoConfig videoConfig
+        @JsonProperty("video_config") VideoConfig videoConfig,
+        @JsonProperty("transcription_config") TranscriptionConfig transcriptionConfig
     ) {
         /**
          * Returns a new builder for GenerationConfig.
@@ -84,6 +86,7 @@ public class Config {
             private Double presencePenalty;
             private Double frequencyPenalty;
             private VideoConfig videoConfig;
+            private TranscriptionConfig transcriptionConfig;
 
             /** Creates a new Builder. */
             public Builder() {}
@@ -185,6 +188,14 @@ public class Config {
             public Builder videoConfig(VideoConfig videoConfig) { this.videoConfig = videoConfig; return this; }
 
             /**
+             * Sets transcription config.
+             *
+             * @param transcriptionConfig Transcription config.
+             * @return This builder.
+             */
+            public Builder transcriptionConfig(TranscriptionConfig transcriptionConfig) { this.transcriptionConfig = transcriptionConfig; return this; }
+
+            /**
              * Builds the GenerationConfig.
              *
              * @return The GenerationConfig.
@@ -193,7 +204,7 @@ public class Config {
                 return new GenerationConfig(
                     temperature, topP, seed, stopSequences, toolChoice,
                     thinkingLevel, thinkingSummaries, maxOutputTokens, speechConfig,
-                    presencePenalty, frequencyPenalty, videoConfig
+                    presencePenalty, frequencyPenalty, videoConfig, transcriptionConfig
                 );
             }
         }
@@ -568,26 +579,117 @@ public class Config {
     }
 
     /**
+     * Configuration for speech recognition (transcription).
+     *
+     * @param languageHints        BCP-47 language codes providing hints about the languages present in the audio.
+     * @param adaptationPhrases    Optional list of phrases to bias the ASR model towards (deprecated).
+     * @param customVocabulary     Optional list of custom vocabulary phrases to bias speech recognition.
+     * @param diarizationMode      Optional speaker diarization configuration (e.g. "speaker").
+     * @param timestampGranularities Granularity of timestamps to include in transcription output (e.g. "word").
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TranscriptionConfig(
+        @JsonProperty("language_hints") List<String> languageHints,
+        @JsonProperty("adaptation_phrases") List<String> adaptationPhrases,
+        @JsonProperty("custom_vocabulary") List<String> customVocabulary,
+        @JsonProperty("diarization_mode") String diarizationMode,
+        @JsonProperty("timestamp_granularities") List<String> timestampGranularities
+    ) {
+        /**
+         * Returns a new builder for TranscriptionConfig.
+         * @return a new builder for TranscriptionConfig.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link TranscriptionConfig}. */
+        public static class Builder {
+            private List<String> languageHints;
+            private List<String> adaptationPhrases;
+            private List<String> customVocabulary;
+            private String diarizationMode;
+            private List<String> timestampGranularities;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets language hints.
+             * @param languageHints Language hints.
+             * @return This builder.
+             */
+            public Builder languageHints(List<String> languageHints) { this.languageHints = languageHints; return this; }
+
+            /**
+             * Sets adaptation phrases.
+             * @param adaptationPhrases Adaptation phrases.
+             * @return This builder.
+             */
+            public Builder adaptationPhrases(List<String> adaptationPhrases) { this.adaptationPhrases = adaptationPhrases; return this; }
+
+            /**
+             * Sets custom vocabulary.
+             * @param customVocabulary Custom vocabulary.
+             * @return This builder.
+             */
+            public Builder customVocabulary(List<String> customVocabulary) { this.customVocabulary = customVocabulary; return this; }
+
+            /**
+             * Sets diarization mode.
+             * @param diarizationMode Diarization mode.
+             * @return This builder.
+             */
+            public Builder diarizationMode(String diarizationMode) { this.diarizationMode = diarizationMode; return this; }
+
+            /**
+             * Sets timestamp granularities.
+             * @param timestampGranularities Timestamp granularities.
+             * @return This builder.
+             */
+            public Builder timestampGranularities(List<String> timestampGranularities) { this.timestampGranularities = timestampGranularities; return this; }
+
+            /**
+             * Builds the TranscriptionConfig.
+             * @return The TranscriptionConfig.
+             */
+            public TranscriptionConfig build() {
+                return new TranscriptionConfig(languageHints, adaptationPhrases, customVocabulary, diarizationMode, timestampGranularities);
+            }
+        }
+    }
+
+    /**
      * Configuration for the Antigravity agent runtime.
      *
      * @param type           The type ("antigravity").
      * @param maxTotalTokens Max total tokens.
+     * @param model          The model to use for agent reasoning.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record AntigravityAgentConfig(
         String type,
-        @JsonProperty("max_total_tokens") Long maxTotalTokens
+        @JsonProperty("max_total_tokens") Long maxTotalTokens,
+        String model
     ) implements AgentConfig {
         /** Creates a AntigravityAgentConfig. */
         public AntigravityAgentConfig() {
-            this("antigravity", null);
+            this("antigravity", null, null);
         }
         /** 
          * Creates a AntigravityAgentConfig with token limit. 
          * @param maxTotalTokens Max total tokens.
          */
         public AntigravityAgentConfig(Long maxTotalTokens) {
-            this("antigravity", maxTotalTokens);
+            this("antigravity", maxTotalTokens, null);
+        }
+        /** 
+         * Creates a AntigravityAgentConfig with token limit and model. 
+         * @param maxTotalTokens Max total tokens.
+         * @param model Model name.
+         */
+        public AntigravityAgentConfig(Long maxTotalTokens, String model) {
+            this("antigravity", maxTotalTokens, model);
         }
     }
 }

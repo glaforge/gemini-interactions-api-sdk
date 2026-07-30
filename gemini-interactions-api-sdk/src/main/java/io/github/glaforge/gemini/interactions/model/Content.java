@@ -120,9 +120,10 @@ public sealed interface Content permits
     @JsonSubTypes({
         @JsonSubTypes.Type(value = Content.UrlCitation.class, name = "url_citation"),
         @JsonSubTypes.Type(value = Content.FileCitation.class, name = "file_citation"),
-        @JsonSubTypes.Type(value = Content.PlaceCitation.class, name = "place_citation")
+        @JsonSubTypes.Type(value = Content.PlaceCitation.class, name = "place_citation"),
+        @JsonSubTypes.Type(value = Content.WordInfo.class, name = "word_info")
     })
-    sealed interface Annotation permits UrlCitation, FileCitation, PlaceCitation {
+    sealed interface Annotation permits UrlCitation, FileCitation, PlaceCitation, WordInfo {
         /**
          * Returns the type of annotation.
          *
@@ -190,6 +191,35 @@ public sealed interface Content permits
         String url,
         @JsonProperty("review_snippets") List<ReviewSnippet> reviewSnippets
     ) implements Annotation {}
+
+    /**
+     * Word-level ASR annotation for transcription output.
+     *
+     * @param type        The type ("word_info").
+     * @param startIndex  Start of segment of response attributed to source.
+     * @param endIndex    End of attributed segment, exclusive.
+     * @param startOffset Start offset in time of the word relative to audio start.
+     * @param endOffset   End offset in time of the word relative to audio start.
+     * @param text        The transcribed word.
+     * @param speaker     Optional speaker label (e.g. "spk_1").
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record WordInfo(
+        String type,
+        @JsonProperty("start_index") Integer startIndex,
+        @JsonProperty("end_index") Integer endIndex,
+        @JsonProperty("start_offset") String startOffset,
+        @JsonProperty("end_offset") String endOffset,
+        String text,
+        String speaker
+    ) implements Annotation {
+        /** Compact constructor establishing default type. */
+        public WordInfo {
+            if (type == null) {
+                type = "word_info";
+            }
+        }
+    }
 
     /**
      * Review snippet for place citation or Google Maps results.

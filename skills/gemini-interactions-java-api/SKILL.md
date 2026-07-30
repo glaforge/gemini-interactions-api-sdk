@@ -130,6 +130,43 @@ if (video != null) {
 }
 ```
 
+### Speech Recognition & Transcription (ASR)
+
+Enable speech-to-text recognition with custom vocabulary, diarization, or word-level timestamps.
+
+```java
+import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.Config.TranscriptionConfig;
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import java.util.List;
+
+GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
+
+TranscriptionConfig transcriptionConfig = TranscriptionConfig.builder()
+    .languageHints(List.of("en-US", "auto"))
+    .diarizationMode("speaker")
+    .timestampGranularities(List.of("word"))
+    .build();
+
+GenerationConfig generationConfig = GenerationConfig.builder()
+    .transcriptionConfig(transcriptionConfig)
+    .build();
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_6_FLASH)
+    .input(
+        new TextContent("Transcribe audio with speaker labels"),
+        new AudioContent(audioBytes, "audio/wav")
+    )
+    .generationConfig(generationConfig)
+    .build();
+
+Interaction response = client.create(request);
+```
+
 ### Stateful Conversation (Multi-Turn)
 
 Use `store(true)` to persist the conversation in the cloud, and `previousInteractionId` to continue the thread.

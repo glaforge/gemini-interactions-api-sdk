@@ -31,6 +31,7 @@ import java.util.List;
  * @param baseEnvironment   The environment configuration (either EnvironmentConfig or a string like "default").
  * @param systemInstruction System instruction for the agent.
  * @param tools             The tools available to the agent.
+ * @param agentConfig       Configuration parameters for the agent.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Agent(
@@ -39,7 +40,8 @@ public record Agent(
     @JsonProperty("base_agent") String baseAgent,
     @JsonProperty("base_environment") @JsonDeserialize(using = BaseEnvironmentDeserializer.class) Object baseEnvironment,
     @JsonProperty("system_instruction") String systemInstruction,
-    List<AgentTool> tools
+    List<AgentTool> tools,
+    @JsonProperty("agent_config") Config.AgentConfig agentConfig
 ) {
     /**
      * Creates a new Builder for Agent.
@@ -60,6 +62,7 @@ public record Agent(
         private Object baseEnvironment;
         private String systemInstruction;
         private List<AgentTool> tools;
+        private Config.AgentConfig agentConfig;
 
         /** Creates a new Builder. */
         public Builder() {}
@@ -153,12 +156,23 @@ public record Agent(
         }
 
         /**
+         * Sets agent config.
+         *
+         * @param agentConfig Agent configuration parameters.
+         * @return This builder.
+         */
+        public Builder agentConfig(Config.AgentConfig agentConfig) {
+            this.agentConfig = agentConfig;
+            return this;
+        }
+
+        /**
          * Builds the Agent.
          *
          * @return The Agent.
          */
         public Agent build() {
-            return new Agent(id, description, baseAgent, baseEnvironment, systemInstruction, tools);
+            return new Agent(id, description, baseAgent, baseEnvironment, systemInstruction, tools, agentConfig);
         }
     }
 }
