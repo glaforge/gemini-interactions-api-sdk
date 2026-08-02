@@ -88,7 +88,10 @@ public class GeminiInteractionsClient {
         this.project = builder.project;
         this.location = builder.location;
         this.credentials = builder.credentials;
-        this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+        this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(30))
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
         this.objectMapper = JsonMapper.builder()
             .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
             .build();
@@ -107,6 +110,7 @@ public class GeminiInteractionsClient {
     private HttpRequest.Builder newRequestBuilder(String url) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(URI.create(url))
+            .timeout(java.time.Duration.ofMinutes(5))
             .header("Api-Revision", "2026-05-20");
 
         if (project != null) {
