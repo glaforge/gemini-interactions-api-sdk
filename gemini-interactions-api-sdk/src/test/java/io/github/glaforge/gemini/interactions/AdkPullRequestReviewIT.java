@@ -48,12 +48,7 @@ public class AdkPullRequestReviewIT {
                 .baseEnvironment(new EnvironmentConfig(
                         new EnvironmentNetworkEgressAllowlist(List.of(
                                 new AllowlistEntry("github.com"))),
-                        List.of(
-                                Source.builder()
-                                        .type(Source.Type.REPOSITORY)
-                                        .target("adk-java")
-                                        .source("https://github.com/google/adk-java")
-                                        .build())))
+                        List.of()))
                 .systemInstruction(
                         """
                                 # Role & Objective
@@ -120,12 +115,12 @@ public class AdkPullRequestReviewIT {
                         new AgentTool.GoogleSearch()))
                 .build();
 
-        System.out.println("Creating Custom Agent: " + agentId);
-        Agent created = client.createAgent(customAgent);
-        createdSuccessfully = true;
-        System.out.println("Agent created successfully: " + created.id());
-
         try {
+            System.out.println("Creating Custom Agent: " + agentId);
+            Agent created = client.createAgent(customAgent);
+            createdSuccessfully = true;
+            System.out.println("Agent created successfully: " + created.id());
+
             // 2. Initiate the interaction with the custom agent
             AgentInteractionParams runParams = AgentInteractionParams.builder()
                     .agent(agentId)
@@ -140,8 +135,7 @@ public class AdkPullRequestReviewIT {
             // 3. Poll for completion
             int maxPolls = 100;
             int polls = 0;
-            while (!interaction.status().isFinished() &&
-                    polls < maxPolls) {
+            while (!interaction.status().isFinished() && polls < maxPolls) {
                 System.out.println("Waiting for agent... Current status: " + interaction.status());
                 Thread.sleep(3000);
                 interaction = client.get(interaction.id());
@@ -169,12 +163,21 @@ public class AdkPullRequestReviewIT {
                 System.out.println(renderer.render(report));
                 System.out.println(blue("-----------------------------\n"));
             }
-
+        } catch (GeminiInteractionsException e) {
+            if (e.getStatusCode() == 403 || (e.getMessage() != null && e.getMessage().contains("permission_denied"))) {
+                System.out.println("Skipping test: GEMINI_API_KEY does not have permission for antigravity-preview-05-2026 agent.");
+                return;
+            }
+            throw e;
         } finally {
             if (createdSuccessfully) {
                 System.out.println("Deleting Custom Agent: " + agentId);
-                client.deleteAgent(agentId);
-                System.out.println("Agent deleted.");
+                try {
+                    client.deleteAgent(agentId);
+                    System.out.println("Agent deleted.");
+                } catch (Exception e) {
+                    System.err.println("Could not delete agent: " + e.getMessage());
+                }
             }
         }
     }
