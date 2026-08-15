@@ -445,28 +445,56 @@ while (!interaction.status().isFinished()) {
 System.out.println(interaction.steps());
 ```
 
-#### 3. Reading Files from an Agent's Environment
-After an interaction completes, you can inspect the agent's remote environment and read or download files it generated:
+#### 3. Reading Files from an Agent's Environment Workspace (`EnvironmentWorkspace`)
+After an interaction completes, you can inspect the agent's remote environment workspace and read or download files it generated:
 
 ```java
-import io.github.glaforge.gemini.interactions.AgentEnvironment;
+import io.github.glaforge.gemini.interactions.EnvironmentWorkspace;
 import java.nio.file.Path;
 
-// Get a stateful environment manager and pull the latest workspace files
-try (AgentEnvironment env = client.getEnvironment(interaction.id()).refresh()) {
+// Get a stateful workspace manager and pull the latest workspace files
+try (EnvironmentWorkspace workspace = client.getWorkspace(interaction.environmentId()).refresh()) {
     // Check if the agent created a specific file
-    if (env.fileExists("output.json")) {
+    if (workspace.fileExists("output.json")) {
         // Read file contents directly into a string
-        String content = env.readTextFile("output.json");
+        String content = workspace.readTextFile("output.json");
         System.out.println(content);
         
         // Or download a binary file to your local system
-        env.downloadFile("chart.png", Path.of("/local/path/chart.png"));
+        workspace.downloadFile("chart.png", Path.of("/local/path/chart.png"));
     }
 }
 ```
 
-#### 4. Listing, Retrieving, and Deleting Agents
+#### 4. Managing Standalone Environments
+The SDK supports full CRUD operations for standalone execution environments (`Environment` resources):
+
+```java
+import io.github.glaforge.gemini.interactions.model.Environment;
+import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllowlist;
+import io.github.glaforge.gemini.interactions.model.AllowlistEntry;
+import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
+import java.util.List;
+
+// Create a standalone execution environment with egress allowlists
+Environment env = client.createEnvironment(
+    new EnvironmentNetworkEgressAllowlist(List.of(new AllowlistEntry("github.com"))),
+    null
+);
+
+// Retrieve environment metadata
+Environment retrieved = client.getEnvironment(env.id());
+System.out.println("Status: " + retrieved.status() + ", files: " + retrieved.fileCount());
+
+// List environments with pagination
+ListEnvironmentsResponse response = client.listEnvironments(10, null);
+response.environments().forEach(e -> System.out.println(e.id() + ": " + e.status()));
+
+// Delete environment
+client.deleteEnvironment(env.id());
+```
+
+#### 5. Listing, Retrieving, and Deleting Agents
 The SDK supports standard management CRUD endpoints:
 
 ```java
@@ -481,7 +509,7 @@ Agent retrieved = client.getAgent("my-concise-coder-agent");
 client.deleteAgent("my-concise-coder-agent");
 ```
 
-#### 5. Server-Side Handling (InteractionsHandler)
+#### 6. Server-Side Handling (InteractionsHandler)
 
 > [!NOTE]
 > To use `InteractionsHandler`, make sure you have added the `gemini-interactions-server` dependency to your project.

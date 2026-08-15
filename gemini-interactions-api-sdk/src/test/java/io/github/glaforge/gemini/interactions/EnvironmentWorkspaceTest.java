@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AgentEnvironmentTest {
+public class EnvironmentWorkspaceTest {
 
     private MockWebServer mockWebServer;
     private GeminiInteractionsClient client;
@@ -58,7 +58,7 @@ public class AgentEnvironmentTest {
     }
 
     @Test
-    void testTarParserAndAgentEnvironmentLazyLoading(@TempDir Path tempDir) throws Exception {
+    void testTarParserAndEnvironmentWorkspaceLazyLoading(@TempDir Path tempDir) throws Exception {
         String filename = "docs/report.md";
         String content = "# My Report\nHello world from remote agent sandbox!";
         byte[] tarBytes = createMockTar(filename, content);
@@ -80,8 +80,8 @@ public class AgentEnvironmentTest {
                 .setResponseCode(200)
                 .addHeader("Content-Type", "application/x-tar"));
 
-        // Retrieve and verify AgentEnvironment
-        try (AgentEnvironment env = client.getEnvironment("interaction-123")) {
+        // Retrieve and verify EnvironmentWorkspace
+        try (EnvironmentWorkspace env = client.getWorkspace("interaction-123")) {
             assertFalse(env.fileExists(filename));
 
             // Load from server

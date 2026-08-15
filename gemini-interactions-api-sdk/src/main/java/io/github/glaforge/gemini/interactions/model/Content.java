@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import io.github.glaforge.gemini.interactions.model.deserializer.MediaProcessingDeserializer;
 import java.util.List;
 
 /**
@@ -325,6 +327,53 @@ public sealed interface Content permits
     }
 
     /**
+     * Configuration for processing media (video).
+     */
+    @JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type",
+        visible = true
+    )
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = Content.StaticMediaProcessing.class, name = "static")
+    })
+    sealed interface MediaProcessing permits Content.StaticMediaProcessing {
+        /**
+         * Returns the type of media processing.
+         * @return The processing type.
+         */
+        String type();
+    }
+
+    /**
+     * Static media processing configuration.
+     *
+     * @param type        The type of media processing (must be "static").
+     * @param startOffset Optional segment start time (e.g. "10.5s").
+     * @param endOffset   Optional segment end time (e.g. "30s").
+     * @param fps         Optional video frame-rate sampling density.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record StaticMediaProcessing(
+        String type,
+        @JsonProperty("start_offset") String startOffset,
+        @JsonProperty("end_offset") String endOffset,
+        Double fps
+    ) implements MediaProcessing {
+        /**
+         * Creates a new StaticMediaProcessing configuration.
+         *
+         * @param startOffset Optional segment start time (e.g. "10.5s").
+         * @param endOffset   Optional segment end time (e.g. "30s").
+         * @param fps         Optional video frame-rate sampling density.
+         */
+        public StaticMediaProcessing(String startOffset, String endOffset, Double fps) {
+            this("static", startOffset, endOffset, fps);
+        }
+    }
+
+    /**
      * Content containing video.
      *
      * @param type       The type of content (must be "video").
@@ -332,6 +381,7 @@ public sealed interface Content permits
      * @param uri        URI of the video.
      * @param mimeType   MIME type of the video.
      * @param resolution Resolution of the video.
+     * @param processing How the model processes this video for understanding (MediaProcessing or String like "static" / "agentic").
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record VideoContent(
@@ -339,11 +389,25 @@ public sealed interface Content permits
         byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType,
-        Resolution resolution
+        Resolution resolution,
+        @JsonDeserialize(using = MediaProcessingDeserializer.class) Object processing
     ) implements Content {
+        /**
+         * Creates a VideoContent instance without processing configuration.
+         *
+         * @param type       The type of content (must be "video").
+         * @param data       Base64 encoded video data.
+         * @param uri        URI of the video.
+         * @param mimeType   MIME type of the video.
+         * @param resolution Resolution of the video.
+         */
+        public VideoContent(String type, byte[] data, String uri, String mimeType, Resolution resolution) {
+            this(type, data, uri, mimeType, resolution, null);
+        }
+
         @Override
         public String toString() {
-            return "VideoContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", resolution=" + resolution + "]";
+            return "VideoContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", resolution=" + resolution + ", processing=" + processing + "]";
         }
     }
 

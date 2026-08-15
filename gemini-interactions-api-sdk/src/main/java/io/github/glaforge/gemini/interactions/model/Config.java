@@ -581,7 +581,8 @@ public class Config {
     /**
      * Configuration for speech recognition (transcription).
      *
-     * @param languageHints        BCP-47 language codes providing hints about the languages present in the audio.
+     * @param languageCodes        Optional BCP-47 language codes providing hints about the languages present in the audio.
+     * @param languageHints        Deprecated: use {@link #languageCodes()}.
      * @param adaptationPhrases    Optional list of phrases to bias the ASR model towards (deprecated).
      * @param customVocabulary     Optional list of custom vocabulary phrases to bias speech recognition.
      * @param diarizationMode      Optional speaker diarization configuration (e.g. "speaker").
@@ -589,12 +590,26 @@ public class Config {
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record TranscriptionConfig(
-        @JsonProperty("language_hints") List<String> languageHints,
-        @JsonProperty("adaptation_phrases") List<String> adaptationPhrases,
+        @JsonProperty("language_codes") List<String> languageCodes,
+        @Deprecated @JsonProperty("language_hints") List<String> languageHints,
+        @Deprecated @JsonProperty("adaptation_phrases") List<String> adaptationPhrases,
         @JsonProperty("custom_vocabulary") List<String> customVocabulary,
         @JsonProperty("diarization_mode") String diarizationMode,
         @JsonProperty("timestamp_granularities") List<String> timestampGranularities
     ) {
+        /**
+         * Creates a new TranscriptionConfig.
+         *
+         * @param languageCodes        Optional BCP-47 language codes.
+         * @param adaptationPhrases    Optional adaptation phrases (deprecated).
+         * @param customVocabulary     Optional custom vocabulary.
+         * @param diarizationMode      Optional diarization mode.
+         * @param timestampGranularities Optional timestamp granularities.
+         */
+        public TranscriptionConfig(List<String> languageCodes, List<String> adaptationPhrases, List<String> customVocabulary, String diarizationMode, List<String> timestampGranularities) {
+            this(languageCodes, languageCodes, adaptationPhrases, customVocabulary, diarizationMode, timestampGranularities);
+        }
+
         /**
          * Returns a new builder for TranscriptionConfig.
          * @return a new builder for TranscriptionConfig.
@@ -605,6 +620,7 @@ public class Config {
 
         /** Builder for {@link TranscriptionConfig}. */
         public static class Builder {
+            private List<String> languageCodes;
             private List<String> languageHints;
             private List<String> adaptationPhrases;
             private List<String> customVocabulary;
@@ -615,11 +631,26 @@ public class Config {
             public Builder() {}
 
             /**
+             * Sets language codes.
+             * @param languageCodes BCP-47 language codes.
+             * @return This builder.
+             */
+            public Builder languageCodes(List<String> languageCodes) { this.languageCodes = languageCodes; return this; }
+
+            /**
              * Sets language hints.
              * @param languageHints Language hints.
              * @return This builder.
+             * @deprecated Use {@link #languageCodes(List)} instead.
              */
-            public Builder languageHints(List<String> languageHints) { this.languageHints = languageHints; return this; }
+            @Deprecated
+            public Builder languageHints(List<String> languageHints) {
+                this.languageHints = languageHints;
+                if (this.languageCodes == null) {
+                    this.languageCodes = languageHints;
+                }
+                return this;
+            }
 
             /**
              * Sets adaptation phrases.
@@ -654,7 +685,8 @@ public class Config {
              * @return The TranscriptionConfig.
              */
             public TranscriptionConfig build() {
-                return new TranscriptionConfig(languageHints, adaptationPhrases, customVocabulary, diarizationMode, timestampGranularities);
+                List<String> codes = languageCodes != null ? languageCodes : languageHints;
+                return new TranscriptionConfig(codes, languageHints != null ? languageHints : codes, adaptationPhrases, customVocabulary, diarizationMode, timestampGranularities);
             }
         }
     }

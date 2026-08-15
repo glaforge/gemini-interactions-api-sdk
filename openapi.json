@@ -369,6 +369,127 @@
         "x-speakeasy-name-override": "get"
       }
     },
+    "/{api_version}/environments": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        }
+      ],
+      "get": {
+        "operationId": "ListEnvironments",
+        "description": "Lists environments.",
+        "parameters": [
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Optional. Maximum number of environments to return.\\nIf unspecified, defaults to 50. Maximum is 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "Optional. Pagination token.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvironmentsResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-group": "environments"
+      },
+      "post": {
+        "operationId": "CreateEnvironment",
+        "description": "Creates an environment.",
+        "requestBody": {
+          "description": "Required. The environment to create.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEnvironmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Environment"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-group": "environments"
+      }
+    },
+    "/{api_version}/environments/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Resource ID segment making up resource `name`. It identifies the resource within its parent collection as described in https://google.aip.dev/122.",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "operationId": "DeleteEnvironment",
+        "description": "Deletes an environment.",
+        "responses": {
+          "default": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-group": "environments"
+      },
+      "get": {
+        "operationId": "GetEnvironment",
+        "description": "Gets an environment.",
+        "responses": {
+          "default": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Environment"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-group": "environments"
+      }
+    },
     "/{api_version}/interactions": {
       "parameters": [
         {
@@ -1863,10 +1984,7 @@
               {
                 "$ref": "#/components/schemas/AntigravityAgentConfig"
               }
-            ],
-            "discriminator": {
-              "propertyName": "type"
-            }
+            ]
           },
           "base_agent": {
             "description": "The base agent to extend.",
@@ -1881,10 +1999,7 @@
               {
                 "type": "string"
               }
-            ],
-            "discriminator": {
-              "propertyName": "type"
-            }
+            ]
           },
           "description": {
             "description": "Agent description for developers to quickly read and understand.",
@@ -1960,10 +2075,7 @@
             "group": "agents"
           }
         ],
-        "x-speakeasy-model-namespace": "agents",
-        "discriminator": {
-          "propertyName": "type"
-        }
+        "x-speakeasy-model-namespace": "agents"
       },
       "AllowedTools": {
         "description": "The configuration for allowed tools.",
@@ -2068,10 +2180,7 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions",
-        "discriminator": {
-          "propertyName": "type"
-        }
+        "x-speakeasy-model-namespace": "interactions"
       },
       "AntigravityAgentConfig": {
         "description": "Configuration for the Antigravity agent runtime.\nProvides server-side control over the agent's execution environment\nand tool configuration.",
@@ -2709,10 +2818,7 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions",
-        "discriminator": {
-          "propertyName": "type"
-        }
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ContentDelta": {
         "type": "object",
@@ -2730,10 +2836,6 @@
           "index": {
             "type": "integer",
             "format": "int32"
-          },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
           }
         },
         "required": [
@@ -2829,10 +2931,7 @@
             "$ref": "#/components/schemas/VideoDelta"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions",
-        "discriminator": {
-          "propertyName": "type"
-        }
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ContentStart": {
         "type": "object",
@@ -2850,10 +2949,6 @@
           "index": {
             "type": "integer",
             "format": "int32"
-          },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
           }
         },
         "required": [
@@ -2890,10 +2985,6 @@
           "index": {
             "type": "integer",
             "format": "int32"
-          },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
           }
         },
         "required": [
@@ -3015,6 +3106,7 @@
           "response_modalities": {
             "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
             "type": "array",
+            "deprecated": true,
             "items": {
               "$ref": "#/components/schemas/ResponseModality"
             }
@@ -3106,6 +3198,43 @@
         "x-speakeasy-model-namespace": "interactions",
         "x-speakeasy-name-override": "CreateAgentInteraction"
       },
+      "CreateEnvironmentRequest": {
+        "description": "Request for `CreateEnvironment`.",
+        "type": "object",
+        "properties": {
+          "network": {
+            "description": "Network configuration for the environment.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EnvironmentNetworkEgressAllowlist"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "disabled"
+                ],
+                "x-google-enum-descriptions": [
+                  "All network egress is blocked."
+                ]
+              }
+            ]
+          },
+          "sources": {
+            "description": "Sources to be mounted into the environment.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            }
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "CreateEnvironmentRequest",
+            "group": "environments"
+          }
+        ],
+        "x-speakeasy-model-namespace": "environments"
+      },
       "CreateModelInteractionParams": {
         "description": "Parameters for creating model interactions",
         "properties": {
@@ -3193,6 +3322,7 @@
           "response_modalities": {
             "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
             "type": "array",
+            "deprecated": true,
             "items": {
               "$ref": "#/components/schemas/ResponseModality"
             }
@@ -3457,10 +3587,99 @@
           {
             "name": "TriggerDeleteResponse",
             "group": "triggers"
+          },
+          {
+            "name": "EnvironmentDeleteResponse",
+            "group": "environments"
           }
         ],
         "x-speakeasy-model-namespace": "interactions",
         "x-stainless-empty-object": true
+      },
+      "Environment": {
+        "description": "An execution environment for an agent.",
+        "type": "object",
+        "properties": {
+          "created": {
+            "description": "Output only. The time at which the environment was created in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+            "type": "string",
+            "readOnly": true
+          },
+          "file_count": {
+            "description": "Output only. The number of files in the environment, output only.",
+            "type": "string",
+            "format": "int64",
+            "readOnly": true
+          },
+          "id": {
+            "description": "Required. Output only. The ID of the environment.",
+            "type": "string",
+            "readOnly": true
+          },
+          "last_accessed": {
+            "description": "Output only. The time at which the environment was last accessed in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+            "type": "string",
+            "readOnly": true
+          },
+          "network": {
+            "description": "Network configuration for the environment.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EnvironmentNetworkEgressAllowlist"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "disabled"
+                ],
+                "x-google-enum-descriptions": [
+                  "All network egress is blocked."
+                ]
+              }
+            ]
+          },
+          "size_bytes": {
+            "description": "Output only. The total size of the environment files in bytes, output only.",
+            "type": "string",
+            "format": "int64",
+            "readOnly": true
+          },
+          "sources": {
+            "description": "Sources to be mounted into the environment.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            }
+          },
+          "status": {
+            "description": "Output only. The status of the environment container.",
+            "type": "string",
+            "enum": [
+              "active",
+              "expired"
+            ],
+            "readOnly": true,
+            "x-google-enum-descriptions": [
+              "",
+              ""
+            ]
+          },
+          "updated": {
+            "description": "Output only. The time at which the environment was last updated in ISO 8601 format\n(YYYY-MM-DDThh:mm:ssZ).",
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "Environment",
+            "group": "environments"
+          }
+        ],
+        "x-speakeasy-model-namespace": "environments"
       },
       "EnvironmentConfig": {
         "description": "Configuration for a custom environment.",
@@ -3654,6 +3873,12 @@
             "type": "string"
           }
         },
+        "x-speakeasy-exports": [
+          {
+            "name": "Error",
+            "group": "interactions"
+          }
+        ],
         "x-speakeasy-model-namespace": "interactions"
       },
       "ErrorEvent": {
@@ -3668,10 +3893,6 @@
           },
           "event_type": {
             "const": "error"
-          },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
           }
         },
         "required": [
@@ -5374,6 +5595,14 @@
             "type": "string",
             "readOnly": true
           },
+          "errors": {
+            "description": "Output only. Diagnostic faults / platform errors recorded on the interaction.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "readOnly": true
+          },
           "generation_config": {
             "description": "Input only. Configuration parameters for the model interaction.",
             "$ref": "#/components/schemas/GenerationConfig",
@@ -5448,6 +5677,7 @@
           "response_modalities": {
             "description": "The requested modalities of the response (TEXT, IMAGE, AUDIO).",
             "type": "array",
+            "deprecated": true,
             "items": {
               "$ref": "#/components/schemas/ResponseModality"
             }
@@ -5579,10 +5809,6 @@
           "interaction": {
             "description": "Partial completed interaction resource emitted at the end of the stream.",
             "$ref": "#/components/schemas/InteractionSseEventInteraction"
-          },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
           }
         },
         "required": [
@@ -5645,10 +5871,6 @@
           "interaction": {
             "description": "Partial interaction resource emitted when the stream is created.",
             "$ref": "#/components/schemas/InteractionSseEventInteraction"
-          },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
           }
         },
         "required": [
@@ -5836,10 +6058,6 @@
           "interaction_id": {
             "type": "string"
           },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
-          },
           "status": {
             "type": "string",
             "enum": [
@@ -5910,13 +6128,6 @@
             }
           },
           {
-            "title": "TurnList",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Turn"
-            }
-          },
-          {
             "type": "string"
           }
         ],
@@ -5943,6 +6154,30 @@
         ],
         "x-speakeasy-model-namespace": "agents",
         "x-speakeasy-name-override": "AgentListResponse"
+      },
+      "ListEnvironmentsResponse": {
+        "description": "Response for `ListEnvironments`.",
+        "type": "object",
+        "properties": {
+          "environments": {
+            "description": "Environments belonging to the provided project.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Environment"
+            }
+          },
+          "next_page_token": {
+            "description": "Pagination token.",
+            "type": "string"
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "EnvironmentListResponse",
+            "group": "environments"
+          }
+        ],
+        "x-speakeasy-model-namespace": "environments"
       },
       "ListTriggerExecutionsResponse": {
         "description": "Response message for TriggerService.ListTriggerExecutions.",
@@ -6286,6 +6521,15 @@
         "x-speakeasy-model-namespace": "interactions",
         "x-speakeasy-name-override": "MCPServerToolResultStep"
       },
+      "MediaProcessing": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/StaticMediaProcessing"
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
       "MediaResolution": {
         "type": "string",
         "enum": [
@@ -6343,7 +6587,8 @@
           "gemini-3.6-flash",
           "lyria-3-clip-preview",
           "lyria-3-pro-preview",
-          "gemini-robotics-er-1.6-preview"
+          "gemini-robotics-er-1.6-preview",
+          "gemini-robotics-er-2-preview"
         ],
         "x-speakeasy-enum-descriptions": [
           "Our first hybrid reasoning model which supports a 1M token context window and has thinking budgets.",
@@ -6366,7 +6611,8 @@
           "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
           "Our low-latency, music generation model optimized for high-fidelity audio clips and precise rhythmic control.",
           "Our advanced, full-song generative model with deep compositional understanding, optimized for precise structural control and complex transitions across diverse musical styles.",
-          "Gemini Robotics-ER 1.6 Preview"
+          "Gemini Robotics-ER 1.6 Preview",
+          "Gemini Robotics Embodied Reasoning 2 Preview"
         ],
         "x-speakeasy-enum-format": "union",
         "x-speakeasy-exports": [
@@ -6391,7 +6637,8 @@
           },
           "error": {
             "description": "The error result of the operation in case of failure or cancellation.",
-            "$ref": "#/components/schemas/Status"
+            "$ref": "#/components/schemas/Status",
+            "deprecated": true
           },
           "type": {
             "const": "model_output"
@@ -7040,12 +7287,14 @@
         "enum": [
           "flex",
           "standard",
-          "priority"
+          "priority",
+          "deferred"
         ],
         "x-google-enum-descriptions": [
           "Flex service tier.",
           "Standard service tier.",
-          "Priority service tier."
+          "Priority service tier.",
+          "Deferred service tier."
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
@@ -7148,6 +7397,33 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
+      "StaticMediaProcessing": {
+        "type": "object",
+        "properties": {
+          "end_offset": {
+            "description": "Optional. Segment end time. Specified as a decimal number of seconds followed\nby an 's' suffix, e.g., \"30s\". Must be non-negative and greater than\n`start_offset` if `start_offset` is set.",
+            "type": "string",
+            "format": "google-duration"
+          },
+          "fps": {
+            "description": "Optional. Video frame-rate sampling density.",
+            "type": "number",
+            "format": "double"
+          },
+          "start_offset": {
+            "description": "Optional. Segment start time. Specified as a decimal number of seconds followed\nby an 's' suffix, e.g., \"10.5s\". Must be non-negative.",
+            "type": "string",
+            "format": "google-duration"
+          },
+          "type": {
+            "const": "static"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
       "Status": {
         "description": "The `Status` type defines a logical error model that is suitable for\ndifferent programming environments, including REST APIs and RPC APIs. It is\nused by [gRPC](https://github.com/grpc). Each `Status` message contains\nthree pieces of data: error code, error message, and error details.\n\nYou can find out more about this error model and how to work with it in the\n[API Design Guide](https://cloud.google.com/apis/design/errors).",
         "type": "object",
@@ -7236,10 +7512,7 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions",
-        "discriminator": {
-          "propertyName": "type"
-        }
+        "x-speakeasy-model-namespace": "interactions"
       },
       "StepDelta": {
         "type": "object",
@@ -7259,7 +7532,6 @@
             "format": "int32"
           },
           "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
             "$ref": "#/components/schemas/StepDeltaMetadata"
           }
         },
@@ -7367,10 +7639,7 @@
             "$ref": "#/components/schemas/VideoDelta"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions",
-        "discriminator": {
-          "propertyName": "type"
-        }
+        "x-speakeasy-model-namespace": "interactions"
       },
       "StepDeltaMetadata": {
         "description": "Optional metadata accompanying ANY streamed event.",
@@ -7396,10 +7665,6 @@
           "index": {
             "type": "integer",
             "format": "int32"
-          },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
           },
           "step": {
             "$ref": "#/components/schemas/Step"
@@ -7446,10 +7711,6 @@
             "type": "integer",
             "format": "int32"
           },
-          "metadata": {
-            "description": "Optional metadata accompanying ANY streamed event.",
-            "$ref": "#/components/schemas/StreamMetadata"
-          },
           "step_usage": {
             "description": "Model usage stats for this specific step.",
             "$ref": "#/components/schemas/Usage"
@@ -7480,15 +7741,6 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "StreamMetadata": {
-        "type": "object",
-        "properties": {
-          "total_usage": {
-            "$ref": "#/components/schemas/Usage"
-          }
-        },
         "x-speakeasy-model-namespace": "interactions"
       },
       "TextAnnotationDelta": {
@@ -7790,10 +8042,7 @@
             "$ref": "#/components/schemas/TextContent"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions",
-        "discriminator": {
-          "propertyName": "type"
-        }
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ThoughtSummaryDelta": {
         "type": "object",
@@ -7849,10 +8098,7 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions",
-        "discriminator": {
-          "propertyName": "type"
-        }
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ToolChoiceConfig": {
         "description": "The tool choice configuration containing allowed tools.",
@@ -7902,8 +8148,8 @@
             "description": "Optional. Configures speaker diarization. Supported values: \"speaker\".",
             "type": "string"
           },
-          "language_hints": {
-            "description": "Required. BCP-47 language codes providing hints about the languages present in the\naudio. At least one must be specified, or set to [\"auto\"] to enable\nautomatic language detection.",
+          "language_codes": {
+            "description": "Optional. BCP-47 language codes providing hints about the languages present in the\naudio. If omitted or empty, defaults to automatic language detection.",
             "type": "array",
             "items": {
               "type": "string"
@@ -7917,9 +8163,6 @@
             }
           }
         },
-        "required": [
-          "language_hints"
-        ],
         "x-speakeasy-exports": [
           {
             "name": "TranscriptionConfig",
@@ -8213,31 +8456,6 @@
           }
         ],
         "x-speakeasy-model-namespace": "triggers"
-      },
-      "Turn": {
-        "type": "object",
-        "properties": {
-          "content": {
-            "oneOf": [
-              {
-                "title": "ContentList",
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/Content"
-                }
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "role": {
-            "description": "The originator of this turn. Must be user for input or model for\nmodel output.",
-            "type": "string"
-          }
-        },
-        "deprecated": true,
-        "x-speakeasy-model-namespace": "interactions"
       },
       "UrlCitation": {
         "description": "A URL citation annotation.",
@@ -8729,6 +8947,25 @@
               "WebM video format",
               "WMV video format",
               "3GPP video format"
+            ]
+          },
+          "processing": {
+            "description": "How the model processes this video for understanding.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaProcessing"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "static",
+                  "agentic"
+                ],
+                "x-google-enum-descriptions": [
+                  "Fixed-rate frame extraction. All frames placed in context.",
+                  "Model-driven dynamic navigation."
+                ]
+              }
             ]
           },
           "resolution": {

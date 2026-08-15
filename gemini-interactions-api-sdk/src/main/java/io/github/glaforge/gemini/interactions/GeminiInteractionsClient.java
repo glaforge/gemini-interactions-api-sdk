@@ -37,6 +37,10 @@ import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
 import io.github.glaforge.gemini.interactions.model.TriggerUpdate;
 import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
 import io.github.glaforge.gemini.interactions.model.ListTriggerExecutionsResponse;
+import io.github.glaforge.gemini.interactions.model.Environment;
+import io.github.glaforge.gemini.interactions.model.CreateEnvironmentRequest;
+import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
+import io.github.glaforge.gemini.interactions.model.Source;
 
 import java.io.IOException;
 import java.net.URI;
@@ -597,16 +601,150 @@ public class GeminiInteractionsClient {
         }
     }
 
+    // --- Environment Operations ---
+
     /**
-     * Downloads the environment workspace snapshot for a given interaction ID as an InputStream containing the TAR archive.
+     * Creates a new execution environment.
      *
-     * @param interactionId The interaction ID.
+     * @param request The environment creation request.
+     * @return The created Environment.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Environment createEnvironment(CreateEnvironmentRequest request) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(request);
+            String url = buildUrl("environments");
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Environment.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Creates a new execution environment.
+     *
+     * @param network Network configuration for the environment (EnvironmentNetworkEgressAllowlist or "disabled").
+     * @param sources Sources to mount into the environment.
+     * @return The created Environment.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Environment createEnvironment(Object network, java.util.List<Source> sources) {
+        return createEnvironment(new CreateEnvironmentRequest(network, sources));
+    }
+
+    /**
+     * Retrieves an Environment by ID.
+     *
+     * @param id The environment ID.
+     * @return The Environment.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Environment getEnvironment(String id) {
+        try {
+            String url = String.format("%s/%s/environments/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Environment.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Lists Environments.
+     *
+     * @return The ListEnvironmentsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListEnvironmentsResponse listEnvironments() {
+        return listEnvironments(null, null);
+    }
+
+    /**
+     * Lists Environments with pagination.
+     *
+     * @param pageSize  The maximum number of environments to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @return The ListEnvironmentsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListEnvironmentsResponse listEnvironments(Integer pageSize, String pageToken) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("environments"));
+            boolean hasParam = false;
+            if (pageSize != null) {
+                urlBuilder.append("?page_size=").append(pageSize);
+                hasParam = true;
+            }
+            if (pageToken != null && !pageToken.isEmpty()) {
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+            }
+
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), ListEnvironmentsResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Deletes an Environment.
+     *
+     * @param id The environment ID.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void deleteEnvironment(String id) {
+        try {
+            String url = String.format("%s/%s/environments/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .DELETE()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    // --- Workspace Sandbox Operations ---
+
+    /**
+     * Downloads the environment workspace snapshot for a given interaction or environment ID as an InputStream containing the TAR archive.
+     *
+     * @param environmentOrInteractionId The environment or interaction ID.
      * @return An InputStream containing the TAR archive.
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
-    public java.io.InputStream downloadEnvironment(String interactionId) {
+    public java.io.InputStream downloadEnvironment(String environmentOrInteractionId) {
         try {
-            String url = String.format("%s/%s/files/environment-%s:download?alt=media", baseUrl, version, interactionId);
+            String url = String.format("%s/%s/files/environment-%s:download?alt=media", baseUrl, version, environmentOrInteractionId);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
@@ -628,17 +766,27 @@ public class GeminiInteractionsClient {
     }
 
     /**
-     * Gets the stateful {@link AgentEnvironment} for the given interaction.
+     * Gets the stateful {@link EnvironmentWorkspace} for the given environment or interaction.
      * <p>
-     * Note: This method returns a new environment wrapper. You must call {@link AgentEnvironment#refresh()}
-     * on the returned environment to download its contents.
+     * Note: This method returns a new workspace wrapper. You must call {@link EnvironmentWorkspace#refresh()}
+     * on the returned workspace to download its contents.
      * </p>
      *
-     * @param interactionId The interaction ID.
-     * @return A stateful AgentEnvironment manager.
+     * @param environmentOrInteractionId The environment or interaction ID.
+     * @return A stateful EnvironmentWorkspace manager.
      */
-    public AgentEnvironment getEnvironment(String interactionId) {
-        return new AgentEnvironment(interactionId, this);
+    public EnvironmentWorkspace getWorkspace(String environmentOrInteractionId) {
+        return new EnvironmentWorkspace(environmentOrInteractionId, this);
+    }
+
+    /**
+     * Gets the stateful {@link EnvironmentWorkspace} for the given environment or interaction.
+     *
+     * @param environmentOrInteractionId The environment or interaction ID.
+     * @return A stateful EnvironmentWorkspace manager.
+     */
+    public EnvironmentWorkspace getEnvironmentWorkspace(String environmentOrInteractionId) {
+        return getWorkspace(environmentOrInteractionId);
     }
 
     // --- Trigger Operations ---

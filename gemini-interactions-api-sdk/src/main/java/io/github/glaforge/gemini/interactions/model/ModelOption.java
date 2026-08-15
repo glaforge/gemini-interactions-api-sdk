@@ -108,6 +108,8 @@ public final class ModelOption {
     public static final String GEMINI_ROBOTICS_ER_1_5_PREVIEW = "gemini-robotics-er-1.5-preview";
     /** Model option constant. */
     public static final String GEMINI_ROBOTICS_ER_1_6_PREVIEW = "gemini-robotics-er-1.6-preview";
+    /** Model option constant for Gemini Robotics Embodied Reasoning 2 Preview. */
+    public static final String GEMINI_ROBOTICS_ER_2_PREVIEW = "gemini-robotics-er-2-preview";
     /** Model option constant. */
     public static final String GEMMA_4_26B_A4B_IT = "gemma-4-26b-a4b-it";
     /** Model option constant. */

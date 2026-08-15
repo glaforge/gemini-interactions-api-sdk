@@ -34,7 +34,7 @@ The project is structured as a Maven multi-module reactor:
 - **`gemini-interactions-api-sdk/`** — The core client SDK:
   - `model/` — Java records representing API resources (`Agent`, `Interaction`, `InteractionParams`, `Tool`, `Config`, `Events`, `Step`, etc.). Most are immutable records with nested `Builder` classes.
   - `GeminiInteractionsClient` — The main SDK entry point. Handles all HTTP communication with the Gemini API (CRUD for agents, interactions, webhooks, environment downloads).
-  - `AgentEnvironment` — Stateful wrapper for downloading and inspecting a remote agent's sandbox filesystem (TAR archive).
+  - `EnvironmentWorkspace` — Stateful wrapper for downloading and inspecting a remote agent's sandbox filesystem (TAR archive).
   - `deserializer/` — Custom Jackson deserializers for polymorphic API responses.
   - `ResearchFrontend` (in `src/test/java`) — A standalone demo web application for the Deep Research agent, deployable to Google Cloud Run. See `researcher-deployment.md` for deployment instructions.
 - **`gemini-interactions-server/`** — The server-side integration:
@@ -50,7 +50,7 @@ The project is structured as a Maven multi-module reactor:
 ### ✅ Good Patterns
 - **Builder pattern:** Use the static `Builder` class for complex records (see `Agent.Builder`, `GenerationConfig.Builder`, `Retrieval.Builder`).
 - **Type-safe overloads:** Prefer multiple overloaded methods with specific types over a single method accepting `Object` (see `Agent.Builder.baseEnvironment()`).
-- **AutoCloseable:** `AgentEnvironment` implements `AutoCloseable`; always use it in a try-with-resources block.
+- **AutoCloseable:** `EnvironmentWorkspace` implements `AutoCloseable`; always use it in a try-with-resources block.
 
 ### ❌ Avoid
 - Using Fully Qualified Names inline (e.g., `java.io.InputStream`) — always add an import statement.

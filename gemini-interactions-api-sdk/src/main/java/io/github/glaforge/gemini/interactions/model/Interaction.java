@@ -37,6 +37,7 @@ import java.time.Instant;
  * @param environmentId         ID of the environment.
  * @param cachedContent         URI of the cached content used.
  * @param safetySettings        The safety settings to apply.
+ * @param errors                Diagnostic faults or platform errors recorded on the interaction.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Interaction(
@@ -52,8 +53,43 @@ public record Interaction(
     @JsonProperty("previous_interaction_id") String previousInteractionId,
     @JsonProperty("environment_id") String environmentId,
     @JsonProperty("cached_content") String cachedContent,
-    @JsonProperty("safety_settings") List<SafetySetting> safetySettings
+    @JsonProperty("safety_settings") List<SafetySetting> safetySettings,
+    List<Events.Error> errors
 ) {
+    /**
+     * Backward-compatible constructor without errors.
+     *
+     * @param id                    The unique identifier for the interaction.
+     * @param model                 The model used for the interaction.
+     * @param agent                 The agent used for the interaction.
+     * @param agentConfig           The agent configuration.
+     * @param created               Creation timestamp.
+     * @param updated               Last update timestamp.
+     * @param status                The status of the interaction.
+     * @param steps                 List of steps.
+     * @param usage                 Token usage details.
+     * @param previousInteractionId ID of the previous interaction in the conversation.
+     * @param environmentId         ID of the environment.
+     * @param cachedContent         URI of the cached content used.
+     * @param safetySettings        The safety settings to apply.
+     */
+    public Interaction(
+        String id,
+        String model,
+        String agent,
+        Config.AgentConfig agentConfig,
+        Instant created,
+        Instant updated,
+        Status status,
+        List<Step> steps,
+        Usage usage,
+        String previousInteractionId,
+        String environmentId,
+        String cachedContent,
+        List<SafetySetting> safetySettings
+    ) {
+        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, null);
+    }
 
     /**
      * Extracts the concatenated text from the last consecutive model output steps.
@@ -307,6 +343,7 @@ public record Interaction(
         private String environmentId;
         private String cachedContent;
         private List<SafetySetting> safetySettings;
+        private List<Events.Error> errors;
 
         /** Creates a new Builder. */
         public Builder() {}
@@ -403,11 +440,18 @@ public record Interaction(
         public Builder safetySettings(List<SafetySetting> safetySettings) { this.safetySettings = safetySettings; return this; }
 
         /**
+         * Sets the errors.
+         * @param errors the list of diagnostic errors.
+         * @return this builder.
+         */
+        public Builder errors(List<Events.Error> errors) { this.errors = errors; return this; }
+
+        /**
          * Builds the Interaction.
          * @return the new Interaction.
          */
         public Interaction build() {
-            return new Interaction(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings);
+            return new Interaction(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors);
         }
     }
 }

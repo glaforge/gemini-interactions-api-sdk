@@ -383,6 +383,52 @@ AgentInteractionParams params = AgentInteractionParams.builder()
     .build();
 ```
 
+### Environment Workspace (Reading & Extracting Sandbox Files)
+
+After an agent interaction completes, inspect its remote sandbox files using `EnvironmentWorkspace`:
+
+```java
+import io.github.glaforge.gemini.interactions.EnvironmentWorkspace;
+import java.nio.file.Path;
+
+try (EnvironmentWorkspace workspace = client.getWorkspace(interaction.environmentId()).refresh()) {
+    if (workspace.fileExists("output.json")) {
+        String content = workspace.readTextFile("output.json");
+        System.out.println("Output JSON: " + content);
+        
+        workspace.downloadFile("chart.png", Path.of("./chart.png"));
+    }
+}
+```
+
+### Standalone Environments Management
+
+Create, retrieve, list, and delete standalone execution environments:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Environment;
+import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllowlist;
+import io.github.glaforge.gemini.interactions.model.AllowlistEntry;
+import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
+import java.util.List;
+
+// Provision environment with egress allowlist
+Environment env = client.createEnvironment(
+    new EnvironmentNetworkEgressAllowlist(List.of(new AllowlistEntry("github.com"))),
+    null
+);
+
+// Get metadata
+Environment retrieved = client.getEnvironment(env.id());
+System.out.println("Environment status: " + retrieved.status() + ", files: " + retrieved.fileCount());
+
+// List environments
+ListEnvironmentsResponse response = client.listEnvironments();
+
+// Delete environment
+client.deleteEnvironment(env.id());
+```
+
 ### Triggers (Scheduling & Automation)
 
 Set up CRON schedules to automatically run agents in the background:

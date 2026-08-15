@@ -42,7 +42,9 @@ public class InteractionParams {
         /** Standard service tier. */
         @JsonProperty("standard") STANDARD,
         /** Priority service tier. */
-        @JsonProperty("priority") PRIORITY
+        @JsonProperty("priority") PRIORITY,
+        /** Deferred service tier. */
+        @JsonProperty("deferred") DEFERRED
     }
 
     /**
@@ -84,7 +86,7 @@ public class InteractionParams {
         Boolean store,
         Boolean background,
         @JsonProperty("system_instruction") String systemInstruction,
-        @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
+        @Deprecated @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
         @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier,
@@ -241,7 +243,9 @@ public class InteractionParams {
              *
              * @param responseModalities The response modalities.
              * @return This builder.
+             * @deprecated Deprecated in the Gemini Interactions API.
              */
+            @Deprecated
             public Builder responseModalities(Interaction.Modality... responseModalities) { this.responseModalities = List.of(responseModalities); return this; }
 
             /**
@@ -249,7 +253,9 @@ public class InteractionParams {
              *
              * @param responseModalities The response modalities.
              * @return This builder.
+             * @deprecated Deprecated in the Gemini Interactions API.
              */
+            @Deprecated
             public Builder responseModalities(List<Interaction.Modality> responseModalities) { this.responseModalities = responseModalities; return this; }
 
             /**
@@ -378,7 +384,7 @@ public class InteractionParams {
         Boolean store,
         Boolean background,
         @JsonProperty("system_instruction") String systemInstruction,
-        @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
+        @Deprecated @JsonProperty("response_modalities") List<Interaction.Modality> responseModalities,
         @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier,
@@ -549,7 +555,9 @@ public class InteractionParams {
              *
              * @param responseModalities The response modalities.
              * @return This builder.
+             * @deprecated Deprecated in the Gemini Interactions API.
              */
+            @Deprecated
             public Builder responseModalities(Interaction.Modality... responseModalities) { this.responseModalities = List.of(responseModalities); return this; }
 
             /**
@@ -557,7 +565,9 @@ public class InteractionParams {
              *
              * @param responseModalities The response modalities.
              * @return This builder.
+             * @deprecated Deprecated in the Gemini Interactions API.
              */
+            @Deprecated
             public Builder responseModalities(List<Interaction.Modality> responseModalities) { this.responseModalities = responseModalities; return this; }
 
             /**

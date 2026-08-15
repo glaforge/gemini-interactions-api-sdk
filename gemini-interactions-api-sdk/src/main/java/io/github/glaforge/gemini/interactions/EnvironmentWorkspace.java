@@ -42,25 +42,34 @@ import java.util.Set;
  * {@link #close()} to clean up the temporary files.
  * </p>
  */
-public class AgentEnvironment implements AutoCloseable {
+public class EnvironmentWorkspace implements AutoCloseable {
 
-    private final String interactionId;
+    private final String environmentId;
     private final GeminiInteractionsClient client;
     private Path tempTarPath;
     private Map<String, TarParser.TarEntryMetadata> index = new HashMap<>();
 
-    AgentEnvironment(String interactionId, GeminiInteractionsClient client) {
-        this.interactionId = interactionId;
+    EnvironmentWorkspace(String environmentId, GeminiInteractionsClient client) {
+        this.environmentId = environmentId;
         this.client = client;
     }
 
     /**
-     * Gets the interaction ID associated with this environment.
+     * Gets the environment or interaction ID associated with this workspace.
+     *
+     * @return The environment or interaction ID.
+     */
+    public String getId() {
+        return environmentId;
+    }
+
+    /**
+     * Gets the interaction ID associated with this environment workspace.
      *
      * @return The interaction ID.
      */
     public String getInteractionId() {
-        return interactionId;
+        return environmentId;
     }
 
     /**
@@ -70,15 +79,14 @@ public class AgentEnvironment implements AutoCloseable {
      * @return this instance for method chaining.
      * @throws GeminiInteractionsException if the download or parsing fails.
      */
-    public synchronized AgentEnvironment refresh() {
+    public synchronized EnvironmentWorkspace refresh() {
         cleanupTempFile();
 
         try {
-            tempTarPath = Files.createTempFile("gemini-env-" + interactionId + "-", ".tar");
-            try (InputStream in = client.downloadEnvironment(interactionId)) {
+            tempTarPath = Files.createTempFile("gemini-env-" + environmentId + "-", ".tar");
+            try (InputStream in = client.downloadEnvironment(environmentId)) {
                 Files.copy(in, tempTarPath, StandardCopyOption.REPLACE_EXISTING);
             }
-            System.out.println("Downloaded TAR size: " + Files.size(tempTarPath) + " bytes");
             Map<String, TarParser.TarEntryMetadata> rawIndex = TarParser.scanTar(tempTarPath);
             this.index = new HashMap<>();
             for (Map.Entry<String, TarParser.TarEntryMetadata> entry : rawIndex.entrySet()) {

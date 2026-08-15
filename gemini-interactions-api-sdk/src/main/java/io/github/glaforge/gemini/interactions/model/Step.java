@@ -99,13 +99,13 @@ public sealed interface Step permits
      *
      * @param type type parameter.
      * @param content content parameter.
-     * @param error error parameter.
+     * @param error error parameter (deprecated in favor of Interaction.errors).
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ModelOutputStep(
         String type,
         List<Content> content,
-        Status error
+        @Deprecated Status error
     ) implements Step {}
 
     // --- Thinking ---
