@@ -448,3 +448,13 @@ TriggerCreateParams params = TriggerCreateParams.builder()
 
 client.createTrigger(params);
 ```
+
+### Type-Safe Union Configuration Records
+
+The SDK uses specialized union records instead of untyped `Object` fields to handle polymorphic API configuration payloads:
+
+- **`SpeechConfiguration`**: Wraps either single-speaker `List<SpeechConfig>` or multi-speaker `SpeakerConfig` (`isSingleSpeaker()`, `isMultiSpeaker()`).
+- **`NetworkConfiguration`**: Wraps either a preset network string (e.g. `"disabled"`, `"allow_all"`) or custom `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`).
+- **`BaseEnvironment`**: Wraps either a preset base environment string (e.g. `"default"`, `"remote"`) or custom `EnvironmentConfig` (`isPreset()`, `isCustom()`).
+- **`MediaProcessingConfiguration`**: Wraps either a preset media mode string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
+

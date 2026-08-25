@@ -48,8 +48,8 @@ The project is structured as a Maven multi-module reactor:
 ## Code Patterns
 
 ### ✅ Good Patterns
-- **Builder pattern:** Use the static `Builder` class for complex records (see `Agent.Builder`, `GenerationConfig.Builder`, `Retrieval.Builder`).
-- **Type-safe overloads:** Prefer multiple overloaded methods with specific types over a single method accepting `Object` (see `Agent.Builder.baseEnvironment()`).
+- **Type-safe union records:** Use dedicated union records (`SpeechConfiguration`, `NetworkConfiguration`, `BaseEnvironment`, `MediaProcessingConfiguration`) rather than `Object` fields to handle polymorphic API payloads.
+- **Type-safe overloads:** Provide overloaded builder methods accepting both domain objects, strings, or union records (see `GenerationConfig.Builder.speechConfig()`, `Agent.Builder.baseEnvironment()`).
 - **AutoCloseable:** `EnvironmentWorkspace` implements `AutoCloseable`; always use it in a try-with-resources block.
 
 ### ❌ Avoid

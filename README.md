@@ -299,20 +299,36 @@ interaction.steps().forEach(step -> {
 });
 ```
 
-### Audio Output
+### Audio Output & Multi-Speaker Synthesis
 ```java
 import io.github.glaforge.gemini.interactions.model.Content.*;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
 import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
 import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+import io.github.glaforge.gemini.interactions.model.Config.SpeakerConfig;
+import io.github.glaforge.gemini.interactions.model.SpeechConfiguration;
 import java.util.List;
+
+// Single speaker configuration
+GenerationConfig genConfig = GenerationConfig.builder()
+    .speechConfig(List.of(new SpeechConfig("Puck", "en-US")))
+    .build();
+
+// Or multi-speaker configuration
+SpeakerConfig multiSpeaker = new SpeakerConfig(List.of(
+    new SpeechConfig("Algenib", "en-US", "speaker1"),
+    new SpeechConfig("Kore", "en-US", "speaker2")
+));
+GenerationConfig multiSpeakerGenConfig = GenerationConfig.builder()
+    .speechConfig(multiSpeaker)
+    .build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
     .model("gemini-2.5-flash-preview-tts")
     .input("Hey, we can generate audio too!")
     .responseModalities(Modality.AUDIO, Modality.TEXT)
-    .generationConfig(GenerationConfig.builder().speechConfig(List.of(new SpeechConfig("Puck", "en-US"))).build())
+    .generationConfig(genConfig)
     .build();
 
 Interaction interaction = client.create(request);
