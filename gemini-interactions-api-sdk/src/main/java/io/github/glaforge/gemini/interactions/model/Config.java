@@ -20,8 +20,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import tools.jackson.databind.annotation.JsonDeserialize;
-import io.github.glaforge.gemini.interactions.model.deserializer.SpeechConfigDeserializer;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +42,7 @@ public class Config {
      * @param thinkingLevel    Level of thinking to use for the model.
      * @param thinkingSummaries Configuration for thinking summaries.
      * @param maxOutputTokens  The maximum number of tokens to include in a candidate.
-     * @param speechConfig     Configuration for speech generation (List of SpeechConfig or SpeakerConfig).
+     * @param speechConfig     Type-safe speech generation configuration.
      * @param presencePenalty  The presence penalty.
      * @param frequencyPenalty The frequency penalty.
      * @param videoConfig      The video configuration.
@@ -60,7 +58,7 @@ public class Config {
         @JsonProperty("thinking_level") ThinkingLevel thinkingLevel,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("max_output_tokens") Integer maxOutputTokens,
-        @JsonProperty("speech_config") @JsonDeserialize(using = SpeechConfigDeserializer.class) Object speechConfig,
+        @JsonProperty("speech_config") SpeechConfiguration speechConfig,
         @JsonProperty("presence_penalty") Double presencePenalty,
         @JsonProperty("frequency_penalty") Double frequencyPenalty,
         @JsonProperty("video_config") VideoConfig videoConfig,
@@ -84,7 +82,7 @@ public class Config {
             private ThinkingLevel thinkingLevel;
             private ThinkingSummaries thinkingSummaries;
             private Integer maxOutputTokens;
-            private Object speechConfig;
+            private SpeechConfiguration speechConfig;
             private Double presencePenalty;
             private Double frequencyPenalty;
             private VideoConfig videoConfig;
@@ -158,28 +156,28 @@ public class Config {
             public Builder maxOutputTokens(Integer maxOutputTokens) { this.maxOutputTokens = maxOutputTokens; return this; }
 
             /**
-             * Sets the speech config list.
+             * Sets the speech configuration.
              *
-             * @param speechConfig The speech config list.
+             * @param speechConfig The speech configuration.
              * @return This builder.
              */
-            public Builder speechConfig(List<SpeechConfig> speechConfig) { this.speechConfig = speechConfig; return this; }
+            public Builder speechConfig(SpeechConfiguration speechConfig) { this.speechConfig = speechConfig; return this; }
 
             /**
-             * Sets the multi-speaker config.
+             * Sets single-speaker speech configs.
              *
-             * @param speakerConfig The speaker config.
+             * @param speechConfig List of speech configs.
              * @return This builder.
              */
-            public Builder speechConfig(SpeakerConfig speakerConfig) { this.speechConfig = speakerConfig; return this; }
+            public Builder speechConfig(List<SpeechConfig> speechConfig) { this.speechConfig = speechConfig != null ? SpeechConfiguration.of(speechConfig) : null; return this; }
 
             /**
-             * Sets the speech config object (List of SpeechConfig or SpeakerConfig).
+             * Sets multi-speaker config.
              *
-             * @param speechConfig The speech config object.
+             * @param speakerConfig Speaker config.
              * @return This builder.
              */
-            public Builder speechConfig(Object speechConfig) { this.speechConfig = speechConfig; return this; }
+            public Builder speechConfig(SpeakerConfig speakerConfig) { this.speechConfig = speakerConfig != null ? SpeechConfiguration.of(speakerConfig) : null; return this; }
 
             /**
              * Sets presence penalty.

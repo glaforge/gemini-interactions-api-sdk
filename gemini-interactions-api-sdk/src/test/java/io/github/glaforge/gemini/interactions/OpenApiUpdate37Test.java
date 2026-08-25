@@ -18,6 +18,7 @@ package io.github.glaforge.gemini.interactions;
 
 import io.github.glaforge.gemini.interactions.model.Config;
 import io.github.glaforge.gemini.interactions.model.ModelOption;
+import io.github.glaforge.gemini.interactions.model.SpeechConfiguration;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -25,7 +26,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,10 +56,11 @@ class OpenApiUpdate37Test {
 
         Config.GenerationConfig deserialized = mapper.readValue(json, Config.GenerationConfig.class);
         assertNotNull(deserialized.speechConfig());
-        assertInstanceOf(Config.SpeakerConfig.class, deserialized.speechConfig());
-        Config.SpeakerConfig resSpeaker = (Config.SpeakerConfig) deserialized.speechConfig();
-        assertEquals(2, resSpeaker.speakers().size());
-        assertEquals("Algenib", resSpeaker.speakers().get(0).voice());
+        SpeechConfiguration speechConfig = deserialized.speechConfig();
+        assertTrue(speechConfig.isMultiSpeaker());
+        assertFalse(speechConfig.isSingleSpeaker());
+        assertEquals(2, speechConfig.multiSpeakerConfig().speakers().size());
+        assertEquals("Algenib", speechConfig.multiSpeakerConfig().speakers().get(0).voice());
     }
 
     @Test
@@ -73,9 +75,10 @@ class OpenApiUpdate37Test {
 
         Config.GenerationConfig deserialized = mapper.readValue(json, Config.GenerationConfig.class);
         assertNotNull(deserialized.speechConfig());
-        assertInstanceOf(List.class, deserialized.speechConfig());
-        @SuppressWarnings("unchecked")
-        List<Config.SpeechConfig> list = (List<Config.SpeechConfig>) deserialized.speechConfig();
+        SpeechConfiguration speechConfig = deserialized.speechConfig();
+        assertTrue(speechConfig.isSingleSpeaker());
+        assertFalse(speechConfig.isMultiSpeaker());
+        List<Config.SpeechConfig> list = speechConfig.singleSpeakerConfigs();
         assertEquals(1, list.size());
         assertEquals("Algenib", list.get(0).voice());
     }

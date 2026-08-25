@@ -17,6 +17,7 @@
 package io.github.glaforge.gemini.interactions.model.deserializer;
 
 import io.github.glaforge.gemini.interactions.model.Config;
+import io.github.glaforge.gemini.interactions.model.SpeechConfiguration;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
@@ -28,33 +29,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Custom Jackson deserializer for {@code speech_config} which can be either
- * a list of {@link Config.SpeechConfig} or a single {@link Config.SpeakerConfig} object.
+ * Custom Jackson deserializer for {@link SpeechConfiguration}.
  */
-public class SpeechConfigDeserializer extends ValueDeserializer<Object> {
+public class SpeechConfigurationDeserializer extends ValueDeserializer<SpeechConfiguration> {
 
     /**
      * Default constructor.
      */
-    public SpeechConfigDeserializer() {
+    public SpeechConfigurationDeserializer() {
         super();
     }
 
     @Override
-    public Object deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+    public SpeechConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.START_ARRAY) {
             JsonNode arrayNode = ctxt.readTree(p);
             List<Config.SpeechConfig> list = new ArrayList<>();
             for (JsonNode element : arrayNode) {
                 list.add(ctxt.readTreeAsValue(element, Config.SpeechConfig.class));
             }
-            return list;
+            return SpeechConfiguration.of(list);
         }
 
         JsonNode node = ctxt.readTree(p);
         if (node.has("speakers")) {
-            return ctxt.readTreeAsValue(node, Config.SpeakerConfig.class);
+            Config.SpeakerConfig speakerConfig = ctxt.readTreeAsValue(node, Config.SpeakerConfig.class);
+            return SpeechConfiguration.of(speakerConfig);
         }
-        return ctxt.readTreeAsValue(node, Config.SpeechConfig.class);
+        Config.SpeechConfig speechConfig = ctxt.readTreeAsValue(node, Config.SpeechConfig.class);
+        return SpeechConfiguration.of(speechConfig);
     }
 }
