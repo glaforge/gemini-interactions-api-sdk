@@ -91,6 +91,8 @@ public final class ModelOption {
     /** Model option constant. */
     public static final String GEMINI_3_6_FLASH = "gemini-3.6-flash";
     /** Model option constant. */
+    public static final String GEMINI_3_7_FLASH = "gemini-3.7-flash";
+    /** Model option constant. */
     public static final String GEMINI_3_5_LIVE_TRANSLATE_PREVIEW = "gemini-3.5-live-translate-preview";
     /** Model option constant. */
     public static final String GEMINI_EMBEDDING_001 = "gemini-embedding-001";

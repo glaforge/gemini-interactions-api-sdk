@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>0.11.0</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml`:
 Add the dependency to your `build.gradle` or `build.gradle.kts`:
 
 ```gradle
-implementation("io.github.glaforge:gemini-interactions-api-sdk:0.11.0")
+implementation("io.github.glaforge:gemini-interactions-api-sdk:1.0.0")
 ```
 
 > [!NOTE]
@@ -156,7 +156,7 @@ GenerationConfig generationConfig = GenerationConfig.builder()
     .build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_6_FLASH)
+    .model(ModelOption.GEMINI_3_7_FLASH)
     .input(
         new TextContent("Transcribe audio with speaker labels"),
         new AudioContent(audioBytes, "audio/wav")

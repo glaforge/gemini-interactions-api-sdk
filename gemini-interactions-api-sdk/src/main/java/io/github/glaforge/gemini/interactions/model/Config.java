@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import io.github.glaforge.gemini.interactions.model.deserializer.SpeechConfigDeserializer;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +44,7 @@ public class Config {
      * @param thinkingLevel    Level of thinking to use for the model.
      * @param thinkingSummaries Configuration for thinking summaries.
      * @param maxOutputTokens  The maximum number of tokens to include in a candidate.
-     * @param speechConfig     Configuration for speech generation.
+     * @param speechConfig     Configuration for speech generation (List of SpeechConfig or SpeakerConfig).
      * @param presencePenalty  The presence penalty.
      * @param frequencyPenalty The frequency penalty.
      * @param videoConfig      The video configuration.
@@ -58,7 +60,7 @@ public class Config {
         @JsonProperty("thinking_level") ThinkingLevel thinkingLevel,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("max_output_tokens") Integer maxOutputTokens,
-        @JsonProperty("speech_config") List<SpeechConfig> speechConfig,
+        @JsonProperty("speech_config") @JsonDeserialize(using = SpeechConfigDeserializer.class) Object speechConfig,
         @JsonProperty("presence_penalty") Double presencePenalty,
         @JsonProperty("frequency_penalty") Double frequencyPenalty,
         @JsonProperty("video_config") VideoConfig videoConfig,
@@ -82,7 +84,7 @@ public class Config {
             private ThinkingLevel thinkingLevel;
             private ThinkingSummaries thinkingSummaries;
             private Integer maxOutputTokens;
-            private List<SpeechConfig> speechConfig;
+            private Object speechConfig;
             private Double presencePenalty;
             private Double frequencyPenalty;
             private VideoConfig videoConfig;
@@ -156,12 +158,28 @@ public class Config {
             public Builder maxOutputTokens(Integer maxOutputTokens) { this.maxOutputTokens = maxOutputTokens; return this; }
 
             /**
-             * Sets the speech config.
+             * Sets the speech config list.
              *
-             * @param speechConfig The speech config.
+             * @param speechConfig The speech config list.
              * @return This builder.
              */
             public Builder speechConfig(List<SpeechConfig> speechConfig) { this.speechConfig = speechConfig; return this; }
+
+            /**
+             * Sets the multi-speaker config.
+             *
+             * @param speakerConfig The speaker config.
+             * @return This builder.
+             */
+            public Builder speechConfig(SpeakerConfig speakerConfig) { this.speechConfig = speakerConfig; return this; }
+
+            /**
+             * Sets the speech config object (List of SpeechConfig or SpeakerConfig).
+             *
+             * @param speechConfig The speech config object.
+             * @return This builder.
+             */
+            public Builder speechConfig(Object speechConfig) { this.speechConfig = speechConfig; return this; }
 
             /**
              * Sets presence penalty.
@@ -255,6 +273,16 @@ public class Config {
     }
 
     /**
+     * Configuration for multi-speaker and speech generation.
+     *
+     * @param speakers Individual speaker configurations.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record SpeakerConfig(
+        List<SpeechConfig> speakers
+    ) {}
+
+    /**
      * Sealed interface for response formats.
      */
     @JsonTypeInfo(
@@ -330,12 +358,30 @@ public class Config {
     /**
      * Configuration for video output format.
      *
-     * @param type The type of format.
+     * @param type       The type of format ("video").
+     * @param gcsUri     Cloud Storage URI to store the video output.
+     * @param resolution Video output resolution ("1080p", "360p", "4k", "720p").
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record VideoResponseFormat(
-        String type
-    ) implements ResponseFormat {}
+        String type,
+        @JsonProperty("gcs_uri") String gcsUri,
+        String resolution
+    ) implements ResponseFormat {
+        /** Creates a VideoResponseFormat with default type. */
+        public VideoResponseFormat() {
+            this("video", null, null);
+        }
+        /**
+         * Creates a VideoResponseFormat with GCS URI and resolution.
+         *
+         * @param gcsUri     GCS URI.
+         * @param resolution Output resolution.
+         */
+        public VideoResponseFormat(String gcsUri, String resolution) {
+            this("video", gcsUri, resolution);
+        }
+    }
 
     /**
      * Aspect ratio for generated images.

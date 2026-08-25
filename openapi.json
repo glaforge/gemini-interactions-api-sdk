@@ -4535,11 +4535,18 @@
             "format": "int32"
           },
           "speech_config": {
-            "description": "Configuration for speech interaction.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SpeechConfig"
-            }
+            "description": "Optional. Speech and multi-speaker configuration.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SpeakerConfig"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SpeechConfig"
+                }
+              }
+            ]
           },
           "stop_sequences": {
             "description": "A list of character sequences that will stop output interaction.",
@@ -6585,6 +6592,7 @@
           "gemini-3.1-flash-image",
           "gemini-3.5-flash",
           "gemini-3.6-flash",
+          "gemini-3.7-flash",
           "lyria-3-clip-preview",
           "lyria-3-pro-preview",
           "gemini-robotics-er-1.6-preview",
@@ -6607,6 +6615,7 @@
           "Gemini 3 Pro Image",
           "Gemini 3 Pro Image Preview",
           "Gemini 3.1 Flash Image.",
+          "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
           "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
           "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
           "Our low-latency, music generation model optimized for high-fidelity audio clips and precise rhythmic control.",
@@ -7347,7 +7356,7 @@
             "type": "string"
           },
           "source": {
-            "description": "The source of the environment.\nFor GCS, this is the GCS path.\nFor GitHub, this is the GitHub path.",
+            "description": "The source of the environment.\nFor Cloud Storage, this is the Cloud Storage path.\nFor GitHub, this is the GitHub path.",
             "type": "string"
           },
           "target": {
@@ -7363,11 +7372,25 @@
               "skill_registry"
             ],
             "x-google-enum-descriptions": [
-              "A GCS bucket.",
+              "A Cloud Storage bucket.",
               "Inline content.",
               "A generic repository. The protocol prefix in the source URL\nidentifies the provider (e.g., github://, gcs://).",
               "A skill resource from the Skill Registry Service.\nSkill: projects/{project}/locations/{location}/skills/{skill}\nSkillRevision:\nprojects/{project}/locations/{location}/skills/{skill}/revisions/{revision}\nSupport mounting all skills under a project:\nprojects/{project}/locations/{location}/skills."
             ]
+          }
+        },
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "SpeakerConfig": {
+        "description": "Configuration for multi-speaker and speech generation.",
+        "type": "object",
+        "properties": {
+          "speakers": {
+            "description": "Individual speaker configurations.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpeechConfig"
+            }
           }
         },
         "x-speakeasy-model-namespace": "interactions"
@@ -8895,13 +8918,15 @@
               "text_to_video",
               "image_to_video",
               "reference_to_video",
-              "edit"
+              "edit",
+              "extend"
             ],
             "x-google-enum-descriptions": [
               "Generates video solely from a text prompt.",
               "Generates video from one or two source images. The first image defines\nthe starting frame, and the optional second image defines the ending\nframe.",
               "Generates video using reference media (such as images, audio, or video).",
-              "Modifies an existing input video."
+              "Modifies an existing input video.",
+              "Extends an existing input video."
             ]
           }
         },
@@ -9085,8 +9110,24 @@
             "format": "google-duration"
           },
           "gcs_uri": {
-            "description": "The GCS URI to store the video output. Required for Vertex if delivery mode\nis URI.",
+            "description": "The Cloud Storage URI to store the video output. Required for Vertex if\ndelivery mode is URI.",
             "type": "string"
+          },
+          "resolution": {
+            "description": "The video output resolution. Defaults to 720p.",
+            "type": "string",
+            "enum": [
+              "360p",
+              "720p",
+              "1080p",
+              "4k"
+            ],
+            "x-google-enum-descriptions": [
+              "360p resolution.",
+              "720p resolution.",
+              "1080p resolution.",
+              "4K resolution."
+            ]
           },
           "type": {
             "const": "video"
