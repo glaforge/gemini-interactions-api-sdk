@@ -17,20 +17,18 @@
 package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import tools.jackson.databind.annotation.JsonDeserialize;
-import io.github.glaforge.gemini.interactions.model.deserializer.NetworkConfigDeserializer;
 
 import java.util.List;
 
 /**
  * Request payload for creating an execution environment.
  *
- * @param network Network configuration for the environment (EnvironmentNetworkEgressAllowlist or "disabled").
+ * @param network Network configuration for the environment.
  * @param sources Sources to be mounted into the environment.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CreateEnvironmentRequest(
-    @JsonDeserialize(using = NetworkConfigDeserializer.class) Object network,
+    NetworkConfiguration network,
     List<Source> sources
 ) {
     /**
@@ -46,29 +44,29 @@ public record CreateEnvironmentRequest(
         /** Creates a new Builder. */
         public Builder() {}
 
-        private Object network;
+        private NetworkConfiguration network;
         private List<Source> sources;
 
         /**
-         * Sets the network configuration object.
+         * Sets the network configuration.
          * @param network Network configuration.
          * @return This builder.
          */
-        public Builder network(Object network) { this.network = network; return this; }
+        public Builder network(NetworkConfiguration network) { this.network = network; return this; }
 
         /**
-         * Sets the network configuration to an egress allowlist.
-         * @param network Network egress allowlist.
+         * Sets the network configuration using an EnvironmentNetworkEgressAllowlist object.
+         * @param config EnvironmentNetworkEgressAllowlist object.
          * @return This builder.
          */
-        public Builder network(EnvironmentNetworkEgressAllowlist network) { this.network = network; return this; }
+        public Builder network(EnvironmentNetworkEgressAllowlist config) { this.network = config != null ? NetworkConfiguration.of(config) : null; return this; }
 
         /**
-         * Sets the network configuration mode (e.g. "disabled").
-         * @param network Network mode string.
+         * Sets the network configuration preset string.
+         * @param preset Network preset string.
          * @return This builder.
          */
-        public Builder network(String network) { this.network = network; return this; }
+        public Builder network(String preset) { this.network = preset != null ? NetworkConfiguration.of(preset) : null; return this; }
 
         /**
          * Sets the sources to mount.

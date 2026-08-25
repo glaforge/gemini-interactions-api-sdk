@@ -38,7 +38,7 @@ public record Agent(
     String id,
     String description,
     @JsonProperty("base_agent") String baseAgent,
-    @JsonProperty("base_environment") @JsonDeserialize(using = BaseEnvironmentDeserializer.class) Object baseEnvironment,
+    @JsonProperty("base_environment") BaseEnvironment baseEnvironment,
     @JsonProperty("system_instruction") String systemInstruction,
     List<AgentTool> tools,
     @JsonProperty("agent_config") Config.AgentConfig agentConfig
@@ -59,7 +59,7 @@ public record Agent(
         private String id;
         private String description;
         private String baseAgent;
-        private Object baseEnvironment;
+        private BaseEnvironment baseEnvironment;
         private String systemInstruction;
         private List<AgentTool> tools;
         private Config.AgentConfig agentConfig;
@@ -101,13 +101,24 @@ public record Agent(
         }
 
         /**
+         * Sets the base environment configuration.
+         *
+         * @param baseEnvironment Base environment configuration.
+         * @return This builder.
+         */
+        public Builder baseEnvironment(BaseEnvironment baseEnvironment) {
+            this.baseEnvironment = baseEnvironment;
+            return this;
+        }
+
+        /**
          * Sets the predefined base environment name.
          *
          * @param baseEnvironment Predefined base environment name (e.g. "default").
          * @return This builder.
          */
         public Builder baseEnvironment(String baseEnvironment) {
-            this.baseEnvironment = baseEnvironment;
+            this.baseEnvironment = baseEnvironment != null ? BaseEnvironment.of(baseEnvironment) : null;
             return this;
         }
 
@@ -118,7 +129,7 @@ public record Agent(
          * @return This builder.
          */
         public Builder baseEnvironment(EnvironmentConfig baseEnvironment) {
-            this.baseEnvironment = baseEnvironment;
+            this.baseEnvironment = baseEnvironment != null ? BaseEnvironment.of(baseEnvironment) : null;
             return this;
         }
 

@@ -214,7 +214,7 @@ public class GeminiInteractionsClientTest {
         assertEquals("agent-xyz", created.id());
         assertEquals("Helper agent", created.description());
         assertEquals("gemini-3.5-flash", created.baseAgent());
-        assertEquals("default", created.baseEnvironment());
+        assertEquals("default", created.baseEnvironment().preset());
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("POST", recordedRequest.getMethod());

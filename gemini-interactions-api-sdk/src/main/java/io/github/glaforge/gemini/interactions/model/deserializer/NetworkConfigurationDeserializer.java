@@ -16,27 +16,35 @@
 
 package io.github.glaforge.gemini.interactions.model.deserializer;
 
+import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllowlist;
+import io.github.glaforge.gemini.interactions.model.NetworkConfiguration;
+import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ValueDeserializer;
-import io.github.glaforge.gemini.interactions.model.Content.StaticMediaProcessing;
 
 /**
- * Custom Jackson deserializer to handle media processing which can be
- * either a string ("static", "agentic") or a StaticMediaProcessing object.
+ * Custom Jackson deserializer for {@link NetworkConfiguration}.
  */
-public class MediaProcessingDeserializer extends ValueDeserializer<Object> {
+public class NetworkConfigurationDeserializer extends ValueDeserializer<NetworkConfiguration> {
 
-    /** Creates a MediaProcessingDeserializer. */
-    public MediaProcessingDeserializer() {}
+    /**
+     * Default constructor.
+     */
+    public NetworkConfigurationDeserializer() {
+        super();
+    }
 
     @Override
-    public Object deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+    public NetworkConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_STRING) {
-            return p.getString();
+            return NetworkConfiguration.of(p.getString());
         }
-        return p.readValueAs(StaticMediaProcessing.class);
+
+        JsonNode node = ctxt.readTree(p);
+        EnvironmentNetworkEgressAllowlist config = ctxt.readTreeAsValue(node, EnvironmentNetworkEgressAllowlist.class);
+        return NetworkConfiguration.of(config);
     }
 }

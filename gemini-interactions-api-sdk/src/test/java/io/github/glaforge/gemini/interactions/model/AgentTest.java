@@ -54,7 +54,7 @@ class AgentTest {
         assertEquals("agent-123", agent.id());
         assertEquals("My custom helper agent", agent.description());
         assertEquals("deep-research-preview-04-2026", agent.baseAgent());
-        assertEquals("default", agent.baseEnvironment());
+        assertEquals("default", agent.baseEnvironment().preset());
         assertEquals("Be helpful and concise.", agent.systemInstruction());
         assertEquals(2, agent.tools().size());
 
@@ -91,11 +91,11 @@ class AgentTest {
         Agent agent = objectMapper.readValue(json, Agent.class);
 
         assertEquals("agent-remote-env", agent.id());
-        assertTrue(agent.baseEnvironment() instanceof EnvironmentConfig);
+        assertTrue(agent.baseEnvironment().isCustom());
 
-        EnvironmentConfig env = (EnvironmentConfig) agent.baseEnvironment();
+        EnvironmentConfig env = agent.baseEnvironment().config();
         assertEquals("remote", env.type());
-        assertEquals("disabled", env.network());
+        assertEquals("disabled", env.network().preset());
         assertEquals(1, env.sources().size());
 
         Source source = env.sources().get(0);
@@ -132,11 +132,11 @@ class AgentTest {
 
         Agent agent = objectMapper.readValue(json, Agent.class);
 
-        assertTrue(agent.baseEnvironment() instanceof EnvironmentConfig);
-        EnvironmentConfig env = (EnvironmentConfig) agent.baseEnvironment();
-        assertTrue(env.network() instanceof EnvironmentNetworkEgressAllowlist);
+        assertTrue(agent.baseEnvironment().isCustom());
+        EnvironmentConfig env = agent.baseEnvironment().config();
+        assertTrue(env.network().isCustom());
 
-        EnvironmentNetworkEgressAllowlist network = (EnvironmentNetworkEgressAllowlist) env.network();
+        EnvironmentNetworkEgressAllowlist network = env.network().config();
         assertEquals(1, network.allowlist().size());
 
         AllowlistEntry entry = network.allowlist().get(0);
@@ -163,7 +163,7 @@ class AgentTest {
         Agent deserialized = objectMapper.readValue(serializedJson, Agent.class);
         assertEquals("agent-builder-test", deserialized.id());
         assertEquals("Fluently built agent", deserialized.description());
-        assertEquals("default", deserialized.baseEnvironment());
+        assertEquals("default", deserialized.baseEnvironment().preset());
         assertEquals(2, deserialized.tools().size());
 
         assertTrue(deserialized.tools().get(0) instanceof AgentTool.GoogleSearch);

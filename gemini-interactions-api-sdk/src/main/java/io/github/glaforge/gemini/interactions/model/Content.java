@@ -20,8 +20,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import tools.jackson.databind.annotation.JsonDeserialize;
-import io.github.glaforge.gemini.interactions.model.deserializer.MediaProcessingDeserializer;
 import java.util.List;
 
 /**
@@ -390,7 +388,7 @@ public sealed interface Content permits
         String uri,
         @JsonProperty("mime_type") String mimeType,
         Resolution resolution,
-        @JsonDeserialize(using = MediaProcessingDeserializer.class) Object processing
+        MediaProcessingConfiguration processing
     ) implements Content {
         /**
          * Creates a VideoContent instance without processing configuration.
@@ -402,7 +400,35 @@ public sealed interface Content permits
          * @param resolution Resolution of the video.
          */
         public VideoContent(String type, byte[] data, String uri, String mimeType, Resolution resolution) {
-            this(type, data, uri, mimeType, resolution, null);
+            this(type, data, uri, mimeType, resolution, (MediaProcessingConfiguration) null);
+        }
+
+        /**
+         * Creates a VideoContent instance with a preset processing mode string.
+         *
+         * @param type       The type of content (must be "video").
+         * @param data       Base64 encoded video data.
+         * @param uri        URI of the video.
+         * @param mimeType   MIME type of the video.
+         * @param resolution Resolution of the video.
+         * @param processing Preset processing mode string.
+         */
+        public VideoContent(String type, byte[] data, String uri, String mimeType, Resolution resolution, String processing) {
+            this(type, data, uri, mimeType, resolution, processing != null ? MediaProcessingConfiguration.of(processing) : null);
+        }
+
+        /**
+         * Creates a VideoContent instance with a MediaProcessing configuration.
+         *
+         * @param type       The type of content (must be "video").
+         * @param data       Base64 encoded video data.
+         * @param uri        URI of the video.
+         * @param mimeType   MIME type of the video.
+         * @param resolution Resolution of the video.
+         * @param processing MediaProcessing configuration.
+         */
+        public VideoContent(String type, byte[] data, String uri, String mimeType, Resolution resolution, MediaProcessing processing) {
+            this(type, data, uri, mimeType, resolution, processing != null ? MediaProcessingConfiguration.of(processing) : null);
         }
 
         @Override

@@ -39,6 +39,7 @@ import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
 import io.github.glaforge.gemini.interactions.model.ListTriggerExecutionsResponse;
 import io.github.glaforge.gemini.interactions.model.Environment;
 import io.github.glaforge.gemini.interactions.model.CreateEnvironmentRequest;
+import io.github.glaforge.gemini.interactions.model.NetworkConfiguration;
 import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
 import io.github.glaforge.gemini.interactions.model.Source;
 
@@ -629,16 +630,19 @@ public class GeminiInteractionsClient {
             throw new GeminiInteractionsException(e);
         }
     }
+    public Environment createEnvironment(Object network, java.util.List<Source> sources) {
+        return createEnvironment(new CreateEnvironmentRequest(NetworkConfiguration.of(network), sources));
+    }
 
     /**
-     * Creates a new execution environment.
+     * Creates an execution environment with a NetworkConfiguration.
      *
-     * @param network Network configuration for the environment (EnvironmentNetworkEgressAllowlist or "disabled").
+     * @param network Network configuration.
      * @param sources Sources to mount into the environment.
      * @return The created Environment.
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
-    public Environment createEnvironment(Object network, java.util.List<Source> sources) {
+    public Environment createEnvironment(NetworkConfiguration network, java.util.List<Source> sources) {
         return createEnvironment(new CreateEnvironmentRequest(network, sources));
     }
 

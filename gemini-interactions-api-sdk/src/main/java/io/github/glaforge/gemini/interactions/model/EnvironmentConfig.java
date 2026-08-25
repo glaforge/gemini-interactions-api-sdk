@@ -17,30 +17,48 @@
 package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import tools.jackson.databind.annotation.JsonDeserialize;
-import io.github.glaforge.gemini.interactions.model.deserializer.NetworkConfigDeserializer;
 import java.util.List;
 
 /**
  * Configuration for a custom environment.
  *
  * @param type    The type (must be "remote").
- * @param network Network configuration (either EnvironmentNetworkEgressAllowlist or the string "disabled").
+ * @param network Network configuration.
  * @param sources Sources to be mounted into the environment.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record EnvironmentConfig(
     String type,
-    @JsonDeserialize(using = NetworkConfigDeserializer.class) Object network,
+    NetworkConfiguration network,
     List<Source> sources
 ) {
     /**
      * Creates a custom remote EnvironmentConfig.
      *
-     * @param network Network config (EnvironmentNetworkEgressAllowlist or "disabled").
+     * @param network Network configuration.
      * @param sources Mounted sources list.
      */
-    public EnvironmentConfig(Object network, List<Source> sources) {
+    public EnvironmentConfig(NetworkConfiguration network, List<Source> sources) {
         this("remote", network, sources);
+    }
+
+    /**
+     * Creates a custom remote EnvironmentConfig from an EnvironmentNetworkEgressAllowlist.
+     *
+     * @param config EnvironmentNetworkEgressAllowlist.
+     * @param sources Mounted sources list.
+     */
+    public EnvironmentConfig(EnvironmentNetworkEgressAllowlist config, List<Source> sources) {
+        this("remote", config != null ? NetworkConfiguration.of(config) : null, sources);
+    }
+
+    /**
+     * Creates a custom remote EnvironmentConfig from a preset string.
+     *
+     * @param preset Network preset string.
+     * @param sources Mounted sources list.
+     */
+    public EnvironmentConfig(String preset, List<Source> sources) {
+        this("remote", preset != null ? NetworkConfiguration.of(preset) : null, sources);
     }
 }

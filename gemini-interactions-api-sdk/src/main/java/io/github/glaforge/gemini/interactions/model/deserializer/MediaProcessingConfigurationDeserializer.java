@@ -16,8 +16,8 @@
 
 package io.github.glaforge.gemini.interactions.model.deserializer;
 
-import io.github.glaforge.gemini.interactions.model.BaseEnvironment;
-import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
+import io.github.glaforge.gemini.interactions.model.Content;
+import io.github.glaforge.gemini.interactions.model.MediaProcessingConfiguration;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
@@ -26,25 +26,25 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ValueDeserializer;
 
 /**
- * Custom Jackson deserializer for {@link BaseEnvironment}.
+ * Custom Jackson deserializer for {@link MediaProcessingConfiguration}.
  */
-public class BaseEnvironmentDeserializer extends ValueDeserializer<BaseEnvironment> {
+public class MediaProcessingConfigurationDeserializer extends ValueDeserializer<MediaProcessingConfiguration> {
 
     /**
      * Default constructor.
      */
-    public BaseEnvironmentDeserializer() {
+    public MediaProcessingConfigurationDeserializer() {
         super();
     }
 
     @Override
-    public BaseEnvironment deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+    public MediaProcessingConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_STRING) {
-            return BaseEnvironment.of(p.getString());
+            return MediaProcessingConfiguration.of(p.getString());
         }
 
         JsonNode node = ctxt.readTree(p);
-        EnvironmentConfig config = ctxt.readTreeAsValue(node, EnvironmentConfig.class);
-        return BaseEnvironment.of(config);
+        Content.StaticMediaProcessing config = ctxt.readTreeAsValue(node, Content.StaticMediaProcessing.class);
+        return MediaProcessingConfiguration.of(config);
     }
 }

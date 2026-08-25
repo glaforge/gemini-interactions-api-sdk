@@ -17,34 +17,33 @@
 package io.github.glaforge.gemini.interactions.model.deserializer;
 
 import io.github.glaforge.gemini.interactions.model.BaseEnvironment;
-import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
 import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonParser;
-import tools.jackson.core.JsonToken;
-import tools.jackson.databind.DeserializationContext;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
 /**
- * Custom Jackson deserializer for {@link BaseEnvironment}.
+ * Custom Jackson serializer for {@link BaseEnvironment}.
  */
-public class BaseEnvironmentDeserializer extends ValueDeserializer<BaseEnvironment> {
+public class BaseEnvironmentSerializer extends ValueSerializer<BaseEnvironment> {
 
     /**
      * Default constructor.
      */
-    public BaseEnvironmentDeserializer() {
+    public BaseEnvironmentSerializer() {
         super();
     }
 
     @Override
-    public BaseEnvironment deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
-        if (p.currentToken() == JsonToken.VALUE_STRING) {
-            return BaseEnvironment.of(p.getString());
+    public void serialize(BaseEnvironment value, JsonGenerator g, SerializationContext ctxt) throws JacksonException {
+        if (value == null) {
+            g.writeNull();
+        } else if (value.isPreset()) {
+            g.writeString(value.preset());
+        } else if (value.isCustom()) {
+            ctxt.writeValue(g, value.config());
+        } else {
+            g.writeNull();
         }
-
-        JsonNode node = ctxt.readTree(p);
-        EnvironmentConfig config = ctxt.readTreeAsValue(node, EnvironmentConfig.class);
-        return BaseEnvironment.of(config);
     }
 }

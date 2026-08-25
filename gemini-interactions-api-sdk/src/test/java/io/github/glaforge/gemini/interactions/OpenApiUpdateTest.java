@@ -156,7 +156,7 @@ class OpenApiUpdateTest {
         assertEquals(Environment.Status.ACTIVE, deserialized.status());
         assertEquals(12L, deserialized.fileCount());
         assertEquals(204800L, deserialized.sizeBytes());
-        assertEquals("disabled", deserialized.network());
+        assertEquals("disabled", deserialized.network().preset());
     }
 
     @Test
@@ -206,8 +206,9 @@ class OpenApiUpdateTest {
         Content deserialized = mapper.readValue(json, Content.class);
         assertInstanceOf(Content.VideoContent.class, deserialized);
         Content.VideoContent deserializedVideo = (Content.VideoContent) deserialized;
-        assertInstanceOf(Content.StaticMediaProcessing.class, deserializedVideo.processing());
-        Content.StaticMediaProcessing deserializedProc = (Content.StaticMediaProcessing) deserializedVideo.processing();
+        assertNotNull(deserializedVideo.processing());
+        assertTrue(deserializedVideo.processing().isCustom());
+        Content.StaticMediaProcessing deserializedProc = (Content.StaticMediaProcessing) deserializedVideo.processing().config();
         assertEquals("1.5s", deserializedProc.startOffset());
         assertEquals("10s", deserializedProc.endOffset());
         assertEquals(2.0, deserializedProc.fps());
