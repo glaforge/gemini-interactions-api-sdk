@@ -630,6 +630,15 @@ public class GeminiInteractionsClient {
             throw new GeminiInteractionsException(e);
         }
     }
+
+    /**
+     * Creates an execution environment using a raw or legacy network configuration object.
+     *
+     * @param network Network configuration (NetworkConfiguration, EnvironmentNetworkEgressAllowlist, or string preset like "disabled").
+     * @param sources Sources to mount into the environment.
+     * @return The created Environment.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
     public Environment createEnvironment(Object network, java.util.List<Source> sources) {
         return createEnvironment(new CreateEnvironmentRequest(NetworkConfiguration.of(network), sources));
     }
