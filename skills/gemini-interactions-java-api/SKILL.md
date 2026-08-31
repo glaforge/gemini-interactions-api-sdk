@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml`:
 Add the dependency to your `build.gradle` or `build.gradle.kts`:
 
 ```gradle
-implementation("io.github.glaforge:gemini-interactions-api-sdk:1.1.0")
+implementation("io.github.glaforge:gemini-interactions-api-sdk:1.2.0")
 ```
 
 > [!NOTE]
