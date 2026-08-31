@@ -227,7 +227,8 @@
                             <preparationGoals>clean verify</preparationGoals>
                             <preparationProfiles>deployment,publication</preparationProfiles>
                             <tagNameFormat>v@{project.version}</tagNameFormat>
-                            <goals>deploy jreleaser:full-release</goals>
+                            <goals>deploy</goals>
+                            <completionGoals>jreleaser:full-release</completionGoals>
                             <arguments>-ntp -B -DskipTests</arguments>
                             <scmCommentPrefix>chore:</scmCommentPrefix>
                             <scmReleaseCommitComment>@{prefix} Releasing version @{releaseLabel}</scmReleaseCommitComment>
