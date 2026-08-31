@@ -38,6 +38,7 @@ jobs:
           git config --global user.name "GitHub Action"
           git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "git@github.com:"
           ./mvnw -ntp -B -Prelease release:prepare release:perform
+          ./mvnw -ntp -B -Ppublication jreleaser:full-release -f target/checkout/pom.xml
 
       - name: JReleaser output
         if: always()
