@@ -460,28 +460,46 @@ while (!interaction.status().isFinished()) {
 System.out.println(interaction.steps());
 ```
 
-#### 3. Reading Files from an Agent's Environment Workspace (`EnvironmentWorkspace`)
-After an interaction completes, you can inspect the agent's remote environment workspace and read or download files it generated:
+#### 3. Inspecting & Reading Files from an Agent's Environment Workspace
 
+The SDK provides two complementary ways to work with an agent's remote environment files:
+
+> [!TIP]
+> **Choosing the right approach:**
+> - **`EnvironmentWorkspace` (Local TAR Cache)**: Best when you need to **read, extract, or download actual file contents** (text, images, data). Downloads the workspace archive once into a temporary local cache so subsequent file reads (`readTextFile`, `readBinaryFile`, `downloadFile`) incur zero extra network calls.
+> - **`client.getEnvironmentFiles(...)` (REST API Metadata Inspection)**: Best when you want to **browse directory trees, check file existence, or inspect file sizes & timestamps** directly via the API with pagination, without downloading the entire TAR archive.
+
+##### Option A: Bulk File Content Reading & Extraction (`EnvironmentWorkspace`)
 ```java
 import io.github.glaforge.gemini.interactions.EnvironmentWorkspace;
 import java.nio.file.Path;
 
-// Get a stateful workspace manager and pull the latest workspace files
+// Download workspace snapshot once and inspect file contents locally
 try (EnvironmentWorkspace workspace = client.getWorkspace(interaction.environmentId()).refresh()) {
-    // Check if the agent created a specific file
     if (workspace.fileExists("output.json")) {
-        // Read file contents directly into a string
+        // Read file contents directly into a String
         String content = workspace.readTextFile("output.json");
         System.out.println(content);
         
-        // Or download a binary file to your local system
+        // Save binary files (e.g. charts, PDFs) to your local disk
         workspace.downloadFile("chart.png", Path.of("/local/path/chart.png"));
     }
 }
+```
 
-// Or inspect environment files metadata directly via the API:
-GetEnvironmentFilesResponse filesResponse = client.getEnvironmentFiles(interaction.environmentId(), "workspace", 50, null, true);
+##### Option B: Remote Metadata Inspection & Directory Browsing (`getEnvironmentFiles`)
+```java
+import io.github.glaforge.gemini.interactions.model.GetEnvironmentFilesResponse;
+
+// Inspect file metadata (name, type, sizeBytes, mimeType, created, modified) via API
+GetEnvironmentFilesResponse filesResponse = client.getEnvironmentFiles(
+    interaction.environmentId(), 
+    "workspace", // path
+    50,          // pageSize
+    null,        // pageToken
+    true         // recursive
+);
+
 filesResponse.files().forEach(file -> {
     System.out.println(file.path() + " (" + file.type() + ", " + file.sizeBytes() + " bytes)");
 });
