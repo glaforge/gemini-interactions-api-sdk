@@ -253,8 +253,7 @@ import java.util.List;
 
 TranscriptionConfig transcriptionConfig = TranscriptionConfig.builder()
     .languageHints(List.of("en-US", "auto"))
-    .diarizationMode("speaker")
-    .timestampGranularities(List.of("word"))
+    .mode(new Config.VerbatimTranscriptionMode("speaker", List.of("word")))
     .build();
 
 GenerationConfig generationConfig = GenerationConfig.builder()
@@ -480,6 +479,12 @@ try (EnvironmentWorkspace workspace = client.getWorkspace(interaction.environmen
         workspace.downloadFile("chart.png", Path.of("/local/path/chart.png"));
     }
 }
+
+// Or inspect environment files metadata directly via the API:
+GetEnvironmentFilesResponse filesResponse = client.getEnvironmentFiles(interaction.environmentId(), "workspace", 50, null, true);
+filesResponse.files().forEach(file -> {
+    System.out.println(file.path() + " (" + file.type() + ", " + file.sizeBytes() + " bytes)");
+});
 ```
 
 #### 4. Managing Standalone Environments

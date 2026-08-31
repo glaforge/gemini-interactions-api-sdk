@@ -91,6 +91,11 @@
             "label": "list",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst agents = await ai.agents.list();\nfor (const agent of (agents.agents ?? [])) {\n    console.log(agent.id);\n}\n"
+          },
+          {
+            "label": "list",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.agents.Agent;\nimport com.google.genai.gaos.models.agents.AgentListResponse;\nimport com.google.genai.gaos.models.operations.ListAgentsResponse;\nimport java.util.List;\n\nClient client = new Client();\nListAgentsResponse response = client.agents.list().call();\nList<Agent> agents = response.agentListResponse()\n    .flatMap(AgentListResponse::agents)\n    .orElse(List.of());\nfor (Agent agent : agents) {\n  agent.id().ifPresent(System.out::println);\n}\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -185,6 +190,11 @@
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst agentId = `research-assistant-${crypto.randomUUID().slice(0, 8)}`;\nconst agent = await ai.agents.create({\n    id: agentId,\n    base_agent: 'antigravity-preview-05-2026',\n    description: 'A helpful research assistant.',\n    system_instruction: 'You are a helpful research assistant.',\n    base_environment: 'remote',\n    tools: [{ type: 'google_search' }],\n});\nif (!agent.id) {\n    throw new Error('Agent creation failed: ID is undefined');\n}\nconsole.log(agent.id);\n\n// [cleanup]\nawait ai.agents.delete(agent.id);\n// [/cleanup]\n"
           },
           {
+            "label": "create",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.agents.Agent;\nimport com.google.genai.gaos.models.agents.BaseEnvironment;\nimport com.google.genai.gaos.models.interactions.GoogleSearch;\nimport com.google.genai.gaos.models.operations.CreateAgentResponse;\nimport java.util.List;\nimport java.util.UUID;\n\nClient client = new Client();\nString agentId = \"research-assistant-\" + UUID.randomUUID().toString().substring(0, 8);\nAgent agent = Agent.builder()\n    .id(agentId)\n    .baseAgent(\"antigravity-preview-05-2026\")\n    .description(\"A helpful research assistant.\")\n    .systemInstruction(\"You are a helpful research assistant.\")\n    .baseEnvironment(BaseEnvironment.of(\"remote\"))\n    .tools(List.of(new GoogleSearch()))\n    .build();\nCreateAgentResponse response = client.agents.create(agent);\nSystem.out.println(response.agent().flatMap(Agent::id).orElse(\"\"));\n\n// [cleanup]\nclient.agents.delete(agentId);\n// [/cleanup]\n"
+          },
+          {
             "label": "with_sources",
             "lang": "sh",
             "source": "curl -X POST https://generativelanguage.googleapis.com/v1beta/agents \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"id\": \"data-analyst-abc123\",\n    \"base_agent\": \"antigravity-preview-05-2026\",\n    \"system_instruction\": \"You are a data analyst. Always include visualizations and export results as PDF.\",\n    \"base_environment\": {\n      \"type\": \"remote\",\n      \"sources\": [\n        {\n          \"type\": \"inline\",\n          \"target\": \".agents/AGENTS.md\",\n          \"content\": \"Always use matplotlib for charts. Include a summary table in every report.\"\n        },\n        {\n          \"type\": \"repository\",\n          \"source\": \"https://github.com/my-org/analysis-templates\",\n          \"target\": \"/workspace/templates\"\n        }\n      ]\n    }\n  }'\n"
@@ -200,6 +210,11 @@
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst agentId = `data-analyst-${crypto.randomUUID().slice(0, 8)}`;\nconst agent = await ai.agents.create({\n    id: agentId,\n    base_agent: 'antigravity-preview-05-2026',\n    system_instruction: 'You are a data analyst. Always include visualizations and export results as PDF.',\n    base_environment: {\n        type: 'remote',\n        sources: [\n            {\n                type: 'inline',\n                target: '.agents/AGENTS.md',\n                content: 'Always use matplotlib for charts. Include a summary table in every report.',\n            },\n            {\n                type: 'repository',\n                source: 'https://github.com/my-org/analysis-templates',\n                target: '/workspace/templates',\n            },\n        ],\n    },\n});\nconsole.log(`Created agent: ${agent.id}`);\n\n// [cleanup]\nif (agent.id) await ai.agents.delete(agent.id);\n// [/cleanup]\n"
           },
           {
+            "label": "with_sources",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.agents.Agent;\nimport com.google.genai.gaos.models.agents.BaseEnvironment;\nimport com.google.genai.gaos.models.interactions.Environment;\nimport com.google.genai.gaos.models.interactions.Source;\nimport com.google.genai.gaos.models.interactions.SourceType;\nimport com.google.genai.gaos.models.operations.CreateAgentResponse;\nimport java.util.List;\nimport java.util.UUID;\n\nClient client = new Client();\nString agentId = \"data-analyst-\" + UUID.randomUUID().toString().substring(0, 8);\nEnvironment env = Environment.builder()\n    .sources(List.of(\n        Source.builder()\n            .type(SourceType.INLINE)\n            .target(\".agents/AGENTS.md\")\n            .content(\"Always use matplotlib for charts. Include a summary table in every report.\")\n            .build(),\n        Source.builder()\n            .type(SourceType.REPOSITORY)\n            .source(\"https://github.com/my-org/analysis-templates\")\n            .target(\"/workspace/templates\")\n            .build()\n    ))\n    .build();\nAgent agent = Agent.builder()\n    .id(agentId)\n    .baseAgent(\"antigravity-preview-05-2026\")\n    .systemInstruction(\"You are a data analyst. Always include visualizations and export results as PDF.\")\n    .baseEnvironment(BaseEnvironment.of(env))\n    .build();\nCreateAgentResponse response = client.agents.create(agent);\nSystem.out.println(\"Created agent: \" + response.agent().flatMap(Agent::id).orElse(\"\"));\n\n// [cleanup]\nclient.agents.delete(agentId);\n// [/cleanup]\n"
+          },
+          {
             "label": "fork_from_env",
             "lang": "sh",
             "source": "# Step 1: Set up the environment interactively\nRESPONSE=$(curl -s -X POST https://generativelanguage.googleapis.com/v1beta/interactions \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"agent\": \"antigravity-preview-05-2026\",\n    \"input\": \"Write a basic Hello World template to /workspace/template.py.\",\n    \"environment\": \"remote\"\n  }')\nENV_ID=$(echo $RESPONSE | python3 -c \"import sys,json; print(json.load(sys.stdin)['environment_id'])\")\n\n# Step 2: Fork that environment into a named agent\ncurl -X POST https://generativelanguage.googleapis.com/v1beta/agents \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d \"{\n    \\\"id\\\": \\\"my-data-analyst\\\",\n    \\\"base_agent\\\": \\\"antigravity-preview-05-2026\\\",\n    \\\"system_instruction\\\": \\\"You are a data analyst. Use the template at /workspace/template.py for all reports.\\\",\n    \\\"base_environment\\\": \\\"$ENV_ID\\\"\n  }\"\n"
@@ -213,6 +228,11 @@
             "label": "fork_from_env",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Step 1: Set up the environment interactively.\nconst interaction = await ai.interactions.create({\n    agent: 'antigravity-preview-05-2026',\n    input: 'Write a basic Hello World template to /workspace/template.py.',\n    environment: 'remote',\n});\n\n// Step 2: Fork that environment into a named agent.\nconst agentId = `my-data-analyst-${crypto.randomUUID().slice(0, 8)}`;\nconst agent = await ai.agents.create({\n    id: agentId,\n    base_agent: 'antigravity-preview-05-2026',\n    system_instruction: 'You are a data analyst. Use the template at /workspace/template.py for all reports.',\n    base_environment: interaction.environment_id,\n});\nconsole.log(`Forked agent: ${agent.id}`);\n\n// [cleanup]\nif (agent.id) await ai.agents.delete(agent.id);\n// [/cleanup]\n"
+          },
+          {
+            "label": "fork_from_env",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.agents.Agent;\nimport com.google.genai.gaos.models.agents.BaseEnvironment;\nimport com.google.genai.gaos.models.interactions.AgentOption;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteraction;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteractionEnvironment;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateAgentResponse;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.UUID;\n\nClient client = new Client();\n\n// Step 1: Set up the environment interactively.\nCreateAgentInteraction params =\n    CreateAgentInteraction.builder()\n        .agent(AgentOption.of(\"antigravity-preview-05-2026\"))\n        .input(InteractionsInput.of(\"Write a basic Hello World template to /workspace/template.py.\"))\n        .environment(CreateAgentInteractionEnvironment.of(\"remote\"))\n        .build();\nCreateInteractionResponse interactionResponse =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    interactionResponse.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\n\n// Step 2: Fork that environment into a named agent.\nString agentId = \"my-data-analyst-\" + UUID.randomUUID().toString().substring(0, 8);\nAgent agent = Agent.builder()\n    .id(agentId)\n    .baseAgent(\"antigravity-preview-05-2026\")\n    .systemInstruction(\"You are a data analyst. Use the template at /workspace/template.py for all reports.\")\n    .baseEnvironment(BaseEnvironment.of(interaction.environmentId().orElse(\"\")))\n    .build();\nCreateAgentResponse agentResponse = client.agents.create(agent);\nSystem.out.println(\"Forked agent: \" + agentResponse.agent().flatMap(Agent::id).orElse(\"\"));\n\n// [cleanup]\nclient.agents.delete(agentId);\n// [/cleanup]\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -280,12 +300,17 @@
           {
             "label": "delete",
             "lang": "python",
-            "source": "import uuid\nfrom google import genai\n\nclient = genai.Client()\n\n# Create an agent so we have a valid ID to delete.\nagent_id = f\"delete-test-{uuid.uuid4().hex[:8]}\"\nclient.agents.create(\n    id=agent_id,\n    base_agent=\"waverunner\",\n    description=\"Temporary agent for deletion.\",\n    base_environment=\"remote\",\n)\n\nclient.agents.delete(agent_id)\nprint(\"Agent deleted successfully.\")\n"
+            "source": "import uuid\nfrom google import genai\n\nclient = genai.Client()\n\n# [setup]\nagent_id = f\"delete-test-{uuid.uuid4().hex[:8]}\"\nclient.agents.create(\n    id=agent_id,\n    base_agent=\"antigravity-preview-05-2026\",\n    description=\"Temporary agent for deletion.\",\n    base_environment=\"remote\",\n)\n# [/setup]\n\nclient.agents.delete(agent_id)\nprint(\"Agent deleted successfully.\")\n"
           },
           {
             "label": "delete",
             "lang": "javascript",
-            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Create an agent so we have a valid ID to delete.\nconst agentId = `delete-test-${crypto.randomUUID().slice(0, 8)}`;\nawait ai.agents.create({\n    id: agentId,\n    base_agent: 'waverunner',\n    description: 'Temporary agent for deletion.',\n    base_environment: 'remote',\n});\n\nawait ai.agents.delete(agentId);\nconsole.log('Agent deleted successfully.');\n"
+            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst agentId = `delete-test-${crypto.randomUUID().slice(0, 8)}`;\nawait ai.agents.create({\n    id: agentId,\n    base_agent: 'antigravity-preview-05-2026',\n    description: 'Temporary agent for deletion.',\n    base_environment: 'remote',\n});\n// [/setup]\n\nawait ai.agents.delete(agentId);\nconsole.log('Agent deleted successfully.');\n"
+          },
+          {
+            "label": "delete",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.agents.Agent;\nimport com.google.genai.gaos.models.agents.BaseEnvironment;\nimport java.util.UUID;\n\nClient client = new Client();\n\n// [setup]\nString agentId = \"delete-test-\" + UUID.randomUUID().toString().substring(0, 8);\nclient.agents.create(Agent.builder()\n    .id(agentId)\n    .baseAgent(\"antigravity-preview-05-2026\")\n    .description(\"Temporary agent for deletion.\")\n    .baseEnvironment(BaseEnvironment.of(\"remote\"))\n    .build());\n// [/setup]\n\nclient.agents.delete(agentId);\nSystem.out.println(\"Agent deleted successfully.\");\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -350,12 +375,17 @@
           {
             "label": "get",
             "lang": "python",
-            "source": "import uuid\nfrom google import genai\n\nclient = genai.Client()\n\n# Create an agent so we have a valid ID to retrieve.\nagent_id = f\"test-agent-{uuid.uuid4().hex[:8]}\"\nclient.agents.create(\n    id=agent_id,\n    base_agent=\"waverunner\",\n    description=\"A test agent.\",\n    base_environment=\"remote\",\n)\n\nagent = client.agents.get(agent_id)\nprint(agent.id)\n\n# [cleanup]\nclient.agents.delete(agent.id)\n# [/cleanup]\n"
+            "source": "import uuid\nfrom google import genai\n\nclient = genai.Client()\n\n# [setup]\nagent_id = f\"test-agent-{uuid.uuid4().hex[:8]}\"\nclient.agents.create(\n    id=agent_id,\n    base_agent=\"antigravity-preview-05-2026\",\n    description=\"A test agent.\",\n    base_environment=\"remote\",\n)\n# [/setup]\n\nagent = client.agents.get(agent_id)\nprint(agent.id)\n\n# [cleanup]\nclient.agents.delete(agent.id)\n# [/cleanup]\n"
           },
           {
             "label": "get",
             "lang": "javascript",
-            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Create an agent so we have a valid ID to retrieve.\nconst agentId = `test-agent-${crypto.randomUUID().slice(0, 8)}`;\nawait ai.agents.create({\n    id: agentId,\n    base_agent: 'waverunner',\n    description: 'A test agent.',\n    base_environment: 'remote',\n});\n\nconst agent = await ai.agents.get(agentId);\nif (!agent.id) {\n    throw new Error('Agent retrieval failed: ID is undefined');\n}\nconsole.log(agent.id);\n\n// [cleanup]\nawait ai.agents.delete(agent.id);\n// [/cleanup]\n"
+            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst agentId = `test-agent-${crypto.randomUUID().slice(0, 8)}`;\nawait ai.agents.create({\n    id: agentId,\n    base_agent: 'antigravity-preview-05-2026',\n    description: 'A test agent.',\n    base_environment: 'remote',\n});\n// [/setup]\n\nconst agent = await ai.agents.get(agentId);\nif (!agent.id) {\n    throw new Error('Agent retrieval failed: ID is undefined');\n}\nconsole.log(agent.id);\n\n// [cleanup]\nawait ai.agents.delete(agent.id);\n// [/cleanup]\n"
+          },
+          {
+            "label": "get",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.agents.Agent;\nimport com.google.genai.gaos.models.agents.BaseEnvironment;\nimport com.google.genai.gaos.models.operations.GetAgentResponse;\nimport java.util.UUID;\n\nClient client = new Client();\n\n// [setup]\nString agentId = \"test-agent-\" + UUID.randomUUID().toString().substring(0, 8);\nclient.agents.create(Agent.builder()\n    .id(agentId)\n    .baseAgent(\"antigravity-preview-05-2026\")\n    .description(\"A test agent.\")\n    .baseEnvironment(BaseEnvironment.of(\"remote\"))\n    .build());\n// [/setup]\n\nGetAgentResponse response = client.agents.get(agentId);\nAgent agent = response.agent().orElseThrow(() -> new RuntimeException(\"No agent returned\"));\nSystem.out.println(agent.id().orElse(\"\"));\n\n// [cleanup]\nclient.agents.delete(agentId);\n// [/cleanup]\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -438,6 +468,74 @@
           }
         },
         "x-speakeasy-group": "environments"
+      }
+    },
+    "/{api_version}/environments/{environment}/files/{path}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        },
+        {
+          "name": "environment",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "path",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "GetEnvironmentFiles",
+        "description": "Retrieves a file or directory from an environment's snapshot.",
+        "parameters": [
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Optional. Maximum number of entries to return per page (for directory listing).",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "Optional. Pagination token for directory listing.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recursive",
+            "in": "query",
+            "description": "Optional. If true and the path is a directory, recursively lists all files.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEnvironmentFilesResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-group": "environments.files",
+        "x-speakeasy-name-override": "list"
       }
     },
     "/{api_version}/environments/{id}": {
@@ -853,6 +951,11 @@
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    input: 'Hello, how are you?',\n});\nconsole.log(interaction.output_text);\n"
           },
           {
+            "label": "simple",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\n\nClient client = new Client();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .input(InteractionsInput.of(\"Hello, how are you?\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
+          },
+          {
             "label": "multi_turn",
             "lang": "sh",
             "source": "curl -X POST https://generativelanguage.googleapis.com/v1beta/interactions \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"model\": \"gemini-3.6-flash\",\n    \"input\": [\n      { \"type\": \"user_input\", \"content\": [{ \"type\": \"text\", \"text\": \"Hello!\" }] },\n      { \"type\": \"model_output\", \"content\": [{ \"type\": \"text\", \"text\": \"Hi there! How can I help you today?\" }] },\n      { \"type\": \"user_input\", \"content\": [{ \"type\": \"text\", \"text\": \"What is the capital of France?\" }] }\n    ]\n  }'\n"
@@ -866,6 +969,11 @@
             "label": "multi_turn",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    input: [\n        { type: 'user_input', content: [{ type: 'text', text: 'Hello' }] },\n        { type: 'model_output', content: [{ type: 'text', text: 'Hi there! How can I help you today?' }] },\n        { type: 'user_input', content: [{ type: 'text', text: 'What is the capital of France?' }] }\n    ]\n});\nconsole.log(interaction.output_text);\n"
+          },
+          {
+            "label": "multi_turn",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.interactions.ModelOutputStep;\nimport com.google.genai.gaos.models.interactions.Step;\nimport com.google.genai.gaos.models.interactions.TextContent;\nimport com.google.genai.gaos.models.interactions.UserInputStep;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nList<Step> conversation = List.of(\n    UserInputStep.builder()\n        .content(List.of(TextContent.builder().text(\"Hello!\").build()))\n        .build(),\n    ModelOutputStep.builder()\n        .content(List.of(TextContent.builder().text(\"Hi there! How can I help you today?\").build()))\n        .build(),\n    UserInputStep.builder()\n        .content(List.of(TextContent.builder().text(\"What is the capital of France?\").build()))\n        .build()\n);\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .input(InteractionsInput.ofStep(conversation))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
           },
           {
             "label": "multimodal_image",
@@ -883,6 +991,11 @@
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    input: [\n      { type: 'text', text: 'What is in this picture?' },\n      { type: 'image', data: 'BASE64_ENCODED_IMAGE', mime_type: 'image/png' }\n    ]\n});\nconsole.log(interaction.output_text);\n"
           },
           {
+            "label": "multimodal_image",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.Content;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.ImageContent;\nimport com.google.genai.gaos.models.interactions.ImageContentMimeType;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.interactions.TextContent;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nList<Content> content = List.of(\n    TextContent.builder().text(\"What is in this picture?\").build(),\n    ImageContent.builder()\n        .data(\"BASE64_ENCODED_IMAGE\")\n        .mimeType(ImageContentMimeType.IMAGE_PNG)\n        .build()\n);\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .input(InteractionsInput.ofContent(content))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
+          },
+          {
             "label": "function_calling",
             "lang": "sh",
             "source": "curl -X POST https://generativelanguage.googleapis.com/v1beta/interactions \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"model\": \"gemini-3.6-flash\",\n    \"tools\": [\n      {\n        \"type\": \"function\",\n        \"name\": \"get_weather\",\n        \"description\": \"Get the current weather in a given location\",\n        \"parameters\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"location\": {\n              \"type\": \"string\",\n              \"description\": \"The city and state, e.g. San Francisco, CA\"\n            }\n          },\n          \"required\": [\n            \"location\"\n          ]\n        }\n      }\n    ],\n    \"input\": \"What is the weather like in Boston, MA?\"\n  }'\n"
@@ -896,6 +1009,11 @@
             "label": "function_calling",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    tools: [{\n        type: 'function',\n        name: 'get_weather',\n        description: 'Get the current weather in a given location',\n        parameters: {\n            type: 'object',\n            properties: {\n                location: {\n                    type: 'string',\n                    description: 'The city and state, e.g. San Francisco, CA'\n                }\n            },\n            required: ['location']\n        }\n    }],\n    input: 'What is the weather like in Boston, MA?'\n});\nconsole.log(interaction.steps.at(-1));\n"
+          },
+          {
+            "label": "function_calling",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Function;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.interactions.Step;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\nimport java.util.Map;\n\nClient client = new Client();\nMap<String, Object> parameters = Map.of(\n    \"type\", \"object\",\n    \"properties\", Map.of(\n        \"location\", Map.of(\n            \"type\", \"string\",\n            \"description\", \"The city and state, e.g. San Francisco, CA\"\n        )\n    ),\n    \"required\", List.of(\"location\")\n);\nFunction functionTool = Function.builder()\n    .name(\"get_weather\")\n    .description(\"Get the current weather in a given location\")\n    .parameters(parameters)\n    .build();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .tools(List.of(functionTool))\n        .input(InteractionsInput.of(\"What is the weather like in Boston, MA?\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nList<Step> steps = interaction.steps().orElse(List.of());\nif (!steps.isEmpty()) {\n  System.out.println(steps.get(steps.size() - 1));\n}\n"
           },
           {
             "label": "deep_research",
@@ -913,6 +1031,11 @@
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    agent: 'deep-research-pro-preview-12-2025',\n    input: 'find a cure to cancer',\n    background: true,\n});\nconsole.log(interaction.status);\n"
           },
           {
+            "label": "deep_research",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.AgentOption;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionStatus;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\n\nClient client = new Client();\nCreateAgentInteraction params =\n    CreateAgentInteraction.builder()\n        .agent(AgentOption.of(\"deep-research-pro-preview-12-2025\"))\n        .input(InteractionsInput.of(\"find a cure to cancer\"))\n        .background(true)\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.status().map(InteractionStatus::value).orElse(\"\"));\n"
+          },
+          {
             "label": "antigravity",
             "lang": "sh",
             "source": "curl -X POST https://generativelanguage.googleapis.com/v1beta/interactions \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"agent\": \"antigravity-preview-05-2026\",\n    \"input\": \"Read Hacker News, summarize the top 5 stories, and save results as a markdown file.\",\n    \"environment\": \"remote\"\n  }'\n"
@@ -926,6 +1049,11 @@
             "label": "antigravity",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    agent: 'antigravity-preview-05-2026',\n    input: 'Read Hacker News, summarize the top 5 stories, and save results as a markdown file.',\n    environment: 'remote',\n});\nconsole.log(interaction.output_text);\n"
+          },
+          {
+            "label": "antigravity",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.AgentOption;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteraction;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteractionEnvironment;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\n\nClient client = new Client();\nCreateAgentInteraction params =\n    CreateAgentInteraction.builder()\n        .agent(AgentOption.of(\"antigravity-preview-05-2026\"))\n        .input(InteractionsInput.of(\"Read Hacker News, summarize the top 5 stories, and save results as a markdown file.\"))\n        .environment(CreateAgentInteractionEnvironment.of(\"remote\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
           },
           {
             "label": "reuse_env",
@@ -943,6 +1071,11 @@
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Step 1: Create an interaction with a fresh remote environment.\nconst interaction = await ai.interactions.create({\n    agent: 'antigravity-preview-05-2026',\n    input: 'Write a hello world script at /workspace/hello.py.',\n    environment: 'remote',\n});\nconsole.log(`Environment ID: ${interaction.environment_id}`);\n\n// Step 2: Reuse the same environment in a follow-up interaction.\nconst interaction2 = await ai.interactions.create({\n    agent: 'antigravity-preview-05-2026',\n    input: 'Modify the script to accept a name argument and greet the user.',\n    environment: interaction.environment_id,\n    previous_interaction_id: interaction.id,\n});\nconsole.log(interaction2.output_text);\n"
           },
           {
+            "label": "reuse_env",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.AgentOption;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteraction;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteractionEnvironment;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\n\nClient client = new Client();\n\n// Step 1: Create an interaction with a fresh remote environment.\nCreateAgentInteraction params1 =\n    CreateAgentInteraction.builder()\n        .agent(AgentOption.of(\"antigravity-preview-05-2026\"))\n        .input(InteractionsInput.of(\"Write a hello world script at /workspace/hello.py.\"))\n        .environment(CreateAgentInteractionEnvironment.of(\"remote\"))\n        .build();\nCreateInteractionResponse response1 =\n    client.interactions.create(CreateInteractionRequestBody.of(params1));\nInteraction interaction1 =\n    response1.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(\"Environment ID: \" + interaction1.environmentId().orElse(\"\"));\n\n// Step 2: Reuse the same environment in a follow-up interaction.\nCreateAgentInteraction params2 =\n    CreateAgentInteraction.builder()\n        .agent(AgentOption.of(\"antigravity-preview-05-2026\"))\n        .input(InteractionsInput.of(\"Modify the script to accept a name argument and greet the user.\"))\n        .environment(CreateAgentInteractionEnvironment.of(interaction1.environmentId().orElse(\"\")))\n        .previousInteractionId(interaction1.id().orElse(null))\n        .build();\nCreateInteractionResponse response2 =\n    client.interactions.create(CreateInteractionRequestBody.of(params2));\nInteraction interaction2 =\n    response2.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction2.outputText().orElse(\"\"));\n"
+          },
+          {
             "label": "with_sources",
             "lang": "sh",
             "source": "curl -X POST https://generativelanguage.googleapis.com/v1beta/interactions \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"agent\": \"antigravity-preview-05-2026\",\n    \"input\": \"List all files under /workspace and summarize what you find.\",\n    \"environment\": {\n      \"type\": \"remote\",\n      \"sources\": [\n        {\n          \"type\": \"repository\",\n          \"source\": \"https://github.com/octocat/Spoon-Knife\",\n          \"target\": \"/workspace/repo\"\n        },\n        {\n          \"type\": \"inline\",\n          \"content\": \"Focus on Python files only.\",\n          \"target\": \"/workspace/notes.txt\"\n        }\n      ]\n    }\n  }'\n"
@@ -958,6 +1091,11 @@
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    agent: 'antigravity-preview-05-2026',\n    input: 'List all files under /workspace and summarize what you find.',\n    environment: {\n        type: 'remote',\n        sources: [\n            {\n                type: 'repository',\n                source: 'https://github.com/octocat/Spoon-Knife',\n                target: '/workspace/repo',\n            },\n            {\n                type: 'inline',\n                content: 'Focus on Python files only.',\n                target: '/workspace/notes.txt',\n            },\n        ],\n    },\n});\nconsole.log(interaction.output_text);\n"
           },
           {
+            "label": "with_sources",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.AgentOption;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteraction;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteractionEnvironment;\nimport com.google.genai.gaos.models.interactions.Environment;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.interactions.Source;\nimport com.google.genai.gaos.models.interactions.SourceType;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nEnvironment env = Environment.builder()\n    .sources(List.of(\n        Source.builder()\n            .type(SourceType.REPOSITORY)\n            .source(\"https://github.com/octocat/Spoon-Knife\")\n            .target(\"/workspace/repo\")\n            .build(),\n        Source.builder()\n            .type(SourceType.INLINE)\n            .content(\"Focus on Python files only.\")\n            .target(\"/workspace/notes.txt\")\n            .build()\n    ))\n    .build();\nCreateAgentInteraction params =\n    CreateAgentInteraction.builder()\n        .agent(AgentOption.of(\"antigravity-preview-05-2026\"))\n        .input(InteractionsInput.of(\"List all files under /workspace and summarize what you find.\"))\n        .environment(CreateAgentInteractionEnvironment.of(env))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
+          },
+          {
             "label": "custom_agent",
             "lang": "sh",
             "source": "# Step 1: Create a custom agent.\ncurl -X POST https://generativelanguage.googleapis.com/v1beta/agents \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"id\": \"code-reviewer\",\n    \"base_agent\": \"antigravity-preview-05-2026\",\n    \"system_instruction\": \"You are a senior code reviewer. Check every file for bugs, style issues, and security vulnerabilities.\",\n    \"base_environment\": {\n      \"type\": \"remote\",\n      \"sources\": [{\n        \"type\": \"repository\",\n        \"source\": \"https://github.com/octocat/Spoon-Knife\",\n        \"target\": \"/workspace/repo\"\n      }]\n    }\n  }'\n\n# Step 2: Use the custom agent.\ncurl -X POST https://generativelanguage.googleapis.com/v1beta/interactions \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"agent\": \"code-reviewer\",\n    \"input\": \"Review the latest changes in /workspace/repo/src and file a summary.\",\n    \"environment\": \"remote\"\n  }'\n"
@@ -971,6 +1109,11 @@
             "label": "custom_agent",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Step 1: Create a custom agent.\nconst agentId = `code-reviewer-${crypto.randomUUID().slice(0, 8)}`;\nawait ai.agents.create({\n    id: agentId,\n    base_agent: 'antigravity-preview-05-2026',\n    system_instruction: 'You are a senior code reviewer. Check every file for bugs, style issues, and security vulnerabilities.',\n    base_environment: {\n        type: 'remote',\n        sources: [{\n            type: 'repository',\n            source: 'https://github.com/octocat/Spoon-Knife',\n            target: '/workspace/repo',\n        }],\n    },\n});\n\n// Step 2: Use the custom agent.\nconst result = await ai.interactions.create({\n    agent: agentId,\n    input: 'Review the latest changes in /workspace/repo/src and file a summary.',\n    environment: 'remote',\n});\nconsole.log(result.output_text);\n\n// [cleanup]\nawait ai.agents.delete(agentId);\n// [/cleanup]\n"
+          },
+          {
+            "label": "custom_agent",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.agents.Agent;\nimport com.google.genai.gaos.models.agents.BaseEnvironment;\nimport com.google.genai.gaos.models.interactions.AgentOption;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteraction;\nimport com.google.genai.gaos.models.interactions.CreateAgentInteractionEnvironment;\nimport com.google.genai.gaos.models.interactions.Environment;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.interactions.Source;\nimport com.google.genai.gaos.models.interactions.SourceType;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\nimport java.util.UUID;\n\nClient client = new Client();\n\n// Step 1: Create a custom agent.\nString agentId = \"code-reviewer-\" + UUID.randomUUID().toString().substring(0, 8);\nEnvironment baseEnv = Environment.builder()\n    .sources(List.of(\n        Source.builder()\n            .type(SourceType.REPOSITORY)\n            .source(\"https://github.com/octocat/Spoon-Knife\")\n            .target(\"/workspace/repo\")\n            .build()\n    ))\n    .build();\nAgent customAgent = Agent.builder()\n    .id(agentId)\n    .baseAgent(\"antigravity-preview-05-2026\")\n    .systemInstruction(\"You are a senior code reviewer. Check every file for bugs, style issues, and security vulnerabilities.\")\n    .baseEnvironment(BaseEnvironment.of(baseEnv))\n    .build();\nclient.agents.create(customAgent);\n\n// Step 2: Use the custom agent.\nCreateAgentInteraction params =\n    CreateAgentInteraction.builder()\n        .agent(AgentOption.of(agentId))\n        .input(InteractionsInput.of(\"Review the latest changes in /workspace/repo/src and file a summary.\"))\n        .environment(CreateAgentInteractionEnvironment.of(\"remote\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n\n// [cleanup]\nclient.agents.delete(agentId);\n// [/cleanup]\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -1059,6 +1202,11 @@
             "label": "delete",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst created = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    input: 'Hello',\n});\n// [/setup]\n\nawait ai.interactions.delete(created.id);\nconsole.log('Interaction deleted successfully.');\n"
+          },
+          {
+            "label": "delete",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\n\nClient client = new Client();\n\n// [setup]\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .input(InteractionsInput.of(\"Hello\"))\n        .build();\nCreateInteractionResponse created =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nString interactionId = created.interaction().flatMap(Interaction::id).orElseThrow();\n// [/setup]\n\nclient.interactions.delete(interactionId);\nSystem.out.println(\"Interaction deleted successfully.\");\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -1209,6 +1357,11 @@
             "label": "get",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst created = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    input: 'Say hello.'\n});\n// [/setup]\n\nconst interaction = await ai.interactions.get(created.id);\nconsole.log(interaction.status);\n"
+          },
+          {
+            "label": "get",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionStatus;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport com.google.genai.gaos.models.operations.GetInteractionByIdRequest;\nimport com.google.genai.gaos.models.operations.GetInteractionByIdResponse;\n\nClient client = new Client();\n\n// [setup]\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .input(InteractionsInput.of(\"Say hello.\"))\n        .build();\nCreateInteractionResponse created =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nString interactionId = created.interaction().flatMap(Interaction::id).orElseThrow();\n// [/setup]\n\nGetInteractionByIdResponse getResponse =\n    client.interactions.get(new GetInteractionByIdRequest(interactionId));\nInteraction interaction =\n    getResponse.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.status().map(InteractionStatus::value).orElse(\"\"));\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -1328,6 +1481,11 @@
             "label": "cancel",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Start a background interaction so it stays in-progress.\nconst created = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    input: 'Write a long essay about the history of computing.',\n    tools: [{ type: 'computer_use' }],\n    background: true,\n});\n\n// Cancel the in-progress interaction.\nconst interaction = await ai.interactions.cancel(created.id);\nconsole.log(interaction.status);\n"
+          },
+          {
+            "label": "cancel",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.ComputerUse;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionStatus;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CancelInteractionByIdResponse;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\n\n// Start a background interaction so it stays in-progress.\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .input(InteractionsInput.of(\"Write a long essay about the history of computing.\"))\n        .tools(List.of(new ComputerUse()))\n        .background(true)\n        .build();\nCreateInteractionResponse created =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nString interactionId = created.interaction().flatMap(Interaction::id).orElseThrow();\n\n// Cancel the in-progress interaction.\nCancelInteractionByIdResponse cancelResponse = client.interactions.cancel(interactionId);\nInteraction interaction =\n    cancelResponse.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.status().map(InteractionStatus::value).orElse(\"\"));\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -2473,6 +2631,11 @@
             "label": "code_execution",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    tools: [{ type: 'code_execution' }],\n    input: 'Calculate the first 10 Fibonacci numbers'\n});\nconsole.log(interaction.output_text);\n"
+          },
+          {
+            "label": "code_execution",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CodeExecution;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .tools(List.of(new CodeExecution()))\n        .input(InteractionsInput.of(\"Calculate the first 10 Fibonacci numbers\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
           }
         ],
         "x-speakeasy-model-namespace": "interactions"
@@ -2788,6 +2951,11 @@
             "label": "computer_use",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-2.5-computer-use-preview-10-2025',\n    tools: [{ type: 'computer_use'}],\n    input: 'Find a flight to Tokyo'\n});\nconsole.log(interaction.output_text);\n"
+          },
+          {
+            "label": "computer_use",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.ComputerUse;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-2.5-computer-use-preview-10-2025\")\n        .tools(List.of(new ComputerUse()))\n        .input(InteractionsInput.of(\"Find a flight to Tokyo\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
           }
         ],
         "x-speakeasy-model-namespace": "interactions"
@@ -3806,6 +3974,65 @@
         "x-speakeasy-model-namespace": "interactions",
         "x-speakeasy-name-override": "Environment"
       },
+      "EnvironmentFile": {
+        "description": "Metadata for a file or directory within an environment.",
+        "type": "object",
+        "properties": {
+          "created": {
+            "description": "Output only. The creation time of the file/directory.",
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "mime_type": {
+            "description": "Output only. The MIME type of the file (e.g., \"text/python\", \"image/png\").\nEmpty for directories.\nNOLINT",
+            "type": "string",
+            "readOnly": true
+          },
+          "modified": {
+            "description": "Output only. The modification time of the file/directory.",
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "name": {
+            "description": "Output only. The name of the file or directory (e.g., \"main.py\" or \"src\").",
+            "type": "string",
+            "readOnly": true
+          },
+          "path": {
+            "description": "Output only. The full relative path within the environment\n(e.g., \"workspace/src/main.py\").",
+            "type": "string",
+            "readOnly": true
+          },
+          "size_bytes": {
+            "description": "Output only. The size of the file/directory in bytes.\nNOLINT",
+            "type": "string",
+            "format": "int64",
+            "readOnly": true
+          },
+          "type": {
+            "description": "Output only. The type of the entry.",
+            "type": "string",
+            "enum": [
+              "file",
+              "directory"
+            ],
+            "readOnly": true,
+            "x-google-enum-descriptions": [
+              "A regular file.",
+              "A directory."
+            ]
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "EnvironmentFile",
+            "group": "environments"
+          }
+        ],
+        "x-speakeasy-model-namespace": "environments"
+      },
       "EnvironmentNetworkEgressAllowlist": {
         "description": "Outbound networking configuration for the sandbox. Accepts an object with an 'allowlist' array to restrict traffic, or the string 'disabled' to turn off all network access. Omit entirely to allow all outbound traffic with no header injection.",
         "example": {
@@ -4055,6 +4282,11 @@
             "label": "file_search",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// Create a file search store so we have a valid one to use.\nconst store = await ai.fileSearchStores.create({});\nif (!store.name) {\n    throw new Error('Store creation failed: Name is undefined');\n}\n\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    tools: [{\n        type: 'file_search',\n        file_search_store_names: [store.name]\n    }],\n    input: 'What documents are available?'\n});\nconsole.log(interaction.output_text);\n\n// [cleanup]\nawait ai.fileSearchStores.delete({name: store.name});\n// [/cleanup]\n"
+          },
+          {
+            "label": "file_search",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.FileSearch;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport com.google.genai.types.CreateFileSearchStoreConfig;\nimport com.google.genai.types.FileSearchStore;\nimport java.util.List;\n\nClient client = new Client();\n\n// Create a file search store so we have a valid one to use.\nFileSearchStore store = client.fileSearchStores.create(CreateFileSearchStoreConfig.builder().build());\nString storeName = store.name().orElseThrow();\n\nFileSearch tool = FileSearch.builder()\n    .fileSearchStoreNames(List.of(storeName))\n    .build();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .tools(List.of(tool))\n        .input(InteractionsInput.of(\"What documents are available?\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n\n// [cleanup]\nclient.fileSearchStores.delete(storeName, null);\n// [/cleanup]\n"
           }
         ],
         "x-speakeasy-model-namespace": "interactions"
@@ -4223,6 +4455,7 @@
             "type": "string"
           },
           "mode": {
+            "title": "mode",
             "description": "The mode of the find session.",
             "type": "string",
             "enum": [
@@ -4303,6 +4536,11 @@
             "label": "function_calling",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    tools: [{\n        type: 'function',\n        name: 'get_weather',\n        description: 'Get the current weather in a given location',\n        parameters: {\n            type: 'object',\n            properties: {\n                location: {\n                    type: 'string',\n                    description: 'The city and state, e.g. San Francisco, CA'\n                }\n            },\n            required: ['location']\n        }\n    }],\n    input: 'What is the weather like in Boston?'\n});\nconsole.log(interaction.steps.at(-1));\n"
+          },
+          {
+            "label": "function_calling",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Function;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.interactions.Step;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\nimport java.util.Map;\n\nClient client = new Client();\nMap<String, Object> parameters = Map.of(\n    \"type\", \"object\",\n    \"properties\", Map.of(\n        \"location\", Map.of(\n            \"type\", \"string\",\n            \"description\", \"The city and state, e.g. San Francisco, CA\"\n        )\n    ),\n    \"required\", List.of(\"location\")\n);\nFunction functionTool = Function.builder()\n    .name(\"get_weather\")\n    .description(\"Get the current weather in a given location\")\n    .parameters(parameters)\n    .build();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .tools(List.of(functionTool))\n        .input(InteractionsInput.of(\"What is the weather like in Boston?\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nList<Step> steps = interaction.steps().orElse(List.of());\nif (!steps.isEmpty()) {\n  System.out.println(steps.get(steps.size() - 1));\n}\n"
           }
         ],
         "x-speakeasy-exports": [
@@ -4610,6 +4848,30 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
+      "GetEnvironmentFilesResponse": {
+        "description": "Response for `GetEnvironmentFiles`.",
+        "type": "object",
+        "properties": {
+          "files": {
+            "description": "If the requested path is a directory, this contains its contents.\nIf the requested path is a file, this contains a single entry with the\nfile's metadata.\nIf alt=media was specified, this is empty (content is served via `blob`).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentFile"
+            }
+          },
+          "next_page_token": {
+            "description": "Pagination token for directory listing.\nNOLINT",
+            "type": "string"
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "GetEnvironmentFilesResponse",
+            "group": "environments"
+          }
+        ],
+        "x-speakeasy-model-namespace": "environments"
+      },
       "GoogleMaps": {
         "description": "A tool that can be used by the model to call Google Maps.",
         "type": "object",
@@ -4650,6 +4912,11 @@
             "label": "google_maps",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    tools: [{\n        type: 'google_maps',\n        latitude: 37.7749,\n        longitude: -122.4194\n    }],\n    input: 'What is the best food near me?'\n});\nconsole.log(interaction.output_text);\n"
+          },
+          {
+            "label": "google_maps",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.GoogleMaps;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nGoogleMaps tool = GoogleMaps.builder()\n    .latitude(37.7749)\n    .longitude(-122.4194)\n    .build();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .tools(List.of(tool))\n        .input(InteractionsInput.of(\"What is the best food near me?\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
           }
         ],
         "x-speakeasy-model-namespace": "interactions"
@@ -4945,6 +5212,11 @@
             "label": "google_search",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    tools: [{ type: 'google_search' }],\n    input: 'Who is the current president of France?'\n});\nconsole.log(interaction.output_text);\n"
+          },
+          {
+            "label": "google_search",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.GoogleSearch;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .tools(List.of(new GoogleSearch()))\n        .input(InteractionsInput.of(\"Who is the current president of France?\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
           }
         ],
         "x-speakeasy-model-namespace": "interactions"
@@ -6320,6 +6592,11 @@
             "label": "mcp_server",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    tools: [{\n        type: 'mcp_server',\n        name: 'weather_service',\n        url: 'https://gemini-api-demos.uc.r.appspot.com/mcp'\n    }],\n    input: 'Today is 12-05-2025, what is the temperature today in London?'\n});\nconsole.log(interaction.output_text);\n"
+          },
+          {
+            "label": "mcp_server",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.interactions.MCPServer;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nMCPServer mcpTool = MCPServer.builder()\n    .name(\"weather_service\")\n    .url(\"https://gemini-api-demos.uc.r.appspot.com/mcp\")\n    .build();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .tools(List.of(mcpTool))\n        .input(InteractionsInput.of(\"Today is 12-05-2025, what is the temperature today in London?\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
           }
         ],
         "x-speakeasy-model-namespace": "interactions",
@@ -7343,6 +7620,19 @@
         ],
         "x-speakeasy-model-namespace": "webhooks"
       },
+      "SmartTranscriptionMode": {
+        "description": "Configuration for smart transcription mode.",
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "smart"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
       "Source": {
         "description": "A source to be mounted into the environment.",
         "type": "object",
@@ -8169,7 +8459,8 @@
           },
           "diarization_mode": {
             "description": "Optional. Configures speaker diarization. Supported values: \"speaker\".",
-            "type": "string"
+            "type": "string",
+            "deprecated": true
           },
           "language_codes": {
             "description": "Optional. BCP-47 language codes providing hints about the languages present in the\naudio. If omitted or empty, defaults to automatic language detection.",
@@ -8178,9 +8469,30 @@
               "type": "string"
             }
           },
+          "mode": {
+            "title": "TranscriptionConfigMode",
+            "description": "Discriminated transcription mode options or enum.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TranscriptionMode"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "verbatim",
+                  "smart"
+                ],
+                "x-google-enum-descriptions": [
+                  "Verbatim transcription mode.",
+                  "Smart transcription mode."
+                ]
+              }
+            ]
+          },
           "timestamp_granularities": {
             "description": "Optional. The granularity of timestamps to include in the transcription output.\nSupported values: \"word\". If empty, no timestamps are generated.",
             "type": "array",
+            "deprecated": true,
             "items": {
               "type": "string"
             }
@@ -8189,6 +8501,25 @@
         "x-speakeasy-exports": [
           {
             "name": "TranscriptionConfig",
+            "group": "interactions"
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "TranscriptionMode": {
+        "description": "Configuration for transcription mode.",
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SmartTranscriptionMode"
+          },
+          {
+            "$ref": "#/components/schemas/VerbatimTranscriptionMode"
+          }
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "TranscriptionMode",
             "group": "interactions"
           }
         ],
@@ -8544,6 +8875,11 @@
             "label": "url_context",
             "lang": "javascript",
             "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst interaction = await ai.interactions.create({\n    model: 'gemini-3.6-flash',\n    tools: [{ type: 'url_context' }],\n    input: 'Summarize https://www.example.com'\n});\nconsole.log(interaction.output_text);\n"
+          },
+          {
+            "label": "url_context",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.interactions.CreateModelInteraction;\nimport com.google.genai.gaos.models.interactions.Interaction;\nimport com.google.genai.gaos.models.interactions.InteractionsInput;\nimport com.google.genai.gaos.models.interactions.URLContext;\nimport com.google.genai.gaos.models.operations.CreateInteractionRequestBody;\nimport com.google.genai.gaos.models.operations.CreateInteractionResponse;\nimport java.util.List;\n\nClient client = new Client();\nCreateModelInteraction params =\n    CreateModelInteraction.builder()\n        .model(\"gemini-3.6-flash\")\n        .tools(List.of(new URLContext()))\n        .input(InteractionsInput.of(\"Summarize https://www.example.com\"))\n        .build();\nCreateInteractionResponse response =\n    client.interactions.create(CreateInteractionRequestBody.of(params));\nInteraction interaction =\n    response.interaction().orElseThrow(() -> new RuntimeException(\"No interaction returned\"));\nSystem.out.println(interaction.outputText().orElse(\"\"));\n"
           }
         ],
         "x-speakeasy-model-namespace": "interactions",
@@ -8889,6 +9225,30 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
+      "VerbatimTranscriptionMode": {
+        "description": "Configuration for verbatim transcription mode.",
+        "type": "object",
+        "properties": {
+          "diarization_mode": {
+            "description": "Optional. Configures speaker diarization. Supported values: \"speaker\".",
+            "type": "string"
+          },
+          "timestamp_granularities": {
+            "description": "Optional. The granularity of timestamps to include in the transcription output.\nSupported values: \"word\". If empty, no timestamps are generated.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "const": "verbatim"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
       "VertexAISearchConfig": {
         "description": "Used to specify configuration for VertexAISearch.",
         "type": "object",
@@ -9046,7 +9406,8 @@
               "video/x-flv",
               "video/webm",
               "video/wmv",
-              "video/3gpp"
+              "video/3gpp",
+              "video/jpeg2000"
             ],
             "x-google-enum-descriptions": [
               "MP4 video format",
@@ -9057,7 +9418,8 @@
               "FLV video format",
               "WebM video format",
               "WMV video format",
-              "3GPP video format"
+              "3GPP video format",
+              "JPEG 2000 video format"
             ]
           },
           "resolution": {

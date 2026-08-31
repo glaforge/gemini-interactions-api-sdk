@@ -41,13 +41,17 @@ import io.github.glaforge.gemini.interactions.model.Environment;
 import io.github.glaforge.gemini.interactions.model.CreateEnvironmentRequest;
 import io.github.glaforge.gemini.interactions.model.NetworkConfiguration;
 import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
+import io.github.glaforge.gemini.interactions.model.EnvironmentFile;
+import io.github.glaforge.gemini.interactions.model.GetEnvironmentFilesResponse;
 import io.github.glaforge.gemini.interactions.model.Source;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -741,6 +745,60 @@ public class GeminiInteractionsClient {
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             checkError(response);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Retrieves file or directory metadata from an environment's snapshot.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment (e.g. "workspace" or "workspace/src/main.py").
+     * @return GetEnvironmentFilesResponse containing file metadata.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public GetEnvironmentFilesResponse getEnvironmentFiles(String environmentId, String path) {
+        return getEnvironmentFiles(environmentId, path, null, null, null);
+    }
+
+    /**
+     * Retrieves file or directory metadata from an environment's snapshot with pagination and options.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment.
+     * @param pageSize      Optional maximum number of entries to return.
+     * @param pageToken     Optional pagination token.
+     * @param recursive     Optional flag to recursively list all files in a directory.
+     * @return GetEnvironmentFilesResponse containing file metadata.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public GetEnvironmentFilesResponse getEnvironmentFiles(String environmentId, String path, Integer pageSize, String pageToken, Boolean recursive) {
+        try {
+            String encodedPath = URLEncoder.encode(path != null ? path : "", StandardCharsets.UTF_8).replace("+", "%20");
+            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/environments/%s/files/%s", baseUrl, version, environmentId, encodedPath));
+            boolean hasParam = false;
+            if (pageSize != null) {
+                urlBuilder.append(hasParam ? "&" : "?").append("page_size=").append(pageSize);
+                hasParam = true;
+            }
+            if (pageToken != null && !pageToken.isEmpty()) {
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
+                hasParam = true;
+            }
+            if (recursive != null) {
+                urlBuilder.append(hasParam ? "&" : "?").append("recursive=").append(recursive);
+                hasParam = true;
+            }
+
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), GetEnvironmentFilesResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
         }

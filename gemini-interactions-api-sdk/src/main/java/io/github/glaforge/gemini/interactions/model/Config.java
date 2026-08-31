@@ -632,6 +632,65 @@ public class Config {
      * @param diarizationMode      Optional speaker diarization configuration (e.g. "speaker").
      * @param timestampGranularities Granularity of timestamps to include in transcription output (e.g. "word").
      */
+    /**
+     * Marker interface for transcription modes.
+     */
+    public sealed interface TranscriptionMode permits SmartTranscriptionMode, VerbatimTranscriptionMode {}
+
+    /**
+     * Smart transcription mode configuration.
+     *
+     * @param type Mode type (always "smart").
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record SmartTranscriptionMode(
+        String type
+    ) implements TranscriptionMode {
+        /** Creates a SmartTranscriptionMode. */
+        public SmartTranscriptionMode() {
+            this("smart");
+        }
+    }
+
+    /**
+     * Verbatim transcription mode configuration.
+     *
+     * @param diarizationMode        Optional speaker diarization configuration ("speaker").
+     * @param timestampGranularities Granularity of timestamps ("word").
+     * @param type                   Mode type (always "verbatim").
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record VerbatimTranscriptionMode(
+        @JsonProperty("diarization_mode") String diarizationMode,
+        @JsonProperty("timestamp_granularities") List<String> timestampGranularities,
+        String type
+    ) implements TranscriptionMode {
+        /** Creates a VerbatimTranscriptionMode with default type. */
+        public VerbatimTranscriptionMode() {
+            this(null, null, "verbatim");
+        }
+        /**
+         * Creates a VerbatimTranscriptionMode with diarization and timestamp options.
+         *
+         * @param diarizationMode        Diarization mode.
+         * @param timestampGranularities Timestamp granularities.
+         */
+        public VerbatimTranscriptionMode(String diarizationMode, List<String> timestampGranularities) {
+            this(diarizationMode, timestampGranularities, "verbatim");
+        }
+    }
+
+    /**
+     * Configuration for speech recognition (transcription).
+     *
+     * @param languageCodes        Optional list of BCP-47 language codes providing hints about languages.
+     * @param languageHints        Deprecated alias for languageCodes.
+     * @param adaptationPhrases    Optional list of phrases to bias the ASR model towards (deprecated).
+     * @param customVocabulary     Optional list of custom vocabulary phrases to bias speech recognition.
+     * @param diarizationMode      Optional speaker diarization configuration (e.g. "speaker").
+     * @param timestampGranularities Granularity of timestamps to include in transcription output (e.g. "word").
+     * @param mode                 Optional transcription mode (smart, verbatim, or custom config).
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record TranscriptionConfig(
         @JsonProperty("language_codes") List<String> languageCodes,
@@ -639,7 +698,8 @@ public class Config {
         @Deprecated @JsonProperty("adaptation_phrases") List<String> adaptationPhrases,
         @JsonProperty("custom_vocabulary") List<String> customVocabulary,
         @JsonProperty("diarization_mode") String diarizationMode,
-        @JsonProperty("timestamp_granularities") List<String> timestampGranularities
+        @JsonProperty("timestamp_granularities") List<String> timestampGranularities,
+        @JsonProperty("mode") TranscriptionModeConfiguration mode
     ) {
         /**
          * Creates a new TranscriptionConfig.
@@ -651,7 +711,7 @@ public class Config {
          * @param timestampGranularities Optional timestamp granularities.
          */
         public TranscriptionConfig(List<String> languageCodes, List<String> adaptationPhrases, List<String> customVocabulary, String diarizationMode, List<String> timestampGranularities) {
-            this(languageCodes, languageCodes, adaptationPhrases, customVocabulary, diarizationMode, timestampGranularities);
+            this(languageCodes, languageCodes, adaptationPhrases, customVocabulary, diarizationMode, timestampGranularities, null);
         }
 
         /**
@@ -670,6 +730,7 @@ public class Config {
             private List<String> customVocabulary;
             private String diarizationMode;
             private List<String> timestampGranularities;
+            private TranscriptionModeConfiguration mode;
 
             /** Creates a new Builder. */
             public Builder() {}
@@ -725,12 +786,33 @@ public class Config {
             public Builder timestampGranularities(List<String> timestampGranularities) { this.timestampGranularities = timestampGranularities; return this; }
 
             /**
+             * Sets transcription mode configuration.
+             * @param mode Transcription mode configuration.
+             * @return This builder.
+             */
+            public Builder mode(TranscriptionModeConfiguration mode) { this.mode = mode; return this; }
+
+            /**
+             * Sets transcription mode as a structured object.
+             * @param mode Transcription mode object.
+             * @return This builder.
+             */
+            public Builder mode(TranscriptionMode mode) { this.mode = TranscriptionModeConfiguration.of(mode); return this; }
+
+            /**
+             * Sets transcription mode preset string.
+             * @param preset Preset string ("smart", "verbatim").
+             * @return This builder.
+             */
+            public Builder mode(String preset) { this.mode = TranscriptionModeConfiguration.of(preset); return this; }
+
+            /**
              * Builds the TranscriptionConfig.
              * @return The TranscriptionConfig.
              */
             public TranscriptionConfig build() {
                 List<String> codes = languageCodes != null ? languageCodes : languageHints;
-                return new TranscriptionConfig(codes, languageHints != null ? languageHints : codes, adaptationPhrases, customVocabulary, diarizationMode, timestampGranularities);
+                return new TranscriptionConfig(codes, languageHints != null ? languageHints : codes, adaptationPhrases, customVocabulary, diarizationMode, timestampGranularities, mode);
             }
         }
     }
