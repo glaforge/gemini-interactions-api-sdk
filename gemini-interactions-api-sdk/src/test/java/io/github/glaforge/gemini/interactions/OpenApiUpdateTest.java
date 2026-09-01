@@ -26,6 +26,7 @@ import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
 import io.github.glaforge.gemini.interactions.model.ModelOption;
+import io.github.glaforge.gemini.interactions.model.Step;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -238,5 +239,88 @@ class OpenApiUpdateTest {
         Events.Error error = interaction.errors().get(0);
         assertEquals("QUOTA_EXCEEDED", error.code());
         assertEquals("Resource quota limit exceeded.", error.message());
+    }
+
+    @Test
+    void testProcessingCallStepSerializationAndDeserialization() throws Exception {
+        Step.ProcessingCallStep step = new Step.ProcessingCallStep("processing_call", "proc-call-123", "sig-abc");
+        String json = mapper.writeValueAsString(step);
+        assertTrue(json.contains("\"type\":\"processing_call\""));
+        assertTrue(json.contains("\"id\":\"proc-call-123\""));
+        assertTrue(json.contains("\"signature\":\"sig-abc\""));
+
+        Step deserialized = mapper.readValue(json, Step.class);
+        assertInstanceOf(Step.ProcessingCallStep.class, deserialized);
+        Step.ProcessingCallStep procCall = (Step.ProcessingCallStep) deserialized;
+        assertEquals("processing_call", procCall.type());
+        assertEquals("proc-call-123", procCall.id());
+        assertEquals("sig-abc", procCall.signature());
+    }
+
+    @Test
+    void testProcessingResultStepSerializationAndDeserialization() throws Exception {
+        Step.ProcessingResultStep step = new Step.ProcessingResultStep("processing_result", "proc-call-123", "sig-xyz");
+        String json = mapper.writeValueAsString(step);
+        assertTrue(json.contains("\"type\":\"processing_result\""));
+        assertTrue(json.contains("\"call_id\":\"proc-call-123\""));
+        assertTrue(json.contains("\"signature\":\"sig-xyz\""));
+
+        Step deserialized = mapper.readValue(json, Step.class);
+        assertInstanceOf(Step.ProcessingResultStep.class, deserialized);
+        Step.ProcessingResultStep procResult = (Step.ProcessingResultStep) deserialized;
+        assertEquals("processing_result", procResult.type());
+        assertEquals("proc-call-123", procResult.callId());
+        assertEquals("sig-xyz", procResult.signature());
+    }
+
+    @Test
+    void testProcessingDeltasSerializationAndDeserialization() throws Exception {
+        Events.ProcessingCallDelta callDelta = new Events.ProcessingCallDelta(Events.DeltaType.PROCESSING_CALL, "sig-1");
+        String callJson = mapper.writeValueAsString(callDelta);
+        assertTrue(callJson.contains("\"type\":\"processing_call\""));
+        assertTrue(callJson.contains("\"signature\":\"sig-1\""));
+
+        Events.Delta deserializedCall = mapper.readValue(callJson, Events.Delta.class);
+        assertInstanceOf(Events.ProcessingCallDelta.class, deserializedCall);
+        Events.ProcessingCallDelta procCallDelta = (Events.ProcessingCallDelta) deserializedCall;
+        assertEquals(Events.DeltaType.PROCESSING_CALL, procCallDelta.type());
+        assertEquals("sig-1", procCallDelta.signature());
+
+        Events.ProcessingResultDelta resultDelta = new Events.ProcessingResultDelta(Events.DeltaType.PROCESSING_RESULT, "sig-2");
+        String resultJson = mapper.writeValueAsString(resultDelta);
+        assertTrue(resultJson.contains("\"type\":\"processing_result\""));
+        assertTrue(resultJson.contains("\"signature\":\"sig-2\""));
+
+        Events.Delta deserializedResult = mapper.readValue(resultJson, Events.Delta.class);
+        assertInstanceOf(Events.ProcessingResultDelta.class, deserializedResult);
+        Events.ProcessingResultDelta procResultDelta = (Events.ProcessingResultDelta) deserializedResult;
+        assertEquals(Events.DeltaType.PROCESSING_RESULT, procResultDelta.type());
+        assertEquals("sig-2", procResultDelta.signature());
+    }
+
+    @Test
+    void testVideoContentWithNameAndAgenticProcessing() throws Exception {
+        Content.VideoContent video = new Content.VideoContent(
+            "video",
+            null,
+            "https://www.youtube.com/watch?v=9hE5-98ZeCg",
+            "video/mp4",
+            "sample_video_clip",
+            Content.Resolution.HIGH,
+            io.github.glaforge.gemini.interactions.model.MediaProcessingConfiguration.of("agentic")
+        );
+
+        String json = mapper.writeValueAsString(video);
+        assertTrue(json.contains("\"name\":\"sample_video_clip\""));
+        assertTrue(json.contains("\"processing\":\"agentic\""));
+        assertTrue(json.contains("\"resolution\":\"high\""));
+
+        Content deserialized = mapper.readValue(json, Content.class);
+        assertInstanceOf(Content.VideoContent.class, deserialized);
+        Content.VideoContent deserializedVideo = (Content.VideoContent) deserialized;
+        assertEquals("sample_video_clip", deserializedVideo.name());
+        assertNotNull(deserializedVideo.processing());
+        assertTrue(deserializedVideo.processing().isPreset());
+        assertEquals("agentic", deserializedVideo.processing().preset());
     }
 }

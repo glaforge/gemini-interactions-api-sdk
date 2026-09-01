@@ -130,6 +130,49 @@ if (video != null) {
 }
 ```
 
+### Agentic Video Understanding
+
+Enable model-driven dynamic video navigation (`"processing": "agentic"`) to let Gemini models actively inspect video segments, jump timestamps, and zoom in on details with sub-second accuracy.
+
+```java
+import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+
+GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
+
+Content.VideoContent videoInput = new Content.VideoContent(
+    "video",
+    null,
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "video/mp4",
+    "sample_clip",
+    Content.Resolution.HIGH,
+    MediaProcessingConfiguration.of("agentic") // or pass "agentic" string directly
+);
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_7_FLASH)
+    .input(
+        new TextContent("At what exact timestamp does the singer start dancing?"),
+        videoInput
+    )
+    .build();
+
+Interaction response = client.create(request);
+System.out.println(response.outputText());
+
+// Inspect server-initiated processing steps
+for (Step step : response.steps()) {
+    if (step instanceof Step.ProcessingCallStep procCall) {
+        System.out.println("Processing call ID: " + procCall.id());
+    } else if (step instanceof Step.ProcessingResultStep procResult) {
+        System.out.println("Processing result for call: " + procResult.callId());
+    }
+}
+```
+
 ### Speech Recognition & Transcription (ASR)
 
 Enable speech-to-text recognition with custom vocabulary, diarization, or word-level timestamps.

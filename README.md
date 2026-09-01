@@ -344,6 +344,45 @@ interaction.steps().forEach(step -> {
 });
 ```
 
+### Agentic Video Understanding
+Enable model-driven dynamic video navigation (`"processing": "agentic"`) to let Gemini models actively search, zoom, and inspect video segments rather than relying purely on fixed-interval frame sampling:
+
+```java
+import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.Content.*;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+
+Content.VideoContent videoInput = new Content.VideoContent(
+    "video",
+    null,
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "video/mp4",
+    "sample_clip",
+    Content.Resolution.HIGH,
+    MediaProcessingConfiguration.of("agentic")
+);
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_7_FLASH)
+    .input(
+        new TextContent("What happens at the key moment of this video?"),
+        videoInput
+    )
+    .build();
+
+Interaction response = client.create(request);
+System.out.println(response.outputText());
+
+// Inspect server-initiated processing steps
+for (Step step : response.steps()) {
+    if (step instanceof Step.ProcessingCallStep procCall) {
+        System.out.println("Processing Call: " + procCall.id());
+    } else if (step instanceof Step.ProcessingResultStep procResult) {
+        System.out.println("Processing Result for Call: " + procResult.callId());
+    }
+}
+```
+
 ### Lyria Music Generation
 ```java
 import io.github.glaforge.gemini.interactions.model.Content.*;

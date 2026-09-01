@@ -2413,7 +2413,8 @@
               "audio/l16",
               "audio/opus",
               "audio/alaw",
-              "audio/mulaw"
+              "audio/mulaw",
+              "audio/webm"
             ],
             "x-google-enum-descriptions": [
               "WAV audio format",
@@ -2427,7 +2428,8 @@
               "L16 audio format",
               "OPUS audio format",
               "ALAW audio format",
-              "MULAW audio format"
+              "MULAW audio format",
+              "WEBM audio format"
             ]
           },
           "sample_rate": {
@@ -2493,7 +2495,8 @@
               "audio/l16",
               "audio/opus",
               "audio/alaw",
-              "audio/mulaw"
+              "audio/mulaw",
+              "audio/webm"
             ],
             "x-google-enum-descriptions": [
               "WAV audio format",
@@ -2507,7 +2510,8 @@
               "L16 audio format",
               "OPUS audio format",
               "ALAW audio format",
-              "MULAW audio format"
+              "MULAW audio format",
+              "WEBM audio format"
             ]
           },
           "rate": {
@@ -2831,45 +2835,6 @@
         "x-speakeasy-exports": [
           {
             "name": "CodeExecutionResultStep",
-            "group": "interactions"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "CodeMenderAgentConfig": {
-        "description": "Configuration for the CodeMender agent.",
-        "type": "object",
-        "properties": {
-          "find_request": {
-            "description": "Parameters for finding vulnerabilities.",
-            "$ref": "#/components/schemas/FindRequest"
-          },
-          "fix_request": {
-            "description": "Parameters for fixing vulnerabilities.",
-            "$ref": "#/components/schemas/FixRequest"
-          },
-          "model": {
-            "description": "The name of the model to use for the CodeMender agent. One\nCodeMender session will only use one model.",
-            "type": "string"
-          },
-          "session_config": {
-            "description": "Optional session-specific configurations to override default agent\nbehavior.",
-            "$ref": "#/components/schemas/SessionConfig"
-          },
-          "session_id": {
-            "description": "Parameter for grouping multiple interactions that belong to\nthe same CodeMender session.",
-            "type": "string"
-          },
-          "type": {
-            "const": "code-mender"
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "x-speakeasy-exports": [
-          {
-            "name": "CodeMenderAgentConfig",
             "group": "interactions"
           }
         ],
@@ -3590,10 +3555,6 @@
             "description": "Enables human-in-the-loop planning for the Deep Research agent. If set to\ntrue, the Deep Research agent will provide a research plan in its response.\nThe agent will then proceed only if the user confirms the plan in the next\nturn.",
             "type": "boolean"
           },
-          "enable_bigquery_tool": {
-            "description": "Enables bigquery tool for the Deep Research agent.",
-            "type": "boolean"
-          },
           "thinking_summaries": {
             "description": "Whether to include thought summaries in the response.",
             "$ref": "#/components/schemas/ThinkingSummaries"
@@ -3623,11 +3584,6 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "DeleteInteractionResponse": {
-        "description": "Response for InteractionService.DeleteInteraction.",
-        "type": "object",
         "x-speakeasy-model-namespace": "interactions"
       },
       "DocumentContent": {
@@ -4147,27 +4103,6 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
-      "ExaAISearchConfig": {
-        "description": "Used to specify configuration for ExaAISearch.",
-        "type": "object",
-        "properties": {
-          "api_key": {
-            "description": "Required. The API key for ExaAiSearch.",
-            "type": "string"
-          },
-          "custom_config": {
-            "description": "Optional. This field can be used to pass any parameter from the Exa.ai Search API.",
-            "type": "object",
-            "additionalProperties": {
-              "description": "Properties of the object."
-            }
-          }
-        },
-        "required": [
-          "api_key"
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
       "FileCitation": {
         "description": "A file citation annotation.",
         "type": "object",
@@ -4223,21 +4158,6 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "FileContent": {
-        "description": "Content of a single file in the codebase.",
-        "type": "object",
-        "properties": {
-          "content": {
-            "description": "The UTF-8 encoded text content of the file.",
-            "type": "string"
-          },
-          "path": {
-            "description": "The relative path of the file from the project root.",
-            "type": "string"
-          }
-        },
         "x-speakeasy-model-namespace": "interactions"
       },
       "FileSearch": {
@@ -4419,84 +4339,6 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "Filter": {
-        "description": "Config for filters.",
-        "type": "object",
-        "properties": {
-          "metadata_filter": {
-            "description": "Optional. String for metadata filtering.",
-            "type": "string"
-          },
-          "vector_distance_threshold": {
-            "description": "Optional. Only returns contexts with vector distance smaller than the\nthreshold.",
-            "type": "number",
-            "format": "double"
-          },
-          "vector_similarity_threshold": {
-            "description": "Optional. Only returns contexts with vector similarity larger than the\nthreshold.",
-            "type": "number",
-            "format": "double"
-          }
-        },
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "FindRequest": {
-        "description": "Request parameters specific to FIND sessions, used for discovering\nvulnerabilities in a codebase.",
-        "type": "object",
-        "properties": {
-          "description": {
-            "description": "Additional context or custom instructions provided by the user to guide\nthe vulnerability analysis.",
-            "type": "string"
-          },
-          "finding_id": {
-            "description": "The identifier of a specific finding to verify. This is primarily used in\nVERIFY mode to focus the agent's execution-based validation on a single\nvulnerability.",
-            "type": "string"
-          },
-          "mode": {
-            "title": "mode",
-            "description": "The mode of the find session.",
-            "type": "string",
-            "enum": [
-              "scan",
-              "verify"
-            ],
-            "x-google-enum-descriptions": [
-              "Fast scan using only the initial classifier.",
-              "Performs classification followed by detailed investigation."
-            ]
-          },
-          "source_files": {
-            "description": "A list of source files to provide as context for the scan.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FileContent"
-            }
-          }
-        },
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "FixRequest": {
-        "description": "Request parameters specific to FIX sessions, used for generating and\nvalidating security patches.",
-        "type": "object",
-        "properties": {
-          "description": {
-            "description": "Additional context or custom instructions provided by the user to guide\nthe patch generation process.",
-            "type": "string"
-          },
-          "finding_id": {
-            "description": "The identifier of the specific security finding to be remediated. This ID\nmaps to a previously discovered vulnerability.",
-            "type": "string"
-          },
-          "source_files": {
-            "description": "A list of source files providing context for the remediation. These files\nare typically the ones containing the identified vulnerability.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FileContent"
-            }
-          }
-        },
         "x-speakeasy-model-namespace": "interactions"
       },
       "Function": {
@@ -5180,13 +5022,11 @@
               "type": "string",
               "enum": [
                 "web_search",
-                "image_search",
-                "enterprise_web_search"
+                "image_search"
               ],
               "x-google-enum-descriptions": [
                 "Setting this field enables web search. Only text results are returned.",
-                "Setting this field enables image search. Image bytes are returned.",
-                "Setting this field enables enterprise web search."
+                "Setting this field enables image search. Image bytes are returned."
               ]
             }
           },
@@ -5274,13 +5114,11 @@
             "type": "string",
             "enum": [
               "web_search",
-              "image_search",
-              "enterprise_web_search"
+              "image_search"
             ],
             "x-google-enum-descriptions": [
               "Setting this field enables web search. Only text results are returned.",
-              "Setting this field enables image search. Image bytes are returned.",
-              "Setting this field enables enterprise web search."
+              "Setting this field enables image search. Image bytes are returned."
             ]
           },
           "signature": {
@@ -5472,72 +5310,12 @@
             "type": "string",
             "enum": [
               "google_search",
-              "google_maps",
-              "retrieval"
+              "google_maps"
             ],
             "x-google-enum-descriptions": [
               "Grounding with Google Web Search and Image Search, & Web Grounding\nfor Enterprise.",
-              "Grounding with Google Maps.",
-              "Grounding with customer's data, for example, VertexAISearch."
+              "Grounding with Google Maps."
             ]
-          }
-        },
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "HarmCategory": {
-        "type": "string",
-        "enum": [
-          "hate_speech",
-          "dangerous_content",
-          "harassment",
-          "sexually_explicit",
-          "civic_integrity",
-          "image_hate",
-          "image_dangerous_content",
-          "image_harassment",
-          "image_sexually_explicit",
-          "jailbreak"
-        ],
-        "x-google-enum-deprecated": [
-          false,
-          false,
-          false,
-          false,
-          true,
-          false,
-          false,
-          false,
-          false,
-          false
-        ],
-        "x-google-enum-descriptions": [
-          "Content that promotes violence or incites hatred against individuals or\ngroups based on certain attributes.",
-          "Content that promotes, facilitates, or enables dangerous activities.",
-          "Abusive, threatening, or content intended to bully, torment, or ridicule.",
-          "Content that contains sexually explicit material.",
-          "Deprecated: Election filter is not longer supported.\nThe harm category is civic integrity.",
-          "Images that contain hate speech.",
-          "Images that contain dangerous content.",
-          "Images that contain harassment.",
-          "Images that contain sexually explicit content.",
-          "Prompts designed to bypass safety filters."
-        ],
-        "x-speakeasy-exports": [
-          {
-            "name": "HarmCategory",
-            "group": "interactions"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "HybridSearch": {
-        "description": "Config for Hybrid Search.",
-        "type": "object",
-        "properties": {
-          "alpha": {
-            "description": "Optional. Alpha value controls the weight between dense and sparse vector search\nresults.",
-            "type": "number",
-            "format": "float"
           }
         },
         "x-speakeasy-model-namespace": "interactions"
@@ -5906,22 +5684,6 @@
           "model": {
             "description": "The name of the `Model` used for generating the interaction.",
             "$ref": "#/components/schemas/ModelOption"
-          },
-          "output_audio": {
-            "description": "The last audio generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
-            "$ref": "#/components/schemas/AudioContent"
-          },
-          "output_image": {
-            "description": "The last image generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
-            "$ref": "#/components/schemas/ImageContent"
-          },
-          "output_text": {
-            "description": "Concatenated text from the last model output in response to the current request.\n\nNote: this is added by the SDK.",
-            "type": "string"
-          },
-          "output_video": {
-            "description": "The last video generated by the model in response to the current request.\n\nNote: this is added by the SDK.",
-            "$ref": "#/components/schemas/VideoContent"
           },
           "previous_interaction_id": {
             "description": "The ID of the previous interaction, if any.",
@@ -6346,8 +6108,7 @@
               "failed",
               "cancelled",
               "incomplete",
-              "budget_exceeded",
-              "queued"
+              "budget_exceeded"
             ],
             "x-google-enum-descriptions": [
               "The interaction is in progress.",
@@ -6356,8 +6117,7 @@
               "The interaction failed.",
               "The interaction was cancelled.",
               "The interaction is completed, but contains incomplete results (e.g.\nhitting max_tokens).",
-              "The interaction was halted because the token budget was exceeded.",
-              "The interaction is queued, waiting for processing (e.g. waiting for\noff-peak capacity)."
+              "The interaction was halted because the token budget was exceeded."
             ]
           }
         },
@@ -6530,19 +6290,6 @@
         ],
         "x-speakeasy-model-namespace": "webhooks",
         "x-speakeasy-name-override": "WebhookListResponse"
-      },
-      "LocalEnvironmentConfig": {
-        "description": "Configuration for an environment that lives on the client connection rather\nthan in a server-managed sandbox.\n\nWhen set (via Interaction.local_environment), the agent's filesystem and\nshell are treated as living on the client: the agent's built-in environment\noperations (e.g. reading/listing/editing files and running commands) are\nsuspended on the server and yielded back to the client to execute, with their\nresults returned on a subsequent turn. This is mutually exclusive with a\nserver-managed `EnvironmentConfig` (remote_environment), since the\nenvironment is either on the client or in a server sandbox, never both.\n\nThis governs only the agent's built-in environment. Client-declared function\ntools are always executed on the client regardless of this field.",
-        "type": "object",
-        "properties": {
-          "type": {
-            "const": "local"
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "x-speakeasy-model-namespace": "interactions"
       },
       "McpServer": {
         "description": "A MCPServer is a server that can be called by the model to perform actions.",
@@ -6921,11 +6668,6 @@
               "$ref": "#/components/schemas/Content"
             }
           },
-          "error": {
-            "description": "The error result of the operation in case of failure or cancellation.",
-            "$ref": "#/components/schemas/Status",
-            "deprecated": true
-          },
           "type": {
             "const": "model_output"
           }
@@ -6955,24 +6697,6 @@
             "group": "interactions"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "ParallelAISearchConfig": {
-        "description": "Used to specify configuration for ParallelAISearch.",
-        "type": "object",
-        "properties": {
-          "api_key": {
-            "description": "Optional. The API key for ParallelAiSearch.",
-            "type": "string"
-          },
-          "custom_config": {
-            "description": "Optional. Custom configs for ParallelAiSearch.",
-            "type": "object",
-            "additionalProperties": {
-              "description": "Properties of the object."
-            }
-          }
-        },
         "x-speakeasy-model-namespace": "interactions"
       },
       "PingWebhookRequest": {
@@ -7074,99 +6798,102 @@
         },
         "x-speakeasy-model-namespace": "interactions"
       },
-      "RagResource": {
-        "description": "The definition of the Rag resource.",
+      "ProcessingCallDelta": {
+        "description": "Streaming delta for a server-initiated media processing step.",
         "type": "object",
         "properties": {
-          "rag_corpus": {
-            "description": "Optional. RagCorpora resource name.",
-            "type": "string"
+          "signature": {
+            "description": "A signature hash for backend validation.",
+            "type": "string",
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
           },
-          "rag_file_ids": {
-            "description": "Optional. rag_file_id. The files should be in the same rag_corpus set in\nrag_corpus field.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "RagRetrievalConfig": {
-        "description": "Specifies the context retrieval config.",
-        "type": "object",
-        "properties": {
-          "filter": {
-            "description": "Optional. Config for filters.",
-            "$ref": "#/components/schemas/Filter"
-          },
-          "hybrid_search": {
-            "description": "Optional. Config for Hybrid Search.",
-            "$ref": "#/components/schemas/HybridSearch"
-          },
-          "ranking": {
-            "description": "Optional. Config for ranking and reranking.",
-            "$ref": "#/components/schemas/Ranking"
-          },
-          "top_k": {
-            "description": "Optional. The number of contexts to retrieve.",
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "RagStoreConfig": {
-        "description": "Use to specify configuration for RAG Store.",
-        "type": "object",
-        "properties": {
-          "rag_resources": {
-            "description": "Optional. The representation of the rag source.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RagResource"
-            }
-          },
-          "rag_retrieval_config": {
-            "description": "Optional. The retrieval config for the Rag query.",
-            "$ref": "#/components/schemas/RagRetrievalConfig"
-          },
-          "similarity_top_k": {
-            "description": "Optional. Number of top k results to return from the selected corpora.",
-            "type": "integer",
-            "deprecated": true,
-            "format": "int32"
-          },
-          "vector_distance_threshold": {
-            "description": "Optional. Only return results with vector distance smaller than the threshold.",
-            "type": "number",
-            "deprecated": true,
-            "format": "double"
-          }
-        },
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "RankService": {
-        "description": "Config for Rank Service.",
-        "type": "object",
-        "properties": {
-          "model_name": {
-            "description": "Optional. The model name of the rank service.",
-            "type": "string"
-          },
-          "ranking_config": {
-            "const": "rank_service"
+          "type": {
+            "const": "processing_call"
           }
         },
         "required": [
-          "ranking_config"
+          "type"
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
-      "Ranking": {
-        "description": "Config for ranking and reranking.",
+      "ProcessingCallStep": {
+        "description": "A server-initiated processing step for media analysis (e.g. video\nunderstanding).",
         "type": "object",
-        "$ref": "#/components/schemas/RankService",
+        "properties": {
+          "id": {
+            "description": "Required. A unique ID for this specific tool call.",
+            "type": "string"
+          },
+          "signature": {
+            "description": "A signature hash for backend validation.",
+            "type": "string",
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
+          },
+          "type": {
+            "const": "processing_call"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "ProcessingCallStep",
+            "group": "interactions"
+          }
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "ProcessingResultDelta": {
+        "description": "Streaming delta for the result of a server-initiated media processing step.",
+        "type": "object",
+        "properties": {
+          "signature": {
+            "description": "A signature hash for backend validation.",
+            "type": "string",
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
+          },
+          "type": {
+            "const": "processing_result"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "ProcessingResultStep": {
+        "description": "The result of a server-initiated media processing step.",
+        "type": "object",
+        "properties": {
+          "call_id": {
+            "description": "Required. ID to match the ID from the function call block.",
+            "type": "string"
+          },
+          "signature": {
+            "description": "A signature hash for backend validation.",
+            "type": "string",
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
+          },
+          "type": {
+            "const": "processing_result"
+          }
+        },
+        "required": [
+          "call_id",
+          "type"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "ProcessingResultStep",
+            "group": "interactions"
+          }
+        ],
         "x-speakeasy-model-namespace": "interactions"
       },
       "ResponseFormat": {
@@ -7208,245 +6935,6 @@
           "Indicates the model should return documents."
         ],
         "x-speakeasy-model-namespace": "interactions"
-      },
-      "Retrieval": {
-        "description": "A tool that can be used by the model to retrieve files.",
-        "type": "object",
-        "properties": {
-          "exa_ai_search_config": {
-            "description": "Used to specify configuration for ExaAISearch.",
-            "$ref": "#/components/schemas/ExaAISearchConfig"
-          },
-          "parallel_ai_search_config": {
-            "description": "Used to specify configuration for ParallelAISearch.",
-            "$ref": "#/components/schemas/ParallelAISearchConfig"
-          },
-          "rag_store_config": {
-            "description": "Used to specify configuration for RagStore.",
-            "$ref": "#/components/schemas/RagStoreConfig"
-          },
-          "retrieval_types": {
-            "description": "The types of file retrieval to enable.",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "vertex_ai_search",
-                "rag_store",
-                "exa_ai_search",
-                "parallel_ai_search"
-              ],
-              "x-google-enum-descriptions": [
-                "",
-                "",
-                "",
-                ""
-              ]
-            }
-          },
-          "type": {
-            "const": "retrieval"
-          },
-          "vertex_ai_search_config": {
-            "description": "Used to specify configuration for VertexAISearch.",
-            "$ref": "#/components/schemas/VertexAISearchConfig"
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "RetrievalCallDelta": {
-        "description": "Used by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc. RetrievalType decides which tool is used.",
-        "type": "object",
-        "properties": {
-          "arguments": {
-            "description": "Required. The arguments to pass to the Retrieval tool.",
-            "$ref": "#/components/schemas/RetrievalStepArguments",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RetrievalStepArguments"
-              }
-            ]
-          },
-          "retrieval_type": {
-            "description": "The type of retrieval tools.",
-            "type": "string",
-            "enum": [
-              "vertex_ai_search",
-              "rag_store",
-              "exa_ai_search",
-              "parallel_ai_search"
-            ],
-            "x-google-enum-descriptions": [
-              "",
-              "",
-              "",
-              ""
-            ]
-          },
-          "signature": {
-            "description": "A signature hash for backend validation.",
-            "type": "string",
-            "format": "byte",
-            "x-speakeasy-base64-input-mode": "file"
-          },
-          "type": {
-            "const": "retrieval_call"
-          }
-        },
-        "required": [
-          "arguments",
-          "type"
-        ],
-        "x-speakeasy-exports": [
-          {
-            "name": "RetrievalCallDelta",
-            "group": "interactions"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "RetrievalCallStep": {
-        "description": "Retrieval call step.\nUsed by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc. RetrievalType decides which tool is used.",
-        "type": "object",
-        "properties": {
-          "arguments": {
-            "description": "Required. The arguments to pass to the retrieval tool.",
-            "$ref": "#/components/schemas/RetrievalStepArguments",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RetrievalStepArguments"
-              }
-            ]
-          },
-          "id": {
-            "description": "Required. A unique ID for this specific tool call.",
-            "type": "string"
-          },
-          "retrieval_type": {
-            "description": "The type of retrieval tools.",
-            "type": "string",
-            "enum": [
-              "vertex_ai_search",
-              "rag_store",
-              "exa_ai_search",
-              "parallel_ai_search"
-            ],
-            "x-google-enum-descriptions": [
-              "",
-              "",
-              "",
-              ""
-            ]
-          },
-          "signature": {
-            "description": "A signature hash for backend validation.",
-            "type": "string",
-            "format": "byte",
-            "x-speakeasy-base64-input-mode": "file"
-          },
-          "type": {
-            "const": "retrieval_call"
-          }
-        },
-        "required": [
-          "arguments",
-          "id",
-          "type"
-        ],
-        "x-speakeasy-exports": [
-          {
-            "name": "RetrievalCallStep",
-            "group": "interactions"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "RetrievalResultDelta": {
-        "description": "Used by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc.\nToolResultDelta.type",
-        "type": "object",
-        "properties": {
-          "is_error": {
-            "description": "Whether the retrieval resulted in an error.",
-            "type": "boolean"
-          },
-          "signature": {
-            "description": "A signature hash for backend validation.",
-            "type": "string",
-            "format": "byte",
-            "x-speakeasy-base64-input-mode": "file"
-          },
-          "type": {
-            "const": "retrieval_result"
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "x-speakeasy-exports": [
-          {
-            "name": "RetrievalResultDelta",
-            "group": "interactions"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "RetrievalResultStep": {
-        "description": "Vertex Retrieval result step.\nUsed by Vertex Retrieval tools such as Parallel AI, Exa AI, Vertex AI Search,\netc.",
-        "type": "object",
-        "properties": {
-          "call_id": {
-            "description": "Required. ID to match the ID from the function call block.",
-            "type": "string"
-          },
-          "is_error": {
-            "description": "Whether the retrieval resulted in an error.",
-            "type": "boolean"
-          },
-          "signature": {
-            "description": "A signature hash for backend validation.",
-            "type": "string",
-            "format": "byte",
-            "x-speakeasy-base64-input-mode": "file"
-          },
-          "type": {
-            "const": "retrieval_result"
-          }
-        },
-        "required": [
-          "call_id",
-          "type"
-        ],
-        "x-speakeasy-exports": [
-          {
-            "name": "RetrievalResultStep",
-            "group": "interactions"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "RetrievalStepArguments": {
-        "description": "The arguments to pass to Retrieval tools.",
-        "type": "object",
-        "properties": {
-          "queries": {
-            "description": "Queries for Retrieval information.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "x-speakeasy-exports": [
-          {
-            "name": "RetrievalCallArguments",
-            "group": "interactions"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions",
-        "x-speakeasy-name-override": "RetrievalCallArguments"
       },
       "ReviewSnippet": {
         "description": "Encapsulates a snippet of a user review that answers a question about\nthe features of a specific place in Google Maps.",
@@ -7517,83 +7005,18 @@
         "type": "object",
         "x-speakeasy-model-namespace": "interactions"
       },
-      "SafetySetting": {
-        "description": "A safety setting that affects the safety-blocking behavior.\n\nA SafetySetting consists of a\nharm category and a\nthreshold for that\ncategory.",
-        "type": "object",
-        "properties": {
-          "method": {
-            "description": "Optional. The method for blocking content. If not specified, the default\nbehavior is to use the probability score.",
-            "type": "string",
-            "enum": [
-              "severity",
-              "probability"
-            ],
-            "x-google-enum-descriptions": [
-              "The harm block method uses both probability and severity scores.",
-              "The harm block method uses the probability score."
-            ]
-          },
-          "threshold": {
-            "description": "Required. The threshold for blocking content. If the harm probability\nexceeds this threshold, the content will be blocked.",
-            "type": "string",
-            "enum": [
-              "block_low_and_above",
-              "block_medium_and_above",
-              "block_only_high",
-              "block_none",
-              "off"
-            ],
-            "x-google-enum-descriptions": [
-              "Block content with a low harm probability or higher.",
-              "Block content with a medium harm probability or higher.",
-              "Block content with a high harm probability.",
-              "Do not block any content, regardless of its harm probability.",
-              "Turn off the safety filter entirely."
-            ]
-          },
-          "type": {
-            "description": "Required. The type of harm category to be blocked.",
-            "$ref": "#/components/schemas/HarmCategory"
-          }
-        },
-        "required": [
-          "threshold",
-          "type"
-        ],
-        "x-speakeasy-exports": [
-          {
-            "name": "SafetySetting",
-            "group": "interactions"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
       "ServiceTier": {
         "type": "string",
         "enum": [
           "flex",
           "standard",
-          "priority",
-          "deferred"
+          "priority"
         ],
         "x-google-enum-descriptions": [
           "Flex service tier.",
           "Standard service tier.",
-          "Priority service tier.",
-          "Deferred service tier."
+          "Priority service tier."
         ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "SessionConfig": {
-        "description": "The configuration of CodeMender sessions.",
-        "type": "object",
-        "properties": {
-          "max_rounds": {
-            "description": "The maximum number of interaction rounds the agent is allowed to perform\nbefore reaching a timeout.",
-            "type": "integer",
-            "format": "int32"
-          }
-        },
         "x-speakeasy-model-namespace": "interactions"
       },
       "SigningSecret": {
@@ -7658,14 +7081,12 @@
             "enum": [
               "gcs",
               "inline",
-              "repository",
-              "skill_registry"
+              "repository"
             ],
             "x-google-enum-descriptions": [
               "A Cloud Storage bucket.",
               "Inline content.",
-              "A generic repository. The protocol prefix in the source URL\nidentifies the provider (e.g., github://, gcs://).",
-              "A skill resource from the Skill Registry Service.\nSkill: projects/{project}/locations/{location}/skills/{skill}\nSkillRevision:\nprojects/{project}/locations/{location}/skills/{skill}/revisions/{revision}\nSupport mounting all skills under a project:\nprojects/{project}/locations/{location}/skills."
+              "A generic repository. The protocol prefix in the source URL\nidentifies the provider (e.g., github://, gcs://)."
             ]
           }
         },
@@ -7737,32 +7158,6 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
-      "Status": {
-        "description": "The `Status` type defines a logical error model that is suitable for\ndifferent programming environments, including REST APIs and RPC APIs. It is\nused by [gRPC](https://github.com/grpc). Each `Status` message contains\nthree pieces of data: error code, error message, and error details.\n\nYou can find out more about this error model and how to work with it in the\n[API Design Guide](https://cloud.google.com/apis/design/errors).",
-        "type": "object",
-        "properties": {
-          "code": {
-            "description": "The status code, which should be an enum value of google.rpc.Code.",
-            "type": "integer",
-            "format": "int32"
-          },
-          "details": {
-            "description": "A list of messages that carry the error details.  There is a common set of\nmessage types for APIs to use.",
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": {
-                "description": "Properties of the object. Contains field @type with type URL."
-              }
-            }
-          },
-          "message": {
-            "description": "A developer-facing error message, which should be in English. Any\nuser-facing error message should be localized and sent in the\ngoogle.rpc.Status.details field, or localized by the client.",
-            "type": "string"
-          }
-        },
-        "x-speakeasy-model-namespace": "interactions"
-      },
       "Step": {
         "description": "A step in the interaction.",
         "type": "object",
@@ -7805,6 +7200,12 @@
           },
           {
             "$ref": "#/components/schemas/ModelOutputStep"
+          },
+          {
+            "$ref": "#/components/schemas/ProcessingCallStep"
+          },
+          {
+            "$ref": "#/components/schemas/ProcessingResultStep"
           },
           {
             "$ref": "#/components/schemas/ThoughtStep"
@@ -7925,10 +7326,10 @@
             "$ref": "#/components/schemas/McpServerToolResultDelta"
           },
           {
-            "$ref": "#/components/schemas/RetrievalCallDelta"
+            "$ref": "#/components/schemas/ProcessingCallDelta"
           },
           {
-            "$ref": "#/components/schemas/RetrievalResultDelta"
+            "$ref": "#/components/schemas/ProcessingResultDelta"
           },
           {
             "$ref": "#/components/schemas/TextAnnotationDelta"
@@ -8397,9 +7798,6 @@
           },
           {
             "$ref": "#/components/schemas/McpServer"
-          },
-          {
-            "$ref": "#/components/schemas/Retrieval"
           },
           {
             "$ref": "#/components/schemas/UrlContext"
@@ -9249,24 +8647,6 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
-      "VertexAISearchConfig": {
-        "description": "Used to specify configuration for VertexAISearch.",
-        "type": "object",
-        "properties": {
-          "datastores": {
-            "description": "Optional. Used to specify Vertex AI Search datastores.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "engine": {
-            "description": "Optional. Used to specify Vertex AI Search engine.",
-            "type": "string"
-          }
-        },
-        "x-speakeasy-model-namespace": "interactions"
-      },
       "VideoConfig": {
         "description": "Configuration options for video generation.",
         "type": "object",
@@ -9333,6 +8713,10 @@
               "WMV video format",
               "3GPP video format"
             ]
+          },
+          "name": {
+            "description": "A user-defined name for this content block. Can be referenced by the model\nin the final response.",
+            "type": "string"
           },
           "processing": {
             "description": "How the model processes this video for understanding.",
@@ -9470,10 +8854,6 @@
             "description": "The duration for the video output.",
             "type": "string",
             "format": "google-duration"
-          },
-          "gcs_uri": {
-            "description": "The Cloud Storage URI to store the video output. Required for Vertex if\ndelivery mode is URI.",
-            "type": "string"
           },
           "resolution": {
             "description": "The video output resolution. Defaults to 720p.",

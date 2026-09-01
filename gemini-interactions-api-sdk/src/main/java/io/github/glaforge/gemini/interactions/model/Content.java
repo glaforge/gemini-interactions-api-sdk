@@ -378,6 +378,7 @@ public sealed interface Content permits
      * @param data       Base64 encoded video data.
      * @param uri        URI of the video.
      * @param mimeType   MIME type of the video.
+     * @param name       Optional user-defined name for this content block.
      * @param resolution Resolution of the video.
      * @param processing How the model processes this video for understanding (MediaProcessing or String like "static" / "agentic").
      */
@@ -387,9 +388,31 @@ public sealed interface Content permits
         byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType,
+        String name,
         Resolution resolution,
         MediaProcessingConfiguration processing
     ) implements Content {
+        /** Compact constructor providing default type. */
+        public VideoContent {
+            if (type == null) {
+                type = "video";
+            }
+        }
+
+        /**
+         * Creates a VideoContent instance with all parameters except name.
+         *
+         * @param type       The type of content (must be "video").
+         * @param data       Base64 encoded video data.
+         * @param uri        URI of the video.
+         * @param mimeType   MIME type of the video.
+         * @param resolution Resolution of the video.
+         * @param processing Media processing configuration.
+         */
+        public VideoContent(String type, byte[] data, String uri, String mimeType, Resolution resolution, MediaProcessingConfiguration processing) {
+            this(type, data, uri, mimeType, null, resolution, processing);
+        }
+
         /**
          * Creates a VideoContent instance without processing configuration.
          *
@@ -400,7 +423,7 @@ public sealed interface Content permits
          * @param resolution Resolution of the video.
          */
         public VideoContent(String type, byte[] data, String uri, String mimeType, Resolution resolution) {
-            this(type, data, uri, mimeType, resolution, (MediaProcessingConfiguration) null);
+            this(type, data, uri, mimeType, null, resolution, (MediaProcessingConfiguration) null);
         }
 
         /**
@@ -414,7 +437,7 @@ public sealed interface Content permits
          * @param processing Preset processing mode string.
          */
         public VideoContent(String type, byte[] data, String uri, String mimeType, Resolution resolution, String processing) {
-            this(type, data, uri, mimeType, resolution, processing != null ? MediaProcessingConfiguration.of(processing) : null);
+            this(type, data, uri, mimeType, null, resolution, processing != null ? MediaProcessingConfiguration.of(processing) : null);
         }
 
         /**
@@ -428,12 +451,12 @@ public sealed interface Content permits
          * @param processing MediaProcessing configuration.
          */
         public VideoContent(String type, byte[] data, String uri, String mimeType, Resolution resolution, MediaProcessing processing) {
-            this(type, data, uri, mimeType, resolution, processing != null ? MediaProcessingConfiguration.of(processing) : null);
+            this(type, data, uri, mimeType, null, resolution, processing != null ? MediaProcessingConfiguration.of(processing) : null);
         }
 
         @Override
         public String toString() {
-            return "VideoContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", resolution=" + resolution + ", processing=" + processing + "]";
+            return "VideoContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", name=" + name + ", resolution=" + resolution + ", processing=" + processing + "]";
         }
     }
 

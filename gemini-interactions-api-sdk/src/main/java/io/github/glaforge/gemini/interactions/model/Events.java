@@ -373,6 +373,10 @@ public sealed interface Events permits
         @JsonProperty("google_maps_result") GOOGLE_MAPS_RESULT("google_maps_result"),
         /** Text annotation delta. */
         @JsonProperty("text_annotation_delta") TEXT_ANNOTATION_DELTA("text_annotation_delta"),
+        /** Processing call delta. */
+        @JsonProperty("processing_call") PROCESSING_CALL("processing_call"),
+        /** Processing result delta. */
+        @JsonProperty("processing_result") PROCESSING_RESULT("processing_result"),
         /** Retrieval call delta. */
         @JsonProperty("retrieval_call") RETRIEVAL_CALL("retrieval_call"),
         /** Retrieval result delta. */
@@ -432,6 +436,8 @@ public sealed interface Events permits
         @JsonSubTypes.Type(value = GoogleMapsCallDelta.class, name = "google_maps_call"),
         @JsonSubTypes.Type(value = GoogleMapsResultDelta.class, name = "google_maps_result"),
         @JsonSubTypes.Type(value = TextAnnotationDelta.class, name = "text_annotation_delta"),
+        @JsonSubTypes.Type(value = ProcessingCallDelta.class, name = "processing_call"),
+        @JsonSubTypes.Type(value = ProcessingResultDelta.class, name = "processing_result"),
         @JsonSubTypes.Type(value = RetrievalCallDelta.class, name = "retrieval_call"),
         @JsonSubTypes.Type(value = RetrievalResultDelta.class, name = "retrieval_result")
     })
@@ -445,7 +451,8 @@ public sealed interface Events permits
         McpServerToolCallDelta, McpServerToolResultDelta,
         FileSearchCallDelta, FileSearchResultDelta,
         GoogleMapsCallDelta, GoogleMapsResultDelta,
-        TextAnnotationDelta, RetrievalCallDelta, RetrievalResultDelta, UnknownDelta {
+        TextAnnotationDelta, ProcessingCallDelta, ProcessingResultDelta,
+        RetrievalCallDelta, RetrievalResultDelta, UnknownDelta {
         /**
          * Returns the type of the delta.
          * @return the type of the delta.
@@ -697,6 +704,44 @@ public sealed interface Events permits
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleMapsResultDelta(DeltaType type, @JsonProperty("call_id") String callId, List<Map<String, Object>> result, @JsonProperty("is_error") Boolean isError) implements Delta {}
+
+    /**
+     * Delta for processing call (agentic video understanding).
+     *
+     * @param type      The type of delta ("processing_call").
+     * @param signature The signature.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ProcessingCallDelta(
+        DeltaType type,
+        String signature
+    ) implements Delta {
+        /** Compact constructor providing default type. */
+        public ProcessingCallDelta {
+            if (type == null) {
+                type = DeltaType.PROCESSING_CALL;
+            }
+        }
+    }
+
+    /**
+     * Delta for processing result (agentic video understanding).
+     *
+     * @param type      The type of delta ("processing_result").
+     * @param signature The signature.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ProcessingResultDelta(
+        DeltaType type,
+        String signature
+    ) implements Delta {
+        /** Compact constructor providing default type. */
+        public ProcessingResultDelta {
+            if (type == null) {
+                type = DeltaType.PROCESSING_RESULT;
+            }
+        }
+    }
 
     /**
      * Delta for Retrieval call.

@@ -50,6 +50,8 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Step.FileSearchResultStep.class, name = "file_search_result"),
     @JsonSubTypes.Type(value = Step.GoogleMapsCallStep.class, name = "google_maps_call"),
     @JsonSubTypes.Type(value = Step.GoogleMapsResultStep.class, name = "google_maps_result"),
+    @JsonSubTypes.Type(value = Step.ProcessingCallStep.class, name = "processing_call"),
+    @JsonSubTypes.Type(value = Step.ProcessingResultStep.class, name = "processing_result"),
     @JsonSubTypes.Type(value = Step.RetrievalCallStep.class, name = "retrieval_call"),
     @JsonSubTypes.Type(value = Step.RetrievalResultStep.class, name = "retrieval_result")
 })
@@ -71,6 +73,8 @@ public sealed interface Step permits
     Step.FileSearchResultStep,
     Step.GoogleMapsCallStep,
     Step.GoogleMapsResultStep,
+    Step.ProcessingCallStep,
+    Step.ProcessingResultStep,
     Step.RetrievalCallStep,
     Step.RetrievalResultStep {
 
@@ -477,6 +481,50 @@ public sealed interface Step permits
         String url,
         @JsonProperty("review_snippets") List<Content.ReviewSnippet> reviewSnippets
     ) {}
+
+    // --- Media Processing (Agentic Video Understanding) ---
+
+    /**
+     * ProcessingCallStep.
+     *
+     * @param type type parameter ("processing_call").
+     * @param id id parameter.
+     * @param signature signature parameter.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ProcessingCallStep(
+        String type,
+        String id,
+        String signature
+    ) implements Step {
+        /** Compact constructor providing default type. */
+        public ProcessingCallStep {
+            if (type == null) {
+                type = "processing_call";
+            }
+        }
+    }
+
+    /**
+     * ProcessingResultStep.
+     *
+     * @param type type parameter ("processing_result").
+     * @param callId callId parameter.
+     * @param signature signature parameter.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ProcessingResultStep(
+        String type,
+        @JsonProperty("call_id") String callId,
+        String signature
+    ) implements Step {
+        /** Compact constructor providing default type. */
+        public ProcessingResultStep {
+            if (type == null) {
+                type = "processing_result";
+            }
+        }
+    }
 
     // --- Retrieval ---
 
