@@ -26,17 +26,17 @@ To use the core client SDK, add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>1.2.4</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
-If you are implementing the server-side webhook handler (`InteractionsHandler`), add the server integration module:
+If you are implementing the server-side webhook handler (`InteractionsHandler`), add the server dependency:
 
 ```xml
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-server</artifactId>
-    <version>1.2.4</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
