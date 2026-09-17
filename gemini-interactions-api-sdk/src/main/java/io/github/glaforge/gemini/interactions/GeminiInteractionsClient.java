@@ -37,6 +37,7 @@ import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
 import io.github.glaforge.gemini.interactions.model.TriggerUpdate;
 import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
 import io.github.glaforge.gemini.interactions.model.ListTriggerExecutionsResponse;
+import io.github.glaforge.gemini.interactions.model.TriggerExecution;
 import io.github.glaforge.gemini.interactions.model.Environment;
 import io.github.glaforge.gemini.interactions.model.CreateEnvironmentRequest;
 import io.github.glaforge.gemini.interactions.model.NetworkConfiguration;
@@ -44,14 +45,23 @@ import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
 import io.github.glaforge.gemini.interactions.model.EnvironmentFile;
 import io.github.glaforge.gemini.interactions.model.GetEnvironmentFilesResponse;
 import io.github.glaforge.gemini.interactions.model.Source;
+import io.github.glaforge.gemini.interactions.model.Credential;
+import io.github.glaforge.gemini.interactions.model.CredentialUpdate;
+import io.github.glaforge.gemini.interactions.model.ListCredentialsResponse;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -303,6 +313,19 @@ public class GeminiInteractionsClient {
         }
     }
 
+    /**
+     * Cancels an interaction by ID.
+     * Alias for {@link #cancel(String)}.
+     *
+     * @param id The interaction ID.
+     * @return The updated Interaction (status should be cancelled).
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     * @see #cancel(String)
+     */
+    public Interaction cancelInteraction(String id) {
+        return cancel(id);
+    }
+
     // --- Webhook Operations ---
 
     /**
@@ -491,6 +514,154 @@ public class GeminiInteractionsClient {
             checkError(response);
 
             return objectMapper.readValue(response.body(), RotateSigningSecretResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    // --- Credential Operations ---
+
+    /**
+     * Creates a new server-managed Credential.
+     *
+     * @param credential The credential to provision.
+     * @return The created Credential (metadata only, secrets are omitted).
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Credential createCredential(Credential credential) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(credential);
+            String url = buildUrl("credentials");
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Credential.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Retrieves metadata for a Credential by ID.
+     *
+     * @param id The credential ID.
+     * @return The Credential metadata (secrets are omitted).
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Credential getCredential(String id) {
+        try {
+            String url = String.format("%s/%s/credentials/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Credential.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Lists credentials.
+     *
+     * @return The ListCredentialsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListCredentialsResponse listCredentials() {
+        return listCredentials(null, null);
+    }
+
+    /**
+     * Lists credentials with pagination.
+     *
+     * @param pageSize  The maximum number of credentials to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @return The ListCredentialsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListCredentialsResponse listCredentials(Integer pageSize, String pageToken) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("credentials"));
+            boolean hasParam = false;
+            if (pageSize != null) {
+                urlBuilder.append("?page_size=").append(pageSize);
+                hasParam = true;
+            }
+            if (pageToken != null && !pageToken.isEmpty()) {
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+            }
+
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), ListCredentialsResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Updates or rotates a Credential (PATCH /v1beta/credentials/{id}).
+     *
+     * @param id     The credential ID.
+     * @param update The credential update payload containing the rotated secrets.
+     * @return The updated Credential metadata.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Credential updateCredential(String id, CredentialUpdate update) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(update);
+            String url = String.format("%s/%s/credentials/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Credential.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Deletes a Credential by ID.
+     *
+     * @param id The credential ID.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void deleteCredential(String id) {
+        try {
+            String url = String.format("%s/%s/credentials/%s", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .DELETE()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
         }
@@ -793,6 +964,35 @@ public class GeminiInteractionsClient {
      * @return GetEnvironmentFilesResponse containing file metadata.
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
+    private String encodeEnvironmentFilePath(String path) {
+        if (path == null || path.isBlank()) {
+            return "";
+        }
+        String p = path.startsWith("/") ? path.substring(1) : path;
+        String[] segments = p.split("/", -1);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < segments.length; i++) {
+            if (i > 0) {
+                sb.append("/");
+            }
+            sb.append(URLEncoder.encode(segments[i], StandardCharsets.UTF_8).replace("+", "%20"));
+        }
+        return sb.toString();
+    }
+
+    private String buildUploadBaseUrl() {
+        String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        return base + "/upload";
+    }
+
+    /**
+     * Retrieves file or directory metadata from an environment's snapshot.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment.
+     * @return GetEnvironmentFilesResponse containing file metadata.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
     public GetEnvironmentFilesResponse getEnvironmentFiles(String environmentId, String path) {
         return getEnvironmentFiles(environmentId, path, null, null, null);
     }
@@ -810,8 +1010,9 @@ public class GeminiInteractionsClient {
      */
     public GetEnvironmentFilesResponse getEnvironmentFiles(String environmentId, String path, Integer pageSize, String pageToken, Boolean recursive) {
         try {
-            String encodedPath = URLEncoder.encode(path != null ? path : "", StandardCharsets.UTF_8).replace("+", "%20");
-            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/environments/%s/files/%s", baseUrl, version, environmentId, encodedPath));
+            String encodedPath = encodeEnvironmentFilePath(path);
+            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/environments/%s/files%s",
+                baseUrl, version, environmentId, encodedPath.isEmpty() ? "" : "/" + encodedPath));
             boolean hasParam = false;
             if (pageSize != null) {
                 urlBuilder.append(hasParam ? "&" : "?").append("page_size=").append(pageSize);
@@ -839,35 +1040,362 @@ public class GeminiInteractionsClient {
         }
     }
 
-    // --- Workspace Sandbox Operations ---
-
     /**
-     * Downloads the environment workspace snapshot for a given interaction or environment ID as an InputStream containing the TAR archive.
+     * Retrieves metadata for a specific file in an environment.
      *
-     * @param environmentOrInteractionId The environment or interaction ID.
-     * @return An InputStream containing the TAR archive.
+     * @param environmentId Environment ID.
+     * @param path          Relative file path in the environment.
+     * @return An Optional containing the EnvironmentFile if found, or empty if not found.
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
-    public java.io.InputStream downloadEnvironment(String environmentOrInteractionId) {
-        try {
-            String url = String.format("%s/%s/files/environment-%s:download?alt=media", baseUrl, version, environmentOrInteractionId);
+    public Optional<EnvironmentFile> getEnvironmentFile(String environmentId, String path) {
+        GetEnvironmentFilesResponse response = getEnvironmentFiles(environmentId, path);
+        if (response.files() != null && !response.files().isEmpty()) {
+            return Optional.of(response.files().get(0));
+        }
+        return Optional.empty();
+    }
 
-            HttpRequest httpRequest = newRequestBuilder(url)
+    /**
+     * Downloads the raw content of a specific file, or a TAR archive of a directory, from an environment.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment (or empty/null for root).
+     * @return An InputStream containing the raw file content or TAR archive.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public InputStream downloadEnvironmentFile(String environmentId, String path) {
+        return downloadEnvironmentFile(environmentId, path, (Boolean) null);
+    }
+
+    /**
+     * Downloads the raw content of a specific file, or a TAR archive of a directory, from an environment.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment (or empty/null for root).
+     * @param recursive     Optional flag. When downloading a directory, whether to recursively include subdirectories.
+     * @return An InputStream containing the raw file content or TAR archive.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public InputStream downloadEnvironmentFile(String environmentId, String path, Boolean recursive) {
+        try {
+            String encodedPath = encodeEnvironmentFilePath(path);
+            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/environments/%s/files%s?alt=media",
+                baseUrl, version, environmentId, encodedPath.isEmpty() ? "" : "/" + encodedPath));
+            if (recursive != null) {
+                urlBuilder.append("&recursive=").append(recursive);
+            }
+
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
                 .GET()
                 .build();
 
-            HttpResponse<java.io.InputStream> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofInputStream());
+            HttpResponse<InputStream> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofInputStream());
 
             if (response.statusCode() >= 300) {
-                try (java.io.InputStream errorStream = response.body()) {
-                    String errorBody = new String(errorStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-                    throw new GeminiInteractionsException("API Request failed to download environment", response.statusCode(), errorBody);
+                try (InputStream errorStream = response.body()) {
+                    String errorBody = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
+                    throw new GeminiInteractionsException("API Request failed to download environment file", response.statusCode(), errorBody);
                 }
             }
 
             return response.body();
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Downloads the raw content of a file or directory archive and writes it directly to an OutputStream.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment.
+     * @param outputStream  OutputStream to write the content to.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void downloadEnvironmentFile(String environmentId, String path, OutputStream outputStream) {
+        downloadEnvironmentFile(environmentId, path, null, outputStream);
+    }
+
+    /**
+     * Downloads the raw content of a file or directory archive and writes it directly to an OutputStream.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment.
+     * @param recursive     Optional flag for directory archive recursion.
+     * @param outputStream  OutputStream to write the content to.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void downloadEnvironmentFile(String environmentId, String path, Boolean recursive, OutputStream outputStream) {
+        try (InputStream in = downloadEnvironmentFile(environmentId, path, recursive)) {
+            in.transferTo(outputStream);
+        } catch (IOException e) {
+            throw new GeminiInteractionsException("Failed to stream environment file content", e);
+        }
+    }
+
+    /**
+     * Downloads the raw content of a file or directory archive and saves it to a local file.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment.
+     * @param targetFile    Destination local file path.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void downloadEnvironmentFile(String environmentId, String path, Path targetFile) {
+        downloadEnvironmentFile(environmentId, path, null, targetFile);
+    }
+
+    /**
+     * Downloads the raw content of a file or directory archive and saves it to a local file.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file or directory path in the environment.
+     * @param recursive     Optional flag for directory archive recursion.
+     * @param targetFile    Destination local file path.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void downloadEnvironmentFile(String environmentId, String path, Boolean recursive, Path targetFile) {
+        try (InputStream in = downloadEnvironmentFile(environmentId, path, recursive)) {
+            if (targetFile.getParent() != null) {
+                Files.createDirectories(targetFile.getParent());
+            }
+            Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new GeminiInteractionsException("Failed to save environment file to " + targetFile, e);
+        }
+    }
+
+    /**
+     * Downloads the raw bytes of a specific file from an environment.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative file path in the environment.
+     * @return Byte array containing the file content.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public byte[] downloadEnvironmentFileBytes(String environmentId, String path) {
+        try (InputStream in = downloadEnvironmentFile(environmentId, path)) {
+            return in.readAllBytes();
+        } catch (IOException e) {
+            throw new GeminiInteractionsException("Failed to read environment file bytes", e);
+        }
+    }
+
+    /**
+     * Uploads file content or extracts a directory archive into an environment sandbox.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative destination path in the environment sandbox.
+     * @param content       The file or archive content as a byte array.
+     * @param mimeType      Optional MIME type of the content. Defaults to application/octet-stream if null or blank.
+     * @param overwrite     Optional flag. If true, replaces existing files; otherwise returns 409 Conflict if target exists.
+     * @param extract       Optional flag. If true, unpacks the uploaded .tar or .tar.gz archive into the destination directory.
+     * @return GetEnvironmentFilesResponse containing metadata for the written file(s).
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public GetEnvironmentFilesResponse uploadEnvironmentFile(String environmentId, String path, byte[] content, String mimeType, Boolean overwrite, Boolean extract) {
+        try {
+            String encodedPath = encodeEnvironmentFilePath(path);
+            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/environments/%s/files%s",
+                buildUploadBaseUrl(), version, environmentId, encodedPath.isEmpty() ? "" : "/" + encodedPath));
+            boolean hasParam = false;
+            if (overwrite != null) {
+                urlBuilder.append(hasParam ? "&" : "?").append("overwrite=").append(overwrite);
+                hasParam = true;
+            }
+            if (extract != null) {
+                urlBuilder.append(hasParam ? "&" : "?").append("extract=").append(extract);
+                hasParam = true;
+            }
+
+            String contentType = (mimeType != null && !mimeType.isBlank()) ? mimeType : "application/octet-stream";
+
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
+                .header("Content-Type", contentType)
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(content != null ? content : new byte[0]))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), GetEnvironmentFilesResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Uploads a single file to the environment sandbox.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative destination path in the environment sandbox.
+     * @param content       The file content as a byte array.
+     * @param mimeType      Optional MIME type of the content.
+     * @param overwrite     Optional flag to overwrite existing file if true.
+     * @return GetEnvironmentFilesResponse containing metadata for the uploaded file.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public GetEnvironmentFilesResponse uploadEnvironmentFile(String environmentId, String path, byte[] content, String mimeType, Boolean overwrite) {
+        return uploadEnvironmentFile(environmentId, path, content, mimeType, overwrite, null);
+    }
+
+    /**
+     * Uploads a text file to the environment sandbox using UTF-8 encoding.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative destination path in the environment sandbox.
+     * @param textContent   The text content of the file.
+     * @param overwrite     Optional flag to overwrite existing file if true.
+     * @return GetEnvironmentFilesResponse containing metadata for the uploaded file.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public GetEnvironmentFilesResponse uploadEnvironmentFile(String environmentId, String path, String textContent, Boolean overwrite) {
+        byte[] bytes = textContent != null ? textContent.getBytes(StandardCharsets.UTF_8) : new byte[0];
+        return uploadEnvironmentFile(environmentId, path, bytes, "text/plain; charset=utf-8", overwrite, null);
+    }
+
+    /**
+     * Uploads a local file to the environment sandbox.
+     *
+     * @param environmentId Environment ID.
+     * @param path          Relative destination path in the environment sandbox.
+     * @param localFile     Path to the local file to upload.
+     * @param overwrite     Optional flag to overwrite existing file if true.
+     * @return GetEnvironmentFilesResponse containing metadata for the uploaded file.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public GetEnvironmentFilesResponse uploadEnvironmentFile(String environmentId, String path, Path localFile, Boolean overwrite) {
+        try {
+            byte[] bytes = Files.readAllBytes(localFile);
+            String probedType = Files.probeContentType(localFile);
+            return uploadEnvironmentFile(environmentId, path, bytes, probedType, overwrite, null);
+        } catch (IOException e) {
+            throw new GeminiInteractionsException("Failed to read local file for upload: " + localFile, e);
+        }
+    }
+
+    /**
+     * Uploads and extracts a TAR or TAR.GZ directory archive into an environment sandbox.
+     *
+     * @param environmentId   Environment ID.
+     * @param destinationPath Relative destination directory path in the environment sandbox.
+     * @param archiveBytes    The archive bytes (.tar or .tar.gz).
+     * @param overwrite       Optional flag to overwrite existing files if true.
+     * @return GetEnvironmentFilesResponse containing metadata for all extracted files.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public GetEnvironmentFilesResponse uploadEnvironmentArchive(String environmentId, String destinationPath, byte[] archiveBytes, Boolean overwrite) {
+        return uploadEnvironmentFile(environmentId, destinationPath, archiveBytes, "application/x-tar", overwrite, true);
+    }
+
+    /**
+     * Uploads and extracts a local TAR or TAR.GZ directory archive into an environment sandbox.
+     *
+     * @param environmentId   Environment ID.
+     * @param destinationPath Relative destination directory path in the environment sandbox.
+     * @param archiveFile     Path to the local .tar or .tar.gz archive file.
+     * @param overwrite       Optional flag to overwrite existing files if true.
+     * @return GetEnvironmentFilesResponse containing metadata for all extracted files.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public GetEnvironmentFilesResponse uploadEnvironmentArchive(String environmentId, String destinationPath, Path archiveFile, Boolean overwrite) {
+        try {
+            byte[] bytes = Files.readAllBytes(archiveFile);
+            return uploadEnvironmentFile(environmentId, destinationPath, bytes, "application/x-tar", overwrite, true);
+        } catch (IOException e) {
+            throw new GeminiInteractionsException("Failed to read archive file for upload: " + archiveFile, e);
+        }
+    }
+
+    // --- Workspace Sandbox Operations ---
+
+    /**
+     * Downloads the environment workspace snapshot for a given interaction or environment ID as an InputStream containing the TAR archive.
+     * <p>
+     * Prefers the modern {@code GET /{version}/environments/{id}/files?alt=media} endpoint,
+     * with automatic fallback to the legacy {@code GET /{version}/files/environment-{id}:download?alt=media} endpoint.
+     * </p>
+     *
+     * @param environmentOrInteractionId The environment or interaction ID.
+     * @return An InputStream containing the TAR archive.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public InputStream downloadEnvironment(String environmentOrInteractionId) {
+        if (environmentOrInteractionId != null && (environmentOrInteractionId.startsWith("env_") || environmentOrInteractionId.startsWith("env-"))) {
+            try {
+                // Prefer modern environment files download endpoint: GET /{version}/environments/{id}/files?alt=media
+                String modernUrl = String.format("%s/%s/environments/%s/files?alt=media", baseUrl, version, environmentOrInteractionId);
+                HttpRequest modernRequest = newRequestBuilder(modernUrl)
+                    .GET()
+                    .build();
+
+                HttpResponse<InputStream> response = httpClient.send(modernRequest, HttpResponse.BodyHandlers.ofInputStream());
+
+                if (response.statusCode() < 300) {
+                    return response.body();
+                }
+
+                // Close error stream from modern endpoint attempt
+                try (InputStream errorStream = response.body()) {
+                    errorStream.readAllBytes();
+                }
+            } catch (IOException | InterruptedException e) {
+                // Fall through to legacy endpoint
+            }
+        }
+
+        try {
+            // Fallback / legacy endpoint: GET /{version}/files/environment-{id}:download?alt=media
+            String legacyUrl = String.format("%s/%s/files/environment-%s:download?alt=media", baseUrl, version, environmentOrInteractionId);
+            HttpRequest legacyRequest = newRequestBuilder(legacyUrl)
+                .GET()
+                .build();
+
+            HttpResponse<InputStream> legacyResponse = httpClient.send(legacyRequest, HttpResponse.BodyHandlers.ofInputStream());
+            if (legacyResponse.statusCode() >= 300) {
+                try (InputStream errorStream = legacyResponse.body()) {
+                    String errorBody = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
+                    throw new GeminiInteractionsException("API Request failed to download environment", legacyResponse.statusCode(), errorBody);
+                }
+            }
+
+            return legacyResponse.body();
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Downloads the environment workspace snapshot for a given interaction or environment ID and writes it directly to an OutputStream.
+     *
+     * @param environmentOrInteractionId The environment or interaction ID.
+     * @param outputStream               The OutputStream to write the TAR archive to.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void downloadEnvironment(String environmentOrInteractionId, OutputStream outputStream) {
+        try (InputStream in = downloadEnvironment(environmentOrInteractionId)) {
+            in.transferTo(outputStream);
+        } catch (IOException e) {
+            throw new GeminiInteractionsException("Failed to stream environment snapshot", e);
+        }
+    }
+
+    /**
+     * Downloads the environment workspace snapshot for a given interaction or environment ID and saves it to a local file.
+     *
+     * @param environmentOrInteractionId The environment or interaction ID.
+     * @param targetFile                 The destination file path for the TAR archive.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public void downloadEnvironment(String environmentOrInteractionId, Path targetFile) {
+        try (InputStream in = downloadEnvironment(environmentOrInteractionId)) {
+            if (targetFile.getParent() != null) {
+                Files.createDirectories(targetFile.getParent());
+            }
+            Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new GeminiInteractionsException("Failed to save environment snapshot to " + targetFile, e);
         }
     }
 
@@ -950,19 +1478,24 @@ public class GeminiInteractionsClient {
     }
 
     /**
-     * Lists Triggers.
+     * Lists Triggers with optional filter and pagination parameters.
      *
+     * @param filter    An optional filter expression to restrict the returned triggers.
      * @param pageSize  The maximum number of triggers to return.
      * @param pageToken A page token, received from a previous list call.
      * @return The ListTriggersResponse.
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
-    public ListTriggersResponse listTriggers(Integer pageSize, String pageToken) {
+    public ListTriggersResponse listTriggers(String filter, Integer pageSize, String pageToken) {
         try {
             StringBuilder urlBuilder = new StringBuilder(buildUrl("triggers"));
             boolean hasParam = false;
+            if (filter != null && !filter.isEmpty()) {
+                urlBuilder.append("?filter=").append(URLEncoder.encode(filter, StandardCharsets.UTF_8));
+                hasParam = true;
+            }
             if (pageSize != null) {
-                urlBuilder.append("?page_size=").append(pageSize);
+                urlBuilder.append(hasParam ? "&" : "?").append("page_size=").append(pageSize);
                 hasParam = true;
             }
             if (pageToken != null && !pageToken.isEmpty()) {
@@ -981,6 +1514,39 @@ public class GeminiInteractionsClient {
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
         }
+    }
+
+    /**
+     * Lists Triggers.
+     *
+     * @param pageSize  The maximum number of triggers to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @return The ListTriggersResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListTriggersResponse listTriggers(Integer pageSize, String pageToken) {
+        return listTriggers(null, pageSize, pageToken);
+    }
+
+    /**
+     * Lists Triggers matching a filter.
+     *
+     * @param filter An optional filter expression to restrict the returned triggers.
+     * @return The ListTriggersResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListTriggersResponse listTriggers(String filter) {
+        return listTriggers(filter, null, null);
+    }
+
+    /**
+     * Lists Triggers.
+     *
+     * @return The ListTriggersResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListTriggersResponse listTriggers() {
+        return listTriggers(null, null, null);
     }
 
     /**
@@ -1012,6 +1578,28 @@ public class GeminiInteractionsClient {
     }
 
     /**
+     * Pauses a trigger by updating its status to {@link Trigger.Status#PAUSED}.
+     *
+     * @param id The trigger ID.
+     * @return The updated Trigger.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Trigger pauseTrigger(String id) {
+        return updateTrigger(id, TriggerUpdate.builder().status(Trigger.Status.PAUSED).build());
+    }
+
+    /**
+     * Resumes a trigger by updating its status to {@link Trigger.Status#ACTIVE}.
+     *
+     * @param id The trigger ID.
+     * @return The updated Trigger.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Trigger resumeTrigger(String id) {
+        return updateTrigger(id, TriggerUpdate.builder().status(Trigger.Status.ACTIVE).build());
+    }
+
+    /**
      * Deletes a Trigger by ID.
      *
      * @param id The trigger ID.
@@ -1028,6 +1616,32 @@ public class GeminiInteractionsClient {
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             checkError(response);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Manually triggers an execution of a Trigger immediately.
+     *
+     * @param id The trigger ID.
+     * @return The created TriggerExecution.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public TriggerExecution runTrigger(String id) {
+        try {
+            String url = String.format("%s/%s/triggers/%s/executions", baseUrl, version, id);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), TriggerExecution.class);
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
         }
@@ -1066,6 +1680,17 @@ public class GeminiInteractionsClient {
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
         }
+    }
+
+    /**
+     * Lists Executions of a Trigger.
+     *
+     * @param triggerId The trigger ID.
+     * @return The ListTriggerExecutionsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListTriggerExecutionsResponse listTriggerExecutions(String triggerId) {
+        return listTriggerExecutions(triggerId, null, null);
     }
 
 

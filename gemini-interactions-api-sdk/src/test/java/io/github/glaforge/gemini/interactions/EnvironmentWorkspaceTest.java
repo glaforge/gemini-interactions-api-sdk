@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -116,7 +117,33 @@ public class EnvironmentWorkspaceTest {
             env.downloadFile(filename, localTarget);
             assertTrue(Files.exists(localTarget));
             assertEquals(content, Files.readString(localTarget));
+
+            // Verify extractAll
+            Path extractDir = tempDir.resolve("extracted-all");
+            env.extractAll(extractDir);
+            Path extractedFile = extractDir.resolve(filename);
+            assertTrue(Files.exists(extractedFile));
+            assertEquals(content, Files.readString(extractedFile));
         }
+
+        // Test client.downloadEnvironment(id, Path)
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(new okio.Buffer().write(tarBytes))
+                .setResponseCode(200)
+                .addHeader("Content-Type", "application/x-tar"));
+        Path downloadedTar = tempDir.resolve("downloaded-snapshot.tar");
+        client.downloadEnvironment("interaction-123", downloadedTar);
+        assertTrue(Files.exists(downloadedTar));
+        assertArrayEquals(tarBytes, Files.readAllBytes(downloadedTar));
+
+        // Test client.downloadEnvironment(id, OutputStream)
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(new okio.Buffer().write(tarBytes))
+                .setResponseCode(200)
+                .addHeader("Content-Type", "application/x-tar"));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        client.downloadEnvironment("interaction-123", baos);
+        assertArrayEquals(tarBytes, baos.toByteArray());
     }
 
     private byte[] createMockTar(String filename, String content) throws Exception {

@@ -411,29 +411,53 @@ Interaction interaction = client.create(params);
 client.deleteAgent(provisioned.id());
 ```
 
-### Budget & Token Controls
+### Antigravity Agent & Budget Controls
 
-For specialized agents like `antigravity` or `deep-research`, set a strict token budget using `agentConfig`:
+The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent powered by Gemini 3.8 Flash that reasons, runs code, and manages files in a secure Linux sandbox.
+
+Configure model, token budget caps, and handle continuation when `status: "incomplete"`:
 
 ```java
+import io.github.glaforge.gemini.interactions.model.AgentOption;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Config.AntigravityAgentConfig;
 
 AgentInteractionParams params = AgentInteractionParams.builder()
-    .agent("antigravity-preview-05-2026")
-    .input("Review recent commits.")
-    .agentConfig(new AntigravityAgentConfig(10000L))
+    .agent(AgentOption.ANTIGRAVITY_PREVIEW_09_2026)
+    .input("Review recent commits and run tests.")
+    .environment("remote")
+    .agentConfig(AntigravityAgentConfig.builder()
+        .model(ModelOption.GEMINI_3_8_FLASH)
+        .maxTotalTokens(50000L)
+        .build())
     .build();
+
+Interaction response = client.create(params);
+
+// Continue if budget is reached
+if (response.status().isIncomplete()) {
+    Interaction continuation = client.create(
+        AgentInteractionParams.builder()
+            .agent(AgentOption.ANTIGRAVITY_PREVIEW_09_2026)
+            .input("continue")
+            .previousInteractionId(response.id())
+            .environment(response.environmentId())
+            .agentConfig(AntigravityAgentConfig.builder().maxTotalTokens(50000L).build())
+            .build()
+    );
+}
 ```
 
 ### Environment Workspace (Reading & Extracting Sandbox Files)
 
-After an agent interaction completes, inspect its remote sandbox files using `EnvironmentWorkspace`:
+After an agent interaction completes, inspect its remote sandbox files using `EnvironmentWorkspace`, or download/upload files directly:
 
 ```java
 import io.github.glaforge.gemini.interactions.EnvironmentWorkspace;
 import java.nio.file.Path;
 
+// Bulk inspection and extraction:
 try (EnvironmentWorkspace workspace = client.getWorkspace(interaction.environmentId()).refresh()) {
     if (workspace.fileExists("output.json")) {
         String content = workspace.readTextFile("output.json");
@@ -441,7 +465,23 @@ try (EnvironmentWorkspace workspace = client.getWorkspace(interaction.environmen
         
         workspace.downloadFile("chart.png", Path.of("./chart.png"));
     }
+    // Or extract all files into a local folder
+    workspace.extractAll(Path.of("./extracted_env"));
 }
+
+// Direct single file download (streaming, bytes, or file):
+byte[] code = client.downloadEnvironmentFileBytes(envId, "src/main.py");
+client.downloadEnvironmentFile(envId, "src/main.py", Path.of("./main.py"));
+
+// Direct directory TAR download:
+client.downloadEnvironmentFile(envId, "src", true, Path.of("./src.tar"));
+
+// Dynamic file and archive upload into active sandbox:
+client.uploadEnvironmentFile(envId, "workspace/config.json", "{\"debug\": true}", true);
+client.uploadEnvironmentArchive(envId, "workspace/src/", Path.of("./source.tar.gz"), true);
+
+// Or download raw TAR snapshot directly:
+client.downloadEnvironment(interaction.environmentId(), Path.of("./snapshot.tar"));
 ```
 
 ### Standalone Environments Management
@@ -475,6 +515,86 @@ Environment cloned = client.createEnvironmentFrom(env.id());
 client.deleteEnvironment(env.id());
 ```
 
+### Server-Managed Credentials (Provisioning, Injection & Rotation)
+
+Securely provision API keys, OAuth tokens, and environment variables into agent environments and tools without exposing secrets in client code or model context:
+
+```java
+import io.github.glaforge.gemini.interactions.model.*;
+
+// Provision Bearer token credential (secret is write-only, never returned by server)
+Credential jiraCred = client.createCredential(Credential.builder()
+    .id("jira-api-token")
+    .bearerToken(BearerTokenConfig.builder()
+        .token("secret-token-12345")
+        .headerName("Authorization")
+        .prefix("Bearer")
+        .build())
+    .build());
+
+// Provision OAuth2 credential
+Credential oauthCred = client.createCredential(Credential.oauth2("github-oauth", OAuth2Config.builder()
+    .clientId("client-id-xyz")
+    .clientSecret("client-secret-xyz")
+    .refreshToken("refresh-token-xyz")
+    .tokenUrl("https://github.com/login/oauth/access_token")
+    .scopes("repo", "read:user")
+    .build()));
+
+// Provision Environment Variable credential
+Credential slackCred = client.createCredential(Credential.environmentVariable("slack-token", EnvironmentVariableConfig.builder()
+    .value("xoxb-secret-slack-token")
+    .injectionLocation("header")
+    .trustedDomains("*.slack.com", "slack.com")
+    .build()));
+
+// Reference credentials in MCP tools
+Tool.McpServer mcpTool = Tool.McpServer.builder()
+    .name("jira-tool")
+    .url("https://jira.internal.net/sse")
+    .credential("jira-api-token")
+    .build();
+
+// Inject credentials into environment container sandboxes
+EnvironmentConfig envConfig = EnvironmentConfig.builder()
+    .env("DEBUG", "true")
+    .envCredential("SLACK_BOT_TOKEN", "slack-token")
+    .build();
+
+// Inspect metadata, list with pagination, rotate secrets, and delete
+Credential meta = client.getCredential("jira-api-token");
+ListCredentialsResponse list = client.listCredentials(10, null);
+client.updateCredential("jira-api-token", CredentialUpdate.ofBearerToken("rotated-token"));
+client.deleteCredential("jira-api-token");
+```
+
+### Refreshing Credentials on Existing Environments
+
+When auth tokens expire during multi-turn interactions, you can refresh environment credentials without rebuilding or losing files:
+
+```java
+import io.github.glaforge.gemini.interactions.model.AllowlistEntry;
+import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
+import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllowlist;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+import java.util.List;
+
+// Inject refreshed tokens via egress proxy transforms
+EnvironmentNetworkEgressAllowlist refreshedAllowlist = new EnvironmentNetworkEgressAllowlist(List.of(
+    AllowlistEntry.of("storage.googleapis.com", "Authorization", "Bearer " + refreshedToken),
+    AllowlistEntry.of("*") // Allow all other outbound requests
+));
+
+// Update existing environment during interaction creation
+AgentInteractionParams params = AgentInteractionParams.builder()
+    .agent("antigravity-preview-05-2026")
+    .input("Fetch the latest dataset from Cloud Storage.")
+    .environment(EnvironmentConfig.forExisting(envId, refreshedAllowlist))
+    .build();
+
+Interaction interaction = client.create(params);
+```
+
 ### Triggers (Scheduling & Automation)
 
 Set up CRON schedules to automatically run agents in the background:
@@ -492,16 +612,31 @@ TriggerCreateParams params = TriggerCreateParams.builder()
         .build())
     .build();
 
-client.createTrigger(params);
+Trigger trigger = client.createTrigger(params);
+
+// Pause and resume triggers
+client.pauseTrigger(trigger.id());
+client.resumeTrigger(trigger.id());
+
+// Manually execute a trigger immediately
+TriggerExecution execution = client.runTrigger(trigger.id());
+
+// List triggers with optional filter and pagination
+ListTriggersResponse activeTriggers = client.listTriggers("status=active", 10, null);
+
+// List trigger executions
+ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id());
 ```
 
 ### Type-Safe Union Configuration Records
 
 The SDK uses specialized union records instead of untyped `Object` fields to handle polymorphic API configuration payloads:
 
+- **`ToolChoiceConfiguration`**: Wraps either a preset mode string (`"auto"`, `"any"`, `"none"`, `"validated"`) or a detailed `Tool.ToolChoiceConfig` (`isMode()`, `isConfig()`).
 - **`SpeechConfiguration`**: Wraps either single-speaker `List<SpeechConfig>` or multi-speaker `SpeakerConfig` (`isSingleSpeaker()`, `isMultiSpeaker()`).
 - **`NetworkConfiguration`**: Wraps either a preset network string (e.g. `"disabled"`, `"allow_all"`) or custom `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`).
 - **`BaseEnvironment`**: Wraps either a preset base environment string (e.g. `"default"`, `"remote"`) or custom `EnvironmentConfig` (`isPreset()`, `isCustom()`).
 - **`MediaProcessingConfiguration`**: Wraps either a preset media mode string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
 - **`TranscriptionModeConfiguration`**: Wraps either a preset transcription mode string (e.g. `"verbatim"`, `"smart"`) or custom `SmartTranscriptionMode` / `VerbatimTranscriptionMode` (`isPreset()`, `isCustom()`).
+
 

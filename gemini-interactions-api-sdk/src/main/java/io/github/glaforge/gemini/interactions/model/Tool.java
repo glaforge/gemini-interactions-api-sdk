@@ -16,10 +16,13 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +33,8 @@ import java.util.Map;
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = "type",
-    visible = true
+    visible = true,
+    defaultImpl = Tool.UnknownTool.class
 )
 @JsonSubTypes({
     @JsonSubTypes.Type(value = Tool.Function.class, name = "function"),
@@ -52,7 +56,8 @@ public sealed interface Tool permits
     Tool.McpServer,
     Tool.FileSearch,
     Tool.GoogleMaps,
-    Tool.Retrieval {
+    Tool.Retrieval,
+    Tool.UnknownTool {
 
     /**
      * Returns the type of the tool.
@@ -233,6 +238,7 @@ public sealed interface Tool permits
      * @param url          The URL of the MCP server.
      * @param headers      Headers for the MCP server connection.
      * @param allowedTools List of allowed tools on the server.
+     * @param credential   Optional server-managed credential ID for authenticating with the MCP server.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record McpServer(
@@ -240,7 +246,8 @@ public sealed interface Tool permits
         String name,
         String url,
         Map<String, String> headers,
-        @JsonProperty("allowed_tools") List<AllowedTools> allowedTools
+        @JsonProperty("allowed_tools") List<AllowedTools> allowedTools,
+        String credential
     ) implements Tool {
         /**
          * Creates a new McpServer tool.
@@ -249,7 +256,31 @@ public sealed interface Tool permits
          * @param url  The URL of the MCP server.
          */
         public McpServer(String name, String url) {
-            this("mcp_server", name, url, null, null);
+            this("mcp_server", name, url, null, null, null);
+        }
+
+        /**
+         * Creates a new McpServer tool with a credential reference.
+         *
+         * @param name       The name of the MCP server.
+         * @param url        The URL of the MCP server.
+         * @param credential The credential ID.
+         */
+        public McpServer(String name, String url, String credential) {
+            this("mcp_server", name, url, null, null, credential);
+        }
+
+        /**
+         * Backward-compatible constructor without credential.
+         *
+         * @param type         The type of tool.
+         * @param name         The name of the MCP server.
+         * @param url          The URL of the MCP server.
+         * @param headers      Headers for the MCP server connection.
+         * @param allowedTools List of allowed tools on the server.
+         */
+        public McpServer(String type, String name, String url, Map<String, String> headers, List<AllowedTools> allowedTools) {
+            this(type, name, url, headers, allowedTools, null);
         }
 
         /**
@@ -267,6 +298,7 @@ public sealed interface Tool permits
             private String url;
             private Map<String, String> headers;
             private List<AllowedTools> allowedTools;
+            private String credential;
 
             /** Creates a new Builder. */
             public Builder() {}
@@ -312,12 +344,20 @@ public sealed interface Tool permits
             public Builder allowedTools(List<AllowedTools> allowedTools) { this.allowedTools = allowedTools; return this; }
 
             /**
+             * Sets the server-managed credential ID.
+             *
+             * @param credential The credential ID.
+             * @return This builder.
+             */
+            public Builder credential(String credential) { this.credential = credential; return this; }
+
+            /**
              * Builds the McpServer.
              *
              * @return A new McpServer instance.
              */
             public McpServer build() {
-                return new McpServer(type, name, url, headers, allowedTools);
+                return new McpServer(type, name, url, headers, allowedTools, credential);
             }
         }
     }
@@ -607,7 +647,41 @@ public sealed interface Tool permits
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ToolChoiceConfig(
         @JsonProperty("allowed_tools") AllowedTools allowedTools
-    ) {}
+    ) {
+        /**
+         * Returns a new builder for ToolChoiceConfig.
+         * @return a new builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link ToolChoiceConfig}. */
+        public static class Builder {
+            private AllowedTools allowedTools;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+              * Sets the allowed tools configuration.
+              * @param allowedTools The allowed tools.
+              * @return This builder.
+              */
+            public Builder allowedTools(AllowedTools allowedTools) {
+                this.allowedTools = allowedTools;
+                return this;
+            }
+
+            /**
+             * Builds the ToolChoiceConfig.
+             * @return The ToolChoiceConfig.
+             */
+            public ToolChoiceConfig build() {
+                return new ToolChoiceConfig(allowedTools);
+            }
+        }
+    }
 
     /**
      * Allowed tools configuration.
@@ -633,5 +707,31 @@ public sealed interface Tool permits
         @JsonProperty("none") NONE,
         /** Validated mode. */
         @JsonProperty("validated") VALIDATED
+    }
+
+    /**
+     * Fallback tool representation for unknown or newly introduced tool types.
+     *
+     * @param type The tool type identifier.
+     * @param raw  Raw unrecognized properties in the tool payload.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record UnknownTool(
+        String type,
+        @JsonAnySetter
+        @JsonAnyGetter
+        Map<String, Object> raw
+    ) implements Tool {
+        /**
+         * Creates an UnknownTool.
+         *
+         * @param type The tool type identifier.
+         * @param raw  Raw unrecognized properties in the tool payload.
+         */
+        public UnknownTool {
+            if (raw == null) {
+                raw = new HashMap<>();
+            }
+        }
     }
 }

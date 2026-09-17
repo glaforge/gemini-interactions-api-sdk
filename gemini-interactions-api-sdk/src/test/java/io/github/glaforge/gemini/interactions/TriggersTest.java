@@ -2,6 +2,8 @@ package io.github.glaforge.gemini.interactions;
 
 import io.github.glaforge.gemini.interactions.model.Trigger;
 import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
+import io.github.glaforge.gemini.interactions.model.TriggerExecution;
+import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.Config;
 import okhttp3.mockwebserver.MockResponse;
@@ -102,5 +104,112 @@ public class TriggersTest {
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("GET", recordedRequest.getMethod());
         assertEquals("/v1beta/triggers/trigger-123", recordedRequest.getPath());
+    }
+
+    @Test
+    void testRunTrigger() throws Exception {
+        String mockResponseJson = """
+                {
+                  "id": "exec-456",
+                  "trigger_id": "trigger-123",
+                  "status": "in_progress"
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(mockResponseJson)
+                .addHeader("Content-Type", "application/json"));
+
+        TriggerExecution execution = client.runTrigger("trigger-123");
+
+        assertNotNull(execution);
+        assertEquals("exec-456", execution.id());
+        assertEquals("trigger-123", execution.triggerId());
+        assertEquals(TriggerExecution.Status.IN_PROGRESS, execution.status());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/v1beta/triggers/trigger-123/executions", recordedRequest.getPath());
+    }
+
+    @Test
+    void testPauseTrigger() throws Exception {
+        String mockResponseJson = """
+                {
+                  "id": "trigger-123",
+                  "status": "paused"
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(mockResponseJson)
+                .addHeader("Content-Type", "application/json"));
+
+        Trigger trigger = client.pauseTrigger("trigger-123");
+
+        assertNotNull(trigger);
+        assertEquals(Trigger.Status.PAUSED, trigger.status());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("PATCH", recordedRequest.getMethod());
+        assertEquals("/v1beta/triggers/trigger-123", recordedRequest.getPath());
+        assertTrue(recordedRequest.getBody().readUtf8().contains("\"status\":\"paused\""));
+    }
+
+    @Test
+    void testResumeTrigger() throws Exception {
+        String mockResponseJson = """
+                {
+                  "id": "trigger-123",
+                  "status": "active"
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(mockResponseJson)
+                .addHeader("Content-Type", "application/json"));
+
+        Trigger trigger = client.resumeTrigger("trigger-123");
+
+        assertNotNull(trigger);
+        assertEquals(Trigger.Status.ACTIVE, trigger.status());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("PATCH", recordedRequest.getMethod());
+        assertEquals("/v1beta/triggers/trigger-123", recordedRequest.getPath());
+        assertTrue(recordedRequest.getBody().readUtf8().contains("\"status\":\"active\""));
+    }
+
+    @Test
+    void testListTriggersWithFilter() throws Exception {
+        String mockResponseJson = """
+                {
+                  "triggers": [
+                    {
+                      "id": "trigger-123",
+                      "status": "active",
+                      "consecutive_failure_count": 0,
+                      "last_pause_time": "2026-03-01T12:00:00Z",
+                      "last_resume_time": "2026-03-01T13:00:00Z",
+                      "last_run_time": "2026-03-01T14:00:00Z"
+                    }
+                  ]
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(mockResponseJson)
+                .addHeader("Content-Type", "application/json"));
+
+        ListTriggersResponse response = client.listTriggers("status=active", 10, "tok-1");
+
+        assertNotNull(response);
+        assertEquals(1, response.triggers().size());
+        Trigger t = response.triggers().getFirst();
+        assertEquals("trigger-123", t.id());
+        assertEquals(0, t.consecutiveFailureCount());
+        assertNotNull(t.lastPauseTime());
+        assertNotNull(t.lastResumeTime());
+        assertNotNull(t.lastRunTime());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("GET", recordedRequest.getMethod());
+        assertEquals("/v1beta/triggers?filter=status%3Dactive&page_size=10&page_token=tok-1", recordedRequest.getPath());
     }
 }

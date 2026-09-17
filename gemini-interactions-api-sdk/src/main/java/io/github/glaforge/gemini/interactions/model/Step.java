@@ -16,10 +16,13 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +33,8 @@ import java.util.Map;
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = "type",
-    visible = true
+    visible = true,
+    defaultImpl = Step.UnknownStep.class
 )
 @JsonSubTypes({
     @JsonSubTypes.Type(value = Step.UserInputStep.class, name = "user_input"),
@@ -76,7 +80,8 @@ public sealed interface Step permits
     Step.ProcessingCallStep,
     Step.ProcessingResultStep,
     Step.RetrievalCallStep,
-    Step.RetrievalResultStep {
+    Step.RetrievalResultStep,
+    Step.UnknownStep {
 
     /**
      * Gets the type.
@@ -561,4 +566,30 @@ public sealed interface Step permits
         @JsonProperty("is_error") Boolean isError,
         String signature
     ) implements Step {}
+
+    /**
+     * Fallback step representation for unknown or newly introduced step types.
+     *
+     * @param type The step type identifier.
+     * @param raw  Raw unrecognized properties in the step payload.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record UnknownStep(
+        String type,
+        @JsonAnySetter
+        @JsonAnyGetter
+        Map<String, Object> raw
+    ) implements Step {
+        /**
+         * Creates an UnknownStep.
+         *
+         * @param type The step type identifier.
+         * @param raw  Raw unrecognized properties in the step payload.
+         */
+        public UnknownStep {
+            if (raw == null) {
+                raw = new HashMap<>();
+            }
+        }
+    }
 }

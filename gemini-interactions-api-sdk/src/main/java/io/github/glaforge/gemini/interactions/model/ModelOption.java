@@ -25,6 +25,8 @@ public final class ModelOption {
     /** Model option constant. */
     public static final String ANTIGRAVITY_PREVIEW_05_2026 = "antigravity-preview-05-2026";
     /** Model option constant. */
+    public static final String ANTIGRAVITY_PREVIEW_09_2026 = "antigravity-preview-09-2026";
+    /** Model option constant. */
     public static final String AQA = "aqa";
     /** Model option constant. */
     public static final String DEEP_RESEARCH_MAX_PREVIEW_04_2026 = "deep-research-max-preview-04-2026";
@@ -88,6 +90,8 @@ public final class ModelOption {
     public static final String GEMINI_3_1_PRO_PREVIEW_CUSTOMTOOLS = "gemini-3.1-pro-preview-customtools";
     /** Model option constant. */
     public static final String GEMINI_3_5_FLASH = "gemini-3.5-flash";
+    /** Model option constant. */
+    public static final String GEMINI_3_5_FLASH_LITE = "gemini-3.5-flash-lite";
     /** Model option constant. */
     public static final String GEMINI_3_6_FLASH = "gemini-3.6-flash";
     /** Model option constant. */

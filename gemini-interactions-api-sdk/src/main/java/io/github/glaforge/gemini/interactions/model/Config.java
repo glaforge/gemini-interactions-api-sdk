@@ -54,7 +54,7 @@ public class Config {
         @JsonProperty("top_p") Double topP,
         Integer seed,
         @JsonProperty("stop_sequences") List<String> stopSequences,
-        @JsonProperty("tool_choice") Tool.ToolChoiceConfig toolChoice,
+        @JsonProperty("tool_choice") ToolChoiceConfiguration toolChoice,
         @JsonProperty("thinking_level") ThinkingLevel thinkingLevel,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("max_output_tokens") Integer maxOutputTokens,
@@ -64,6 +64,51 @@ public class Config {
         @JsonProperty("video_config") VideoConfig videoConfig,
         @JsonProperty("transcription_config") TranscriptionConfig transcriptionConfig
     ) {
+        /**
+         * Backward-compatible constructor accepting {@link Tool.ToolChoiceConfig}.
+         *
+         * @param temperature       The temperature.
+         * @param topP              The topP value.
+         * @param seed              The seed.
+         * @param stopSequences     The stop sequences.
+         * @param toolChoice        The tool choice config.
+         * @param thinkingLevel     The thinking level.
+         * @param thinkingSummaries The thinking summaries.
+         * @param maxOutputTokens   The max output tokens.
+         * @param speechConfig      The speech config.
+         * @param presencePenalty   The presence penalty.
+         * @param frequencyPenalty  The frequency penalty.
+         * @param videoConfig       The video config.
+         * @param transcriptionConfig The transcription config.
+         */
+        public GenerationConfig(
+            Double temperature,
+            Double topP,
+            Integer seed,
+            List<String> stopSequences,
+            Tool.ToolChoiceConfig toolChoice,
+            ThinkingLevel thinkingLevel,
+            ThinkingSummaries thinkingSummaries,
+            Integer maxOutputTokens,
+            SpeechConfiguration speechConfig,
+            Double presencePenalty,
+            Double frequencyPenalty,
+            VideoConfig videoConfig,
+            TranscriptionConfig transcriptionConfig
+        ) {
+            this(temperature, topP, seed, stopSequences, toolChoice != null ? ToolChoiceConfiguration.of(toolChoice) : null,
+                thinkingLevel, thinkingSummaries, maxOutputTokens, speechConfig, presencePenalty, frequencyPenalty, videoConfig, transcriptionConfig);
+        }
+
+        /**
+         * Backward-compatible accessor for ToolChoiceConfig.
+         *
+         * @return The ToolChoiceConfig, or null if using a preset mode string or not set.
+         */
+        public Tool.ToolChoiceConfig toolChoiceConfig() {
+            return toolChoice != null ? toolChoice.config() : null;
+        }
+
         /**
          * Returns a new builder for GenerationConfig.
          * @return a new builder for GenerationConfig.
@@ -78,7 +123,7 @@ public class Config {
             private Double topP;
             private Integer seed;
             private List<String> stopSequences;
-            private Tool.ToolChoiceConfig toolChoice;
+            private ToolChoiceConfiguration toolChoice;
             private ThinkingLevel thinkingLevel;
             private ThinkingSummaries thinkingSummaries;
             private Integer maxOutputTokens;
@@ -124,12 +169,28 @@ public class Config {
             public Builder stopSequences(List<String> stopSequences) { this.stopSequences = stopSequences; return this; }
 
             /**
-             * Sets the tool choice.
+             * Sets the tool choice configuration.
              *
-             * @param toolChoice The tool choice.
+             * @param toolChoice The tool choice configuration.
              * @return This builder.
              */
-            public Builder toolChoice(Tool.ToolChoiceConfig toolChoice) { this.toolChoice = toolChoice; return this; }
+            public Builder toolChoice(ToolChoiceConfiguration toolChoice) { this.toolChoice = toolChoice; return this; }
+
+            /**
+             * Sets the tool choice using a detailed ToolChoiceConfig.
+             *
+             * @param toolChoice The tool choice config.
+             * @return This builder.
+             */
+            public Builder toolChoice(Tool.ToolChoiceConfig toolChoice) { this.toolChoice = toolChoice != null ? ToolChoiceConfiguration.of(toolChoice) : null; return this; }
+
+            /**
+             * Sets the tool choice mode string ("auto", "any", "none", "validated").
+             *
+             * @param mode The tool choice mode string.
+             * @return This builder.
+             */
+            public Builder toolChoice(String mode) { this.toolChoice = mode != null ? ToolChoiceConfiguration.of(mode) : null; return this; }
 
             /**
              * Sets the thinking level.
@@ -356,20 +417,27 @@ public class Config {
     /**
      * Configuration for video output format.
      *
-     * @param type       The type of format ("video").
-     * @param gcsUri     Cloud Storage URI to store the video output.
-     * @param resolution Video output resolution ("1080p", "360p", "4k", "720p").
+     * @param type        The type of format ("video").
+     * @param gcsUri      Cloud Storage URI to store the video output.
+     * @param resolution  Video output resolution ("1080p", "360p", "4k", "720p").
+     * @param aspectRatio Aspect ratio for video output ("16:9", "9:16", "1:1", etc.).
+     * @param delivery    Delivery mode for the video output ("URI", "INLINE").
+     * @param duration    Duration for the video output (e.g. "5s", "10s").
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record VideoResponseFormat(
         String type,
         @JsonProperty("gcs_uri") String gcsUri,
-        String resolution
+        String resolution,
+        @JsonProperty("aspect_ratio") String aspectRatio,
+        String delivery,
+        String duration
     ) implements ResponseFormat {
         /** Creates a VideoResponseFormat with default type. */
         public VideoResponseFormat() {
-            this("video", null, null);
+            this("video", null, null, null, null, null);
         }
+
         /**
          * Creates a VideoResponseFormat with GCS URI and resolution.
          *
@@ -377,7 +445,91 @@ public class Config {
          * @param resolution Output resolution.
          */
         public VideoResponseFormat(String gcsUri, String resolution) {
-            this("video", gcsUri, resolution);
+            this("video", gcsUri, resolution, null, null, null);
+        }
+
+        /**
+         * Creates a VideoResponseFormat with all parameters.
+         *
+         * @param gcsUri      GCS URI.
+         * @param resolution  Output resolution.
+         * @param aspectRatio Aspect ratio.
+         * @param delivery    Delivery mode.
+         * @param duration    Duration.
+         */
+        public VideoResponseFormat(String gcsUri, String resolution, String aspectRatio, String delivery, String duration) {
+            this("video", gcsUri, resolution, aspectRatio, delivery, duration);
+        }
+
+        /**
+         * Returns a new builder for VideoResponseFormat.
+         * @return a new builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link VideoResponseFormat}. */
+        public static class Builder {
+            private String type = "video";
+            private String gcsUri;
+            private String resolution;
+            private String aspectRatio;
+            private String delivery;
+            private String duration;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the type.
+             * @param type the type.
+             * @return This builder.
+             */
+            public Builder type(String type) { this.type = type; return this; }
+
+            /**
+             * Sets the Cloud Storage URI.
+             * @param gcsUri GCS URI.
+             * @return This builder.
+             */
+            public Builder gcsUri(String gcsUri) { this.gcsUri = gcsUri; return this; }
+
+            /**
+             * Sets the resolution.
+             * @param resolution Video resolution.
+             * @return This builder.
+             */
+            public Builder resolution(String resolution) { this.resolution = resolution; return this; }
+
+            /**
+             * Sets the aspect ratio.
+             * @param aspectRatio Aspect ratio.
+             * @return This builder.
+             */
+            public Builder aspectRatio(String aspectRatio) { this.aspectRatio = aspectRatio; return this; }
+
+            /**
+             * Sets the delivery mode.
+             * @param delivery Delivery mode.
+             * @return This builder.
+             */
+            public Builder delivery(String delivery) { this.delivery = delivery; return this; }
+
+            /**
+             * Sets the duration.
+             * @param duration Video duration.
+             * @return This builder.
+             */
+            public Builder duration(String duration) { this.duration = duration; return this; }
+
+            /**
+             * Builds the VideoResponseFormat.
+             * @return The VideoResponseFormat.
+             */
+            public VideoResponseFormat build() {
+                return new VideoResponseFormat(type, gcsUri, resolution, aspectRatio, delivery, duration);
+            }
         }
     }
 
@@ -842,12 +994,82 @@ public class Config {
             this("antigravity", maxTotalTokens, null);
         }
         /** 
+         * Creates an AntigravityAgentConfig with model. 
+         * @param model Model name.
+         */
+        public AntigravityAgentConfig(String model) {
+            this("antigravity", null, model);
+        }
+
+        /** 
          * Creates a AntigravityAgentConfig with token limit and model. 
          * @param maxTotalTokens Max total tokens.
          * @param model Model name.
          */
         public AntigravityAgentConfig(Long maxTotalTokens, String model) {
             this("antigravity", maxTotalTokens, model);
+        }
+
+        /**
+         * Creates a new builder for {@link AntigravityAgentConfig}.
+         *
+         * @return A new Builder instance.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /**
+         * Builder for {@link AntigravityAgentConfig}.
+         */
+        public static class Builder {
+            private Long maxTotalTokens;
+            private String model;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the max total tokens for the agent run.
+             *
+             * @param maxTotalTokens Max total tokens.
+             * @return This builder.
+             */
+            public Builder maxTotalTokens(Long maxTotalTokens) {
+                this.maxTotalTokens = maxTotalTokens;
+                return this;
+            }
+
+            /**
+             * Sets the max total tokens for the agent run from a string.
+             *
+             * @param maxTotalTokens Max total tokens as a string.
+             * @return This builder.
+             */
+            public Builder maxTotalTokens(String maxTotalTokens) {
+                this.maxTotalTokens = maxTotalTokens != null ? Long.parseLong(maxTotalTokens) : null;
+                return this;
+            }
+
+            /**
+             * Sets the model to use for agent reasoning.
+             *
+             * @param model The model name (e.g., "gemini-3.8-flash", "gemini-3.5-flash-lite").
+             * @return This builder.
+             */
+            public Builder model(String model) {
+                this.model = model;
+                return this;
+            }
+
+            /**
+             * Builds the {@link AntigravityAgentConfig}.
+             *
+             * @return A new AntigravityAgentConfig instance.
+             */
+            public AntigravityAgentConfig build() {
+                return new AntigravityAgentConfig("antigravity", maxTotalTokens, model);
+            }
         }
     }
 }

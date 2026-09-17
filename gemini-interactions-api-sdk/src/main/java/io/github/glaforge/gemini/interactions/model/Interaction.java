@@ -297,12 +297,39 @@ public record Interaction(
         @JsonProperty("budget_exceeded") BUDGET_EXCEEDED;
         
         /**
-         * Checks whether the status represents a finished state.
+         * Checks whether the status represents a finished (terminal) state.
          *
-         * @return true if the status is COMPLETED, FAILED, or CANCELLED.
+         * @return true if the status is COMPLETED, FAILED, CANCELLED, INCOMPLETE, or BUDGET_EXCEEDED.
          */
         public boolean isFinished() {
-            return this == COMPLETED || this == FAILED || this == CANCELLED;
+            return this == COMPLETED || this == FAILED || this == CANCELLED || this == INCOMPLETE || this == BUDGET_EXCEEDED;
+        }
+
+        /**
+         * Checks whether the status represents an incomplete state (e.g. token budget limit reached).
+         *
+         * @return true if INCOMPLETE.
+         */
+        public boolean isIncomplete() {
+            return this == INCOMPLETE;
+        }
+
+        /**
+         * Checks whether the status represents a successfully completed state.
+         *
+         * @return true if COMPLETED.
+         */
+        public boolean isCompleted() {
+            return this == COMPLETED;
+        }
+
+        /**
+         * Checks whether the status represents a failed state.
+         *
+         * @return true if FAILED.
+         */
+        public boolean isFailed() {
+            return this == FAILED;
         }
     }
 

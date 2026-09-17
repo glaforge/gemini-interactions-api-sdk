@@ -523,14 +523,60 @@ try (EnvironmentWorkspace workspace = client.getWorkspace(interaction.environmen
         // Save binary files (e.g. charts, PDFs) to your local disk
         workspace.downloadFile("chart.png", Path.of("/local/path/chart.png"));
     }
+
+    // Extract all environment files to a local directory
+    workspace.extractAll(Path.of("./local/extracted_snapshot"));
 }
+
+// Or download the complete raw TAR snapshot directly to a file:
+client.downloadEnvironment(interaction.environmentId(), Path.of("./snapshot.tar"));
 ```
 
-##### Option B: Remote Metadata Inspection & Directory Browsing (`getEnvironmentFiles`)
+##### Option B: Direct Single File & Directory Downloads (`downloadEnvironmentFile`)
+Download individual files or subdirectories directly without fetching the full environment archive:
+```java
+import java.io.InputStream;
+import java.nio.file.Path;
+
+// Download single file content directly as bytes or save to disk
+byte[] codeBytes = client.downloadEnvironmentFileBytes(envId, "src/main.py");
+client.downloadEnvironmentFile(envId, "src/main.py", Path.of("./main.py"));
+
+// Stream raw content
+try (InputStream in = client.downloadEnvironmentFile(envId, "workspace/report.md")) {
+    // Process stream...
+}
+
+// Download a subdirectory as a TAR archive (with recursive=true)
+client.downloadEnvironmentFile(envId, "src", true, Path.of("./src.tar"));
+```
+
+##### Option C: Uploading Files & Archives into Sandbox (`uploadEnvironmentFile` & `uploadEnvironmentArchive`)
+Upload files or seed entire directory structures dynamically into an active sandbox:
+```java
+import java.nio.file.Path;
+
+// Upload a single text file (with overwrite protection)
+client.uploadEnvironmentFile(envId, "workspace/config.json", "{\"debug\": true}", true);
+
+// Upload a local binary file
+client.uploadEnvironmentFile(envId, "workspace/data.bin", Path.of("./local/data.bin"), true);
+
+// Upload and automatically extract a .tar or .tar.gz directory archive into destination path
+client.uploadEnvironmentArchive(envId, "workspace/src/", Path.of("./source.tar.gz"), true);
+```
+
+##### Option D: Remote Metadata Inspection & Directory Browsing (`getEnvironmentFiles`)
 ```java
 import io.github.glaforge.gemini.interactions.model.GetEnvironmentFilesResponse;
+import io.github.glaforge.gemini.interactions.model.EnvironmentFile;
+import java.util.Optional;
 
-// Inspect file metadata (name, type, sizeBytes, mimeType, created, modified) via API
+// Fetch metadata for a specific file
+Optional<EnvironmentFile> file = client.getEnvironmentFile(envId, "src/main.py");
+file.ifPresent(f -> System.out.println(f.name() + ": " + f.sizeBytes() + " bytes"));
+
+// Inspect directory tree metadata via API
 GetEnvironmentFilesResponse filesResponse = client.getEnvironmentFiles(
     interaction.environmentId(), 
     "workspace", // path
@@ -539,8 +585,8 @@ GetEnvironmentFilesResponse filesResponse = client.getEnvironmentFiles(
     true         // recursive
 );
 
-filesResponse.files().forEach(file -> {
-    System.out.println(file.path() + " (" + file.type() + ", " + file.sizeBytes() + " bytes)");
+filesResponse.files().forEach(f -> {
+    System.out.println(f.path() + " (" + f.type() + ", " + f.sizeBytes() + " bytes)");
 });
 ```
 
@@ -575,7 +621,99 @@ Environment cloned = client.createEnvironmentFrom(env.id());
 client.deleteEnvironment(env.id());
 ```
 
-#### 5. Listing, Retrieving, and Deleting Agents
+#### 5. Server-Managed Credentials (Provisioning, Injection & Rotation)
+The SDK supports Google's server-managed Credentials API, allowing developers to securely provision API keys, OAuth tokens, and environment variables into agent environments and tools without exposing secrets in client logs or model context:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Credential;
+import io.github.glaforge.gemini.interactions.model.CredentialType;
+import io.github.glaforge.gemini.interactions.model.BearerTokenConfig;
+import io.github.glaforge.gemini.interactions.model.OAuth2Config;
+import io.github.glaforge.gemini.interactions.model.EnvironmentVariableConfig;
+import io.github.glaforge.gemini.interactions.model.CredentialUpdate;
+import io.github.glaforge.gemini.interactions.model.ListCredentialsResponse;
+import io.github.glaforge.gemini.interactions.model.Tool;
+import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
+
+// 1. Provision a Bearer token credential (secret is write-only, never returned by server)
+Credential jiraCred = client.createCredential(Credential.builder()
+    .id("jira-api-token")
+    .bearerToken(BearerTokenConfig.builder()
+        .token("secret-token-12345")
+        .headerName("Authorization")
+        .prefix("Bearer")
+        .build())
+    .build());
+
+// 2. Provision an OAuth2 credential
+Credential oauthCred = client.createCredential(Credential.oauth2("github-oauth", OAuth2Config.builder()
+    .clientId("client-id-xyz")
+    .clientSecret("client-secret-xyz")
+    .refreshToken("refresh-token-xyz")
+    .tokenUrl("https://github.com/login/oauth/access_token")
+    .scopes("repo", "read:user")
+    .build()));
+
+// 3. Provision an environment variable credential with trusted domains
+Credential slackCred = client.createCredential(Credential.environmentVariable("slack-token", EnvironmentVariableConfig.builder()
+    .value("xoxb-secret-slack-token")
+    .injectionLocation("header")
+    .trustedDomains("*.slack.com", "slack.com")
+    .build()));
+
+// 4. Reference credentials in MCP Tools
+Tool.McpServer mcpTool = Tool.McpServer.builder()
+    .name("jira-tool")
+    .url("https://jira.internal.net/sse")
+    .credential("jira-api-token")
+    .build();
+
+// 5. Inject credentials into Environment sandbox containers
+EnvironmentConfig envConfig = EnvironmentConfig.builder()
+    .env("DEBUG", "true")
+    .envCredential("SLACK_BOT_TOKEN", "slack-token")
+    .build();
+
+// 6. Inspect metadata, list, rotate secrets, and delete
+Credential meta = client.getCredential("jira-api-token");
+ListCredentialsResponse list = client.listCredentials(10, null);
+
+// Rotate secret without changing referencing agents
+client.updateCredential("jira-api-token", CredentialUpdate.ofBearerToken("rotated-secret-token"));
+
+// Delete credential
+client.deleteCredential("jira-api-token");
+```
+
+#### 6. Refreshing Credentials on Existing Environments
+When tokens expire during multi-step tasks, you can update network credentials on an active sandbox while preserving all installed packages, repositories, and workspace files:
+
+```java
+import io.github.glaforge.gemini.interactions.model.AllowlistEntry;
+import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
+import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllowlist;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+import java.util.List;
+import java.util.Map;
+
+// Configure updated network allowlist with refreshed token (egress proxy header injection)
+EnvironmentNetworkEgressAllowlist refreshedNetwork = new EnvironmentNetworkEgressAllowlist(List.of(
+    AllowlistEntry.of("storage.googleapis.com", "Authorization", "Bearer " + refreshedGcsToken),
+    AllowlistEntry.of("api.github.com", Map.of("Authorization", "Bearer " + refreshedGithubPat)),
+    AllowlistEntry.of("*") // Allow all other outbound traffic without transformation
+));
+
+// Update the existing environment during interaction creation
+AgentInteractionParams refreshParams = AgentInteractionParams.builder()
+    .agent("antigravity-preview-05-2026")
+    .input("Fetch the latest reports from gs://my-bucket/data/ and create a PR on GitHub.")
+    .environment(EnvironmentConfig.forExisting(env.id(), refreshedNetwork))
+    .build();
+
+Interaction refreshedInteraction = client.create(refreshParams);
+```
+
+#### 7. Listing, Retrieving, and Deleting Agents
 The SDK supports standard management CRUD endpoints:
 
 ```java
@@ -590,7 +728,7 @@ Agent retrieved = client.getAgent("my-concise-coder-agent");
 client.deleteAgent("my-concise-coder-agent");
 ```
 
-#### 6. Server-Side Handling (InteractionsHandler)
+#### 8. Server-Side Handling (InteractionsHandler)
 
 > [!NOTE]
 > To use `InteractionsHandler`, make sure you have added the `gemini-interactions-server` dependency to your project.
@@ -615,21 +753,44 @@ public class MyInteractionsServer extends InteractionsHandler {
 }
 ```
 
-### Budget & Token Controls
+### Antigravity Agent & Budget Controls
 
-For specialized agents like `antigravity` or `deep-research`, you can set a strict token budget to cap resource usage using `agentConfig` in `AgentInteractionParams`:
+The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent powered by Gemini 3.8 Flash that can reason, run code (Bash, Python, Node.js), manage files, and search the web inside an isolated remote Linux sandbox.
+
+You can configure its underlying model (e.g. `gemini-3.8-flash`, `gemini-3.5-flash-lite`), set token budget caps with `AntigravityAgentConfig.builder()`, and seamlessly continue executions when the token budget is reached (`status: "incomplete"`):
 
 ```java
-import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+import io.github.glaforge.gemini.interactions.model.AgentOption;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
 import io.github.glaforge.gemini.interactions.model.Config.AntigravityAgentConfig;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
 
+// 1. Run Antigravity with a token budget
 AgentInteractionParams params = AgentInteractionParams.builder()
-    .agent("antigravity-preview-05-2026")
-    .input("Review recent commits.")
-    .agentConfig(new AntigravityAgentConfig(10000L)) // strict cap
+    .agent(AgentOption.ANTIGRAVITY_PREVIEW_09_2026)
+    .input("Review recent commits and run test suite.")
+    .environment("remote")
+    .agentConfig(AntigravityAgentConfig.builder()
+        .model(ModelOption.GEMINI_3_8_FLASH)
+        .maxTotalTokens(50000L) // Budget cap
+        .build())
     .build();
 
 Interaction response = client.create(params);
+
+// 2. If status is incomplete, continue in the same environment:
+if (response.status().isIncomplete()) {
+    Interaction continuation = client.create(
+        AgentInteractionParams.builder()
+            .agent(AgentOption.ANTIGRAVITY_PREVIEW_09_2026)
+            .input("continue")
+            .previousInteractionId(response.id())
+            .environment(response.environmentId())
+            .agentConfig(AntigravityAgentConfig.builder().maxTotalTokens(50000L).build())
+            .build()
+    );
+}
 ```
 
 ### Triggers (Scheduling & Automation)
@@ -637,6 +798,7 @@ Interaction response = client.create(params);
 You can set up CRON-like schedules to automatically run agents in the background. This is useful for periodic auditing, continuous integration, or recurring tasks.
 
 ```java
+import io.github.glaforge.gemini.interactions.model.AgentOption;
 import io.github.glaforge.gemini.interactions.model.Trigger;
 import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
@@ -646,14 +808,27 @@ TriggerCreateParams params = TriggerCreateParams.builder()
     .displayName("Daily Security Audit")
     .schedule("0 0 * * *") // Run daily at midnight
     .interaction(AgentInteractionParams.builder()
-        .agent("antigravity-preview-05-2026")
+        .agent(AgentOption.ANTIGRAVITY_PREVIEW_09_2026)
         .input("Audit the codebase for hardcoded secrets.")
-        .agentConfig(new AntigravityAgentConfig(50000L)) // Budget cap: 50K tokens
+        .agentConfig(AntigravityAgentConfig.builder().maxTotalTokens(50000L).build()) // Budget cap: 50K tokens
         .build())
     .build();
 
 Trigger trigger = client.createTrigger(params);
 System.out.println("Created Trigger ID: " + trigger.id());
+
+// Pause and resume triggers
+client.pauseTrigger(trigger.id());
+client.resumeTrigger(trigger.id());
+
+// Run immediately on demand
+TriggerExecution execution = client.runTrigger(trigger.id());
+
+// Query and list triggers by filter/status
+ListTriggersResponse activeTriggers = client.listTriggers("status=active", 10, null);
+
+// List trigger executions
+ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id());
 ```
 
 ### Function Calling

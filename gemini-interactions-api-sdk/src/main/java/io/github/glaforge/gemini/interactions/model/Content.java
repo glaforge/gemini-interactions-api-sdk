@@ -16,11 +16,15 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the content of the response or input.
@@ -30,7 +34,8 @@ import java.util.List;
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = "type",
-    visible = true
+    visible = true,
+    defaultImpl = Content.UnknownContent.class
 )
 @JsonSubTypes({
     @JsonSubTypes.Type(value = Content.TextContent.class, name = "text"),
@@ -46,7 +51,8 @@ public sealed interface Content permits
     Content.AudioContent,
     Content.DocumentContent,
     Content.VideoContent,
-    Content.ThoughtContent {
+    Content.ThoughtContent,
+    Content.UnknownContent {
 
     /**
      * Returns the type of content.
@@ -481,6 +487,32 @@ public sealed interface Content permits
          */
         public ThoughtContent(String signature, List<Content> summary) {
             this("thought", signature, summary);
+        }
+    }
+
+    /**
+     * Fallback content representation for unknown or newly introduced content types.
+     *
+     * @param type The content type identifier.
+     * @param raw  Raw unrecognized properties in the content payload.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record UnknownContent(
+        String type,
+        @JsonAnySetter
+        @JsonAnyGetter
+        Map<String, Object> raw
+    ) implements Content {
+        /**
+         * Creates an UnknownContent.
+         *
+         * @param type The content type identifier.
+         * @param raw  Raw unrecognized properties in the content payload.
+         */
+        public UnknownContent {
+            if (raw == null) {
+                raw = new HashMap<>();
+            }
         }
     }
 }

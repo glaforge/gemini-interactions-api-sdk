@@ -480,12 +480,36 @@ public class InteractionParams {
             public Builder inputTurns(List<Interaction.Turn> turns) { this.input = turns; return this; }
 
             /**
-             * Sets the environment.
+             * Sets the environment using an arbitrary object.
              *
-             * @param environment The environment.
+             * @param environment The environment object.
              * @return This builder.
              */
             public Builder environment(Object environment) { this.environment = environment; return this; }
+
+            /**
+             * Sets the environment using a preset name or existing environment ID string (e.g. "remote" or "env_abc123").
+             *
+             * @param environment The environment name or ID.
+             * @return This builder.
+             */
+            public Builder environment(String environment) { this.environment = environment; return this; }
+
+            /**
+             * Sets the environment using an EnvironmentConfig.
+             *
+             * @param environment The custom environment configuration.
+             * @return This builder.
+             */
+            public Builder environment(EnvironmentConfig environment) { this.environment = environment; return this; }
+
+            /**
+             * Sets the environment using a BaseEnvironment.
+             *
+             * @param environment The base environment configuration.
+             * @return This builder.
+             */
+            public Builder environment(BaseEnvironment environment) { this.environment = environment; return this; }
 
             /**
              * Sets the agent configuration.

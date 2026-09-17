@@ -17,8 +17,11 @@
 package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.github.glaforge.gemini.interactions.model.deserializer.AllowlistEntryDeserializer;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A single domain allowlist rule with optional header injection.
@@ -26,7 +29,9 @@ import java.util.Map;
  * @param domain    Domain to allow outbound requests to. Supports wildcards (e.g. "*.googleapis.com").
  * @param transform Headers to inject on all outbound requests matching this domain.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(using = AllowlistEntryDeserializer.class)
 public record AllowlistEntry(
     String domain,
     List<Map<String, String>> transform
@@ -37,6 +42,39 @@ public record AllowlistEntry(
      * @param domain The allowed domain.
      */
     public AllowlistEntry(String domain) {
-        this(domain, null);
+        this(domain, (List<Map<String, String>>) null);
+    }
+
+    /**
+     * Creates an AllowlistEntry with only the domain specified.
+     *
+     * @param domain The allowed domain.
+     * @return An AllowlistEntry with no header transforms.
+     */
+    public static AllowlistEntry of(String domain) {
+        return new AllowlistEntry(domain);
+    }
+
+    /**
+     * Creates an AllowlistEntry with a single header transform mapping.
+     *
+     * @param domain    The allowed domain.
+     * @param transform A single header mapping (e.g. Map.of("Authorization", "Bearer token")).
+     * @return An AllowlistEntry with the specified transform.
+     */
+    public static AllowlistEntry of(String domain, Map<String, String> transform) {
+        return new AllowlistEntry(domain, transform != null ? List.of(transform) : null);
+    }
+
+    /**
+     * Creates an AllowlistEntry with a single header name and value.
+     *
+     * @param domain      The allowed domain.
+     * @param headerName  Header name to inject (e.g. "Authorization").
+     * @param headerValue Header value to inject (e.g. "Bearer ...").
+     * @return An AllowlistEntry with the specified injected header.
+     */
+    public static AllowlistEntry of(String domain, String headerName, String headerValue) {
+        return of(domain, headerName != null && headerValue != null ? Map.of(headerName, headerValue) : null);
     }
 }

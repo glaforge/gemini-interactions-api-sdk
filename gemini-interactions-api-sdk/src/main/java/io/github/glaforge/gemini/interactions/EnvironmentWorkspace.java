@@ -220,6 +220,27 @@ public class EnvironmentWorkspace implements AutoCloseable {
         }
     }
 
+    /**
+     * Extracts all files from the environment workspace into the specified local directory.
+     *
+     * @param targetDirectory The target directory where files will be extracted.
+     * @throws IOException            If creating directories or writing files fails.
+     * @throws NoSuchElementException If the environment workspace has not been refreshed.
+     */
+    public void extractAll(Path targetDirectory) throws IOException {
+        if (tempTarPath == null) {
+            throw new NoSuchElementException("Environment workspace is empty or has not been refreshed.");
+        }
+        Files.createDirectories(targetDirectory);
+        for (String relativePath : index.keySet()) {
+            Path targetFile = targetDirectory.resolve(relativePath);
+            if (!targetFile.normalize().startsWith(targetDirectory.normalize())) {
+                throw new IOException("Bad tar entry path outside target directory: " + relativePath);
+            }
+            downloadFile(relativePath, targetFile);
+        }
+    }
+
     @Override
     public synchronized void close() {
         cleanupTempFile();
