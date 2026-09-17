@@ -632,6 +632,7 @@ ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.
 
 The SDK uses specialized union records instead of untyped `Object` fields to handle polymorphic API configuration payloads:
 
+- **`TriggerInteraction`**: Wraps either an interaction request template (`InteractionParams.Request`) or a hydrated `Interaction` resource (`isRequest()`, `isResource()`).
 - **`ToolChoiceConfiguration`**: Wraps either a preset mode string (`"auto"`, `"any"`, `"none"`, `"validated"`) or a detailed `Tool.ToolChoiceConfig` (`isMode()`, `isConfig()`).
 - **`SpeechConfiguration`**: Wraps either single-speaker `List<SpeechConfig>` or multi-speaker `SpeakerConfig` (`isSingleSpeaker()`, `isMultiSpeaker()`).
 - **`NetworkConfiguration`**: Wraps either a preset network string (e.g. `"disabled"`, `"allow_all"`) or custom `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`).

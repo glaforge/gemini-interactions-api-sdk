@@ -16,7 +16,9 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TriggersTest {
@@ -211,5 +213,67 @@ public class TriggersTest {
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("GET", recordedRequest.getMethod());
         assertEquals("/v1beta/triggers?filter=status%3Dactive&page_size=10&page_token=tok-1", recordedRequest.getPath());
+    }
+
+    @Test
+    void testTriggerWithRequestInteraction() throws Exception {
+        String mockResponseJson = """
+                {
+                  "id": "trigger-req",
+                  "status": "active",
+                  "interaction": {
+                    "agent": "antigravity-preview-09-2026",
+                    "input": "Perform nightly sync"
+                  }
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(mockResponseJson)
+                .addHeader("Content-Type", "application/json"));
+
+        Trigger trigger = client.getTrigger("trigger-req");
+
+        assertNotNull(trigger);
+        assertNotNull(trigger.interaction());
+        assertTrue(trigger.interaction().isRequest());
+        assertFalse(trigger.interaction().isResource());
+        assertNotNull(trigger.interaction().request());
+        assertNull(trigger.interaction().resource());
+        assertNotNull(trigger.interactionAsRequest());
+        assertNull(trigger.interactionAsInteraction());
+        assertTrue(trigger.interaction().request() instanceof InteractionParams.AgentInteractionParams);
+        assertEquals("antigravity-preview-09-2026",
+            ((InteractionParams.AgentInteractionParams) trigger.interaction().request()).agent());
+    }
+
+    @Test
+    void testTriggerWithResourceInteraction() throws Exception {
+        String mockResponseJson = """
+                {
+                  "id": "trigger-res",
+                  "status": "active",
+                  "interaction": {
+                    "id": "inter-999",
+                    "status": "completed",
+                    "model": "gemini-3.8-flash"
+                  }
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(mockResponseJson)
+                .addHeader("Content-Type", "application/json"));
+
+        Trigger trigger = client.getTrigger("trigger-res");
+
+        assertNotNull(trigger);
+        assertNotNull(trigger.interaction());
+        assertFalse(trigger.interaction().isRequest());
+        assertTrue(trigger.interaction().isResource());
+        assertNull(trigger.interaction().request());
+        assertNotNull(trigger.interaction().resource());
+        assertNull(trigger.interactionAsRequest());
+        assertNotNull(trigger.interactionAsInteraction());
+        assertEquals("inter-999", trigger.interaction().resource().id());
+        assertEquals("gemini-3.8-flash", trigger.interaction().resource().model());
     }
 }

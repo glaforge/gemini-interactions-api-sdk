@@ -3,9 +3,6 @@ package io.github.glaforge.gemini.interactions.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
-import java.util.Map;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
 /**
  * A trigger that automatically creates interactions on a schedule.
@@ -34,7 +31,7 @@ public record Trigger(
     @JsonProperty("display_name") String displayName,
     @JsonProperty("environment_id") String environmentId,
     @JsonProperty("execution_timeout_seconds") Integer executionTimeoutSeconds,
-    Object interaction,
+    TriggerInteraction interaction,
     @JsonProperty("max_consecutive_failures") Integer maxConsecutiveFailures,
     String schedule,
     @JsonProperty("time_zone") String timeZone,
@@ -80,48 +77,71 @@ public record Trigger(
         Instant createTime,
         Instant updateTime
     ) {
-        this(id, displayName, environmentId, executionTimeoutSeconds, (Object) interaction, maxConsecutiveFailures,
-            schedule, timeZone, status, nextRunTime, previousInteractionId, createTime, updateTime, null, null, null, null);
+        this(id, displayName, environmentId, executionTimeoutSeconds, interaction != null ? TriggerInteraction.of(interaction) : null,
+            maxConsecutiveFailures, schedule, timeZone, status, nextRunTime, previousInteractionId, createTime, updateTime, null, null, null, null);
     }
 
-    private static final ObjectMapper MAPPER = JsonMapper.builder().build();
+    /**
+     * Backward-compatible constructor accepting Object interaction.
+     *
+     * @param id The id.
+     * @param displayName The display name.
+     * @param environmentId The environment id.
+     * @param executionTimeoutSeconds The execution timeout in seconds.
+     * @param interaction The interaction request parameters or resource.
+     * @param maxConsecutiveFailures The max consecutive failures.
+     * @param schedule The cron schedule.
+     * @param timeZone The time zone.
+     * @param status The status.
+     * @param nextRunTime The next run time.
+     * @param previousInteractionId The previous interaction id.
+     * @param createTime The create time.
+     * @param updateTime The update time.
+     * @param consecutiveFailureCount The consecutive failure count.
+     * @param lastPauseTime The last pause time.
+     * @param lastResumeTime The last resume time.
+     * @param lastRunTime The last run time.
+     */
+    public Trigger(
+        String id,
+        String displayName,
+        String environmentId,
+        Integer executionTimeoutSeconds,
+        Object interaction,
+        Integer maxConsecutiveFailures,
+        String schedule,
+        String timeZone,
+        Status status,
+        Instant nextRunTime,
+        String previousInteractionId,
+        Instant createTime,
+        Instant updateTime,
+        Integer consecutiveFailureCount,
+        Instant lastPauseTime,
+        Instant lastResumeTime,
+        Instant lastRunTime
+    ) {
+        this(id, displayName, environmentId, executionTimeoutSeconds, interaction != null ? TriggerInteraction.of(interaction) : null,
+            maxConsecutiveFailures, schedule, timeZone, status, nextRunTime, previousInteractionId,
+            createTime, updateTime, consecutiveFailureCount, lastPauseTime, lastResumeTime, lastRunTime);
+    }
 
     /**
      * Returns the interaction as an {@link InteractionParams.Request}, if applicable.
      *
-     * @return The interaction request, or null if not of this type.
+     * @return The interaction request, or null if not of this type or not set.
      */
     public InteractionParams.Request interactionAsRequest() {
-        if (interaction instanceof InteractionParams.Request req) {
-            return req;
-        }
-        if (interaction instanceof Map<?, ?> map) {
-            try {
-                return MAPPER.convertValue(map, InteractionParams.Request.class);
-            } catch (Exception ignored) {
-                return null;
-            }
-        }
-        return null;
+        return interaction != null ? interaction.request() : null;
     }
 
     /**
      * Returns the interaction as an {@link Interaction}, if applicable.
      *
-     * @return The interaction resource, or null if not of this type.
+     * @return The interaction resource, or null if not of this type or not set.
      */
     public Interaction interactionAsInteraction() {
-        if (interaction instanceof Interaction i) {
-            return i;
-        }
-        if (interaction instanceof Map<?, ?> map) {
-            try {
-                return MAPPER.convertValue(map, Interaction.class);
-            } catch (Exception ignored) {
-                return null;
-            }
-        }
-        return null;
+        return interaction != null ? interaction.resource() : null;
     }
 
     /**
@@ -153,7 +173,7 @@ public record Trigger(
         private String displayName;
         private String environmentId;
         private Integer executionTimeoutSeconds;
-        private Object interaction;
+        private TriggerInteraction interaction;
         private Integer maxConsecutiveFailures;
         private String schedule;
         private String timeZone;
@@ -192,23 +212,29 @@ public record Trigger(
          */
         public Builder executionTimeoutSeconds(Integer executionTimeoutSeconds) { this.executionTimeoutSeconds = executionTimeoutSeconds; return this; }
         /**
-         * Sets the interaction parameters or template.
-         * @param interaction The interaction parameters or resource.
+         * Sets the trigger interaction.
+         * @param interaction The trigger interaction.
          * @return This builder.
          */
-        public Builder interaction(Object interaction) { this.interaction = interaction; return this; }
+        public Builder interaction(TriggerInteraction interaction) { this.interaction = interaction; return this; }
         /**
          * Sets the interaction request parameters.
          * @param interaction The interaction parameters.
          * @return This builder.
          */
-        public Builder interaction(InteractionParams.Request interaction) { this.interaction = interaction; return this; }
+        public Builder interaction(InteractionParams.Request interaction) { this.interaction = interaction != null ? TriggerInteraction.of(interaction) : null; return this; }
         /**
          * Sets the interaction resource.
          * @param interaction The interaction resource.
          * @return This builder.
          */
-        public Builder interaction(Interaction interaction) { this.interaction = interaction; return this; }
+        public Builder interaction(Interaction interaction) { this.interaction = interaction != null ? TriggerInteraction.of(interaction) : null; return this; }
+        /**
+         * Sets the interaction parameters, resource, or TriggerInteraction.
+         * @param interaction The interaction parameters or resource.
+         * @return This builder.
+         */
+        public Builder interaction(Object interaction) { this.interaction = interaction != null ? TriggerInteraction.of(interaction) : null; return this; }
         /**
          * Sets the max consecutive failures.
          * @param maxConsecutiveFailures The max consecutive failures.

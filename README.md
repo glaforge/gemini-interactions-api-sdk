@@ -827,6 +827,14 @@ TriggerExecution execution = client.runTrigger(trigger.id());
 // Query and list triggers by filter/status
 ListTriggersResponse activeTriggers = client.listTriggers("status=active", 10, null);
 
+// Inspect the trigger's scheduled interaction template or resource in a type-safe way
+TriggerInteraction interaction = trigger.interaction();
+if (interaction.isRequest()) {
+    InteractionParams.Request req = interaction.request();
+} else if (interaction.isResource()) {
+    Interaction res = interaction.resource();
+}
+
 // List trigger executions
 ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id());
 ```
