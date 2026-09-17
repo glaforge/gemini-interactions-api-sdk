@@ -1061,8 +1061,23 @@ ModelInteractionParams params = ModelInteractionParams.builder()
     .build();
 ```
 
+## Type-Safe Union Records
+
+To avoid untyped `Object` fields and provide compile-time safety when working with polymorphic payloads, the SDK provides dedicated union records with helper predicates:
+
+- **`InteractionInput`**: Represents the polymorphic input to an interaction (`String text`, `List<Content> contents`, `List<Turn> turns`, `List<Step> steps`). Inspect with `input.isText()`, `input.isContents()`, `input.isTurns()`, `input.isSteps()`, or extract with `input.text()`, `input.contents()`, `input.turns()`, `input.steps()`.
+- **`TurnContent`**: Represents multi-turn conversation turn content (`String text` or `List<Content> parts`). Inspect with `content.isText()`, `content.isParts()`, or use convenience methods directly on `Turn`: `turn.text()` and `turn.parts()`.
+- **`BaseEnvironment`**: Configures an agent's sandbox environment as either a preset string (e.g. `"default"`, `"remote"`) or custom `EnvironmentConfig` (`isPreset()`, `isCustom()`, `preset()`, `config()`).
+- **`TriggerInteraction`**: Encapsulates scheduled trigger interactions as either an interaction template `InteractionParams.Request` or a hydrated `Interaction` resource (`isRequest()`, `isResource()`, `request()`, `resource()`).
+- **`ToolChoiceConfiguration`**: Configures tool choice mode as either a preset string (`"auto"`, `"any"`, `"none"`, `"validated"`) or detailed `Tool.ToolChoiceConfig` (`isMode()`, `isConfig()`).
+- **`SpeechConfiguration`**: Encapsulates speech config as single-speaker `List<SpeechConfig>` or multi-speaker `SpeakerConfig` (`isSingleSpeaker()`, `isMultiSpeaker()`).
+- **`NetworkConfiguration`**: Configures environment networking as a preset string (e.g. `"disabled"`, `"allow_all"`) or custom allowlist `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`).
+- **`MediaProcessingConfiguration`**: Configures media mode as a preset string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
+- **`TranscriptionModeConfiguration`**: Configures audio transcription mode as a preset string or custom config (`isPreset()`, `isCustom()`).
+
 ## License
 Apache 2.0
 
 ## Disclaimer
 This is not an official Google project.
+

@@ -57,6 +57,28 @@ public record BaseEnvironment(
     }
 
     /**
+     * Creates a BaseEnvironment from an Object (String, EnvironmentConfig, or BaseEnvironment).
+     *
+     * @param environment The environment object.
+     * @return BaseEnvironment instance.
+     */
+    public static BaseEnvironment of(Object environment) {
+        if (environment == null) {
+            return null;
+        }
+        if (environment instanceof BaseEnvironment be) {
+            return be;
+        }
+        if (environment instanceof String s) {
+            return of(s);
+        }
+        if (environment instanceof EnvironmentConfig ec) {
+            return of(ec);
+        }
+        throw new IllegalArgumentException("Unsupported base environment type: " + environment.getClass());
+    }
+
+    /**
      * Returns true if this base environment is a preset name.
      *
      * @return true if preset is non-null.
@@ -70,7 +92,16 @@ public record BaseEnvironment(
      *
      * @return true if config is non-null.
      */
-    public boolean isCustom() {
-        return config != null;
+     public boolean isCustom() {
+         return config != null;
+     }
+
+    /**
+     * Returns the underlying value (either {@link String} preset or {@link EnvironmentConfig}).
+     *
+     * @return The underlying value.
+     */
+    public Object value() {
+        return preset != null ? preset : config;
     }
 }

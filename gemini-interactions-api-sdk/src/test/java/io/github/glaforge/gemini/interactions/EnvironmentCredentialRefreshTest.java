@@ -135,7 +135,8 @@ class EnvironmentCredentialRefreshTest {
             .input("Hello")
             .environment("remote")
             .build();
-        assertEquals("remote", params1.environment());
+        assertEquals(BaseEnvironment.of("remote"), params1.environment());
+        assertEquals("remote", params1.environment().preset());
 
         // EnvironmentConfig overload (credential refresh)
         EnvironmentConfig config = EnvironmentConfig.forExisting("env_123", "disabled");
@@ -144,7 +145,8 @@ class EnvironmentCredentialRefreshTest {
             .input("Run isolated task")
             .environment(config)
             .build();
-        assertEquals(config, params2.environment());
+        assertEquals(BaseEnvironment.of(config), params2.environment());
+        assertEquals(config, params2.environment().config());
 
         String json2 = mapper.writeValueAsString(params2);
         assertTrue(json2.contains("\"environment_id\":\"env_123\""));

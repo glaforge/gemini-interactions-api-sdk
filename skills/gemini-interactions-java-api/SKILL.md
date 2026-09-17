@@ -639,5 +639,7 @@ The SDK uses specialized union records instead of untyped `Object` fields to han
 - **`BaseEnvironment`**: Wraps either a preset base environment string (e.g. `"default"`, `"remote"`) or custom `EnvironmentConfig` (`isPreset()`, `isCustom()`).
 - **`MediaProcessingConfiguration`**: Wraps either a preset media mode string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
 - **`TranscriptionModeConfiguration`**: Wraps either a preset transcription mode string (e.g. `"verbatim"`, `"smart"`) or custom `SmartTranscriptionMode` / `VerbatimTranscriptionMode` (`isPreset()`, `isCustom()`).
+- **`TurnContent`**: Wraps either a plain text string or multimodal `List<Content>` parts for conversation turns (`isText()`, `isParts()`, `text()`, `parts()`).
+- **`InteractionInput`**: Wraps polymorphic input to an interaction: plain text string, `List<Content>` contents, `List<Turn>` turns, or `List<Step>` steps (`isText()`, `isContents()`, `isTurns()`, `isSteps()`).
 
 

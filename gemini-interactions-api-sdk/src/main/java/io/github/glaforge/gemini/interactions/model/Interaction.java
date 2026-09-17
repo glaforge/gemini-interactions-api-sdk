@@ -199,13 +199,131 @@ public record Interaction(
      * Represents a single turn in an interaction.
      *
      * @param role    The role of the participant.
-     * @param content The content of the turn (String or List&lt;Content&gt;).
+     * @param content The type-safe content of the turn (text string or list of content parts).
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Turn(
         Role role,
-        Object content // String or List<Content>
-    ) {}
+        TurnContent content
+    ) {
+        /**
+         * Creates a Turn with a string text content.
+         *
+         * @param role The role.
+         * @param text The text content.
+         */
+        public Turn(Role role, String text) {
+            this(role, text != null ? TurnContent.of(text) : null);
+        }
+
+        /**
+         * Creates a Turn with a list of content parts.
+         *
+         * @param role  The role.
+         * @param parts The content parts.
+         */
+        public Turn(Role role, List<Content> parts) {
+            this(role, parts != null ? TurnContent.of(parts) : null);
+        }
+
+        /**
+         * Creates a Turn with content parts.
+         *
+         * @param role  The role.
+         * @param parts The content parts.
+         */
+        public Turn(Role role, Content... parts) {
+            this(role, parts != null ? TurnContent.of(parts) : null);
+        }
+
+        /**
+         * Backward-compatible constructor accepting Object content.
+         *
+         * @param role    The role.
+         * @param content The content object (String, Content, or List&lt;Content&gt;).
+         */
+        public Turn(Role role, Object content) {
+            this(role, content != null ? TurnContent.of(content) : null);
+        }
+
+        /**
+         * Returns the text of the turn, if text-based.
+         *
+         * @return The text content, or null if parts-based.
+         */
+        public String text() {
+            return content != null ? content.text() : null;
+        }
+
+        /**
+         * Returns the content parts of the turn, if parts-based.
+         *
+         * @return The parts list, or null if text-based.
+         */
+        public List<Content> parts() {
+            return content != null ? content.parts() : null;
+        }
+
+        /**
+         * Creates a user turn with text.
+         *
+         * @param text The text.
+         * @return A user Turn.
+         */
+        public static Turn user(String text) {
+            return new Turn(Role.USER, text);
+        }
+
+        /**
+         * Creates a user turn with content parts.
+         *
+         * @param parts The content parts.
+         * @return A user Turn.
+         */
+        public static Turn user(Content... parts) {
+            return new Turn(Role.USER, parts);
+        }
+
+        /**
+         * Creates a user turn with a list of content parts.
+         *
+         * @param parts The list of content parts.
+         * @return A user Turn.
+         */
+        public static Turn user(List<Content> parts) {
+            return new Turn(Role.USER, parts);
+        }
+
+        /**
+         * Creates a model turn with text.
+         *
+         * @param text The text.
+         * @return A model Turn.
+         */
+        public static Turn model(String text) {
+            return new Turn(Role.MODEL, text);
+        }
+
+        /**
+         * Creates a model turn with content parts.
+         *
+         * @param parts The content parts.
+         * @return A model Turn.
+         */
+        public static Turn model(Content... parts) {
+            return new Turn(Role.MODEL, parts);
+        }
+
+        /**
+         * Creates a model turn with a list of content parts.
+         *
+         * @param parts The list of content parts.
+         * @return A model Turn.
+         */
+        public static Turn model(List<Content> parts) {
+            return new Turn(Role.MODEL, parts);
+        }
+    }
 
     /**
      * Token usage details.

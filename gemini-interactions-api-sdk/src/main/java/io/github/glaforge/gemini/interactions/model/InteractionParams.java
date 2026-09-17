@@ -56,13 +56,19 @@ public class InteractionParams {
          * @return whether the response should be streamed.
          */
         Boolean stream();
+
+        /**
+         * Returns the interaction input payload.
+         * @return the interaction input.
+         */
+        InteractionInput input();
     }
 
     /**
      * Parameters for creating a model interaction.
      *
      * @param model                 The model to use (e.g., "gemini-2.5-flash").
-     * @param input                 The input content (String, Content, List&lt;Content&gt;, List&lt;Turn&gt;).
+     * @param input                 The type-safe input content (text, contents, turns, or steps).
      * @param generationConfig      Configuration for generation.
      * @param tools                 List of tools available for the interaction.
      * @param stream                Whether to stream the response.
@@ -79,7 +85,7 @@ public class InteractionParams {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ModelInteractionParams(
         String model,
-        Object input, // String, Content, List<Content>, List<Turn>
+        InteractionInput input,
         @JsonProperty("generation_config") Config.GenerationConfig generationConfig,
         List<Tool> tools,
         Boolean stream,
@@ -94,6 +100,44 @@ public class InteractionParams {
         @JsonProperty("safety_settings") List<SafetySetting> safetySettings
     ) implements Request {
 
+        /**
+         * Backward-compatible constructor accepting Object input.
+         *
+         * @param model                 The model.
+         * @param input                 The input object.
+         * @param generationConfig      The generation config.
+         * @param tools                 The tools.
+         * @param stream                Whether to stream.
+         * @param store                 Whether to store.
+         * @param background            Whether background.
+         * @param systemInstruction     The system instruction.
+         * @param responseModalities    The response modalities.
+         * @param responseFormat        The response format.
+         * @param previousInteractionId The previous interaction id.
+         * @param serviceTier           The service tier.
+         * @param cachedContent         The cached content.
+         * @param safetySettings        The safety settings.
+         */
+        public ModelInteractionParams(
+            String model,
+            Object input,
+            Config.GenerationConfig generationConfig,
+            List<Tool> tools,
+            Boolean stream,
+            Boolean store,
+            Boolean background,
+            String systemInstruction,
+            List<Interaction.Modality> responseModalities,
+            Config.ResponseFormat responseFormat,
+            String previousInteractionId,
+            ServiceTier serviceTier,
+            String cachedContent,
+            List<SafetySetting> safetySettings
+        ) {
+            this(model, input != null ? InteractionInput.of(input) : null, generationConfig, tools,
+                stream, store, background, systemInstruction, responseModalities, responseFormat,
+                previousInteractionId, serviceTier, cachedContent, safetySettings);
+        }
 
         /**
          * Returns a new builder for model interaction parameters.
@@ -105,7 +149,7 @@ public class InteractionParams {
             /** Creates a new Builder. */
             public Builder() {}
             private String model;
-            private Object input;
+            private InteractionInput input;
             private Config.GenerationConfig generationConfig;
             private List<Tool> tools;
             private Boolean stream;
@@ -121,12 +165,20 @@ public class InteractionParams {
             private List<SafetySetting> safetySettings;
 
             /**
-             * Sets the model.
+              * Sets the model.
+              *
+              * @param model The model to use.
+              * @return This builder.
+              */
+            public Builder model(String model) { this.model = model; return this; }
+
+            /**
+             * Sets the input content as an InteractionInput.
              *
-             * @param model The model to use.
+             * @param input The input.
              * @return This builder.
              */
-            public Builder model(String model) { this.model = model; return this; }
+            public Builder input(InteractionInput input) { this.input = input; return this; }
 
             /**
              * Sets the input content as a string.
@@ -134,7 +186,7 @@ public class InteractionParams {
              * @param text The input text.
              * @return This builder.
              */
-            public Builder input(String text) { this.input = text; return this; }
+            public Builder input(String text) { this.input = text != null ? InteractionInput.of(text) : null; return this; }
 
             /**
              * Sets the input content as a list of Content objects.
@@ -142,7 +194,7 @@ public class InteractionParams {
              * @param content The input content.
              * @return This builder.
              */
-            public Builder input(Content... content) { this.input = List.of(content); return this; }
+            public Builder input(Content... content) { this.input = content != null ? InteractionInput.ofContents(content) : null; return this; }
 
             /**
              * Sets the input content as a list of Content objects.
@@ -150,21 +202,21 @@ public class InteractionParams {
              * @param content The input content.
              * @return This builder.
              */
-            public Builder inputContents(List<Content> content) { this.input = content; return this; }
+            public Builder inputContents(List<Content> content) { this.input = content != null ? InteractionInput.ofContents(content) : null; return this; }
             /**
              * Sets the input using one or more Steps.
              *
              * @param steps The input steps.
              * @return This builder.
              */
-            public Builder input(Step... steps) { this.input = List.of(steps); return this; }
+            public Builder input(Step... steps) { this.input = steps != null ? InteractionInput.ofSteps(steps) : null; return this; }
             /**
              * Sets the input using a list of Steps.
              *
              * @param steps The input steps.
              * @return This builder.
              */
-            public Builder inputSteps(List<Step> steps) { this.input = steps; return this; }
+            public Builder inputSteps(List<Step> steps) { this.input = steps != null ? InteractionInput.ofSteps(steps) : null; return this; }
 
             /**
              * Sets the input content as a list of Turns (multi-turn history).
@@ -172,7 +224,7 @@ public class InteractionParams {
              * @param turns The input turns.
              * @return This builder.
              */
-            public Builder input(Interaction.Turn... turns) { this.input = List.of(turns); return this; }
+            public Builder input(Interaction.Turn... turns) { this.input = turns != null ? InteractionInput.ofTurns(turns) : null; return this; }
 
             /**
              * Sets the input content as a list of Turns (multi-turn history).
@@ -180,7 +232,15 @@ public class InteractionParams {
              * @param turns The input turns.
              * @return This builder.
              */
-            public Builder inputTurns(List<Interaction.Turn> turns) { this.input = turns; return this; }
+            public Builder inputTurns(List<Interaction.Turn> turns) { this.input = turns != null ? InteractionInput.ofTurns(turns) : null; return this; }
+
+            /**
+             * Sets the input content from an arbitrary object.
+             *
+             * @param input The input object.
+             * @return This builder.
+             */
+            public Builder input(Object input) { this.input = input != null ? InteractionInput.of(input) : null; return this; }
 
             /**
              * Sets the generation config.
@@ -374,9 +434,8 @@ public class InteractionParams {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AgentInteractionParams(
         String agent,
-        Object input,
-        @tools.jackson.databind.annotation.JsonDeserialize(using = io.github.glaforge.gemini.interactions.model.deserializer.BaseEnvironmentDeserializer.class)
-        Object environment,
+        InteractionInput input,
+        BaseEnvironment environment,
         @JsonProperty("agent_config") Config.AgentConfig agentConfig,
         @JsonProperty("generation_config") Config.GenerationConfig generationConfig,
         List<Tool> tools,
@@ -390,6 +449,50 @@ public class InteractionParams {
         @JsonProperty("service_tier") ServiceTier serviceTier,
         @JsonProperty("safety_settings") List<SafetySetting> safetySettings
     ) implements Request {
+
+        /**
+         * Backward-compatible constructor accepting Object input and Object environment.
+         *
+         * @param agent                 The agent name.
+         * @param input                 The input object.
+         * @param environment           The environment object.
+         * @param agentConfig           The agent config.
+         * @param generationConfig      The generation config.
+         * @param tools                 The tools.
+         * @param stream                Whether to stream.
+         * @param store                 Whether to store.
+         * @param background            Whether background.
+         * @param systemInstruction     The system instruction.
+         * @param responseModalities    The response modalities.
+         * @param responseFormat        The response format.
+         * @param previousInteractionId The previous interaction id.
+         * @param serviceTier           The service tier.
+         * @param safetySettings        The safety settings.
+         */
+        public AgentInteractionParams(
+            String agent,
+            Object input,
+            Object environment,
+            Config.AgentConfig agentConfig,
+            Config.GenerationConfig generationConfig,
+            List<Tool> tools,
+            Boolean stream,
+            Boolean store,
+            Boolean background,
+            String systemInstruction,
+            List<Interaction.Modality> responseModalities,
+            Config.ResponseFormat responseFormat,
+            String previousInteractionId,
+            ServiceTier serviceTier,
+            List<SafetySetting> safetySettings
+        ) {
+            this(agent, input != null ? InteractionInput.of(input) : null,
+                environment != null ? BaseEnvironment.of(environment) : null,
+                agentConfig, generationConfig, tools, stream, store, background,
+                systemInstruction, responseModalities, responseFormat,
+                previousInteractionId, serviceTier, safetySettings);
+        }
+
         /**
          * Returns a new builder for agent interaction parameters.
          * @return a new builder for agent interaction parameters.
@@ -401,8 +504,8 @@ public class InteractionParams {
             /** Creates a new Builder. */
             public Builder() {}
             private String agent;
-            private Object input;
-            private Object environment;
+            private InteractionInput input;
+            private BaseEnvironment environment;
             private Config.AgentConfig agentConfig;
             private Config.GenerationConfig generationConfig;
             private List<Tool> tools;
@@ -426,12 +529,20 @@ public class InteractionParams {
             public Builder agent(String agent) { this.agent = agent; return this; }
 
             /**
+             * Sets the input content as an InteractionInput.
+             *
+             * @param input The input.
+             * @return This builder.
+             */
+            public Builder input(InteractionInput input) { this.input = input; return this; }
+
+            /**
              * Sets the input content as a string.
              *
              * @param text The input text.
              * @return This builder.
              */
-            public Builder input(String text) { this.input = text; return this; }
+            public Builder input(String text) { this.input = text != null ? InteractionInput.of(text) : null; return this; }
 
             /**
              * Sets the input content as a list of Content objects.
@@ -439,7 +550,7 @@ public class InteractionParams {
              * @param content The input content.
              * @return This builder.
              */
-            public Builder input(Content... content) { this.input = List.of(content); return this; }
+            public Builder input(Content... content) { this.input = content != null ? InteractionInput.ofContents(content) : null; return this; }
 
             /**
              * Sets the input content as a list of Content objects.
@@ -447,21 +558,21 @@ public class InteractionParams {
              * @param content The input content.
              * @return This builder.
              */
-            public Builder inputContents(List<Content> content) { this.input = content; return this; }
+            public Builder inputContents(List<Content> content) { this.input = content != null ? InteractionInput.ofContents(content) : null; return this; }
             /**
              * Sets the input using one or more Steps.
              *
              * @param steps The input steps.
              * @return This builder.
              */
-            public Builder input(Step... steps) { this.input = List.of(steps); return this; }
+            public Builder input(Step... steps) { this.input = steps != null ? InteractionInput.ofSteps(steps) : null; return this; }
             /**
              * Sets the input using a list of Steps.
              *
              * @param steps The input steps.
              * @return This builder.
              */
-            public Builder inputSteps(List<Step> steps) { this.input = steps; return this; }
+            public Builder inputSteps(List<Step> steps) { this.input = steps != null ? InteractionInput.ofSteps(steps) : null; return this; }
 
             /**
              * Sets the input content as a list of Turns (multi-turn history).
@@ -469,7 +580,7 @@ public class InteractionParams {
              * @param turns The input turns.
              * @return This builder.
              */
-            public Builder input(Interaction.Turn... turns) { this.input = List.of(turns); return this; }
+            public Builder input(Interaction.Turn... turns) { this.input = turns != null ? InteractionInput.ofTurns(turns) : null; return this; }
 
              /**
              * Sets the input content as a list of Turns (multi-turn history).
@@ -477,31 +588,15 @@ public class InteractionParams {
              * @param turns The input turns.
              * @return This builder.
              */
-            public Builder inputTurns(List<Interaction.Turn> turns) { this.input = turns; return this; }
+            public Builder inputTurns(List<Interaction.Turn> turns) { this.input = turns != null ? InteractionInput.ofTurns(turns) : null; return this; }
 
             /**
-             * Sets the environment using an arbitrary object.
+             * Sets the input content from an arbitrary object.
              *
-             * @param environment The environment object.
+             * @param input The input object.
              * @return This builder.
              */
-            public Builder environment(Object environment) { this.environment = environment; return this; }
-
-            /**
-             * Sets the environment using a preset name or existing environment ID string (e.g. "remote" or "env_abc123").
-             *
-             * @param environment The environment name or ID.
-             * @return This builder.
-             */
-            public Builder environment(String environment) { this.environment = environment; return this; }
-
-            /**
-             * Sets the environment using an EnvironmentConfig.
-             *
-             * @param environment The custom environment configuration.
-             * @return This builder.
-             */
-            public Builder environment(EnvironmentConfig environment) { this.environment = environment; return this; }
+            public Builder input(Object input) { this.input = input != null ? InteractionInput.of(input) : null; return this; }
 
             /**
              * Sets the environment using a BaseEnvironment.
@@ -510,6 +605,30 @@ public class InteractionParams {
              * @return This builder.
              */
             public Builder environment(BaseEnvironment environment) { this.environment = environment; return this; }
+
+            /**
+             * Sets the environment using a preset name or existing environment ID string (e.g. "remote" or "env_abc123").
+             *
+             * @param environment The environment name or ID.
+             * @return This builder.
+             */
+            public Builder environment(String environment) { this.environment = environment != null ? BaseEnvironment.of(environment) : null; return this; }
+
+            /**
+             * Sets the environment using an EnvironmentConfig.
+             *
+             * @param environment The custom environment configuration.
+             * @return This builder.
+             */
+            public Builder environment(EnvironmentConfig environment) { this.environment = environment != null ? BaseEnvironment.of(environment) : null; return this; }
+
+            /**
+             * Sets the environment using an arbitrary object.
+             *
+             * @param environment The environment object.
+             * @return This builder.
+             */
+            public Builder environment(Object environment) { this.environment = environment != null ? BaseEnvironment.of(environment) : null; return this; }
 
             /**
              * Sets the agent configuration.

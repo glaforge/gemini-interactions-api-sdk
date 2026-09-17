@@ -44,7 +44,7 @@ class AgentInteractionParamsTest {
                 .input("Hello world")
                 .build();
 
-        assertEquals("Hello world", params.input());
+        assertEquals("Hello world", params.input().text());
 
         String json = mapper.writeValueAsString(params);
         assertTrue(json.contains("\"input\":\"Hello world\""));
@@ -58,7 +58,8 @@ class AgentInteractionParamsTest {
                 .inputContents(List.of(content))
                 .build();
 
-        assertTrue(params.input() instanceof List);
+        assertTrue(params.input().isContents());
+        assertEquals(1, params.input().contents().size());
         String json = mapper.writeValueAsString(params);
         assertTrue(json.contains("\"text\":\"Hello\""));
         assertTrue(json.contains("\"type\":\"text\""));
@@ -72,7 +73,8 @@ class AgentInteractionParamsTest {
                 .inputTurns(List.of(turn))
                 .build();
 
-        assertTrue(params.input() instanceof List);
+        assertTrue(params.input().isTurns());
+        assertEquals(1, params.input().turns().size());
         String json = mapper.writeValueAsString(params);
         assertTrue(json.contains("\"role\":\"user\""));
         // Turn content is a string "Hello", so looking for property "content":"Hello"
@@ -86,8 +88,8 @@ class AgentInteractionParamsTest {
                 .input(new Content.TextContent("Hi"))
                 .build();
 
-        assertTrue(params.input() instanceof List);
-        assertEquals(1, ((List<?>) params.input()).size());
+        assertTrue(params.input().isContents());
+        assertEquals(1, params.input().contents().size());
 
         String json = mapper.writeValueAsString(params);
         System.err.println("testInputContentVarargs JSON: " + json);
@@ -101,8 +103,8 @@ class AgentInteractionParamsTest {
                 .input(new Turn(Role.USER, "Hi"))
                 .build();
 
-        assertTrue(params.input() instanceof List);
-        assertEquals(1, ((List<?>) params.input()).size());
+        assertTrue(params.input().isTurns());
+        assertEquals(1, params.input().turns().size());
 
         String json = mapper.writeValueAsString(params);
         assertTrue(json.contains("\"role\":\"user\""));
@@ -116,7 +118,7 @@ class AgentInteractionParamsTest {
                 .input("Hello model")
                 .build();
 
-        assertEquals("Hello model", params.input());
+        assertEquals("Hello model", params.input().text());
         String json = mapper.writeValueAsString(params);
         assertTrue(json.contains("\"input\":\"Hello model\""));
     }
