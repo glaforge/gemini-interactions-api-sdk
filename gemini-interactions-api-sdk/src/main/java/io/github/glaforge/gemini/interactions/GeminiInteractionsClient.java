@@ -660,6 +660,41 @@ public class GeminiInteractionsClient {
     }
 
     /**
+     * Creates a new execution environment cloned/forked from an existing environment.
+     *
+     * @param fromEnvironment The source environment ID or path (e.g. "environments/env_123" or "env_123") to copy from.
+     * @return The created Environment.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Environment createEnvironmentFrom(String fromEnvironment) {
+        return createEnvironment(CreateEnvironmentRequest.builder().fromEnvironment(fromEnvironment).build());
+    }
+
+    /**
+     * Creates a new execution environment cloned/forked from an existing environment with a NetworkConfiguration.
+     *
+     * @param fromEnvironment The source environment ID or path to copy from.
+     * @param network Network configuration.
+     * @return The created Environment.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Environment createEnvironmentFrom(String fromEnvironment, NetworkConfiguration network) {
+        return createEnvironment(CreateEnvironmentRequest.builder().fromEnvironment(fromEnvironment).network(network).build());
+    }
+
+    /**
+     * Creates a new execution environment cloned/forked from an existing environment with a network configuration object or preset string.
+     *
+     * @param fromEnvironment The source environment ID or path to copy from.
+     * @param network Network configuration (NetworkConfiguration, EnvironmentNetworkEgressAllowlist, or string preset like "disabled").
+     * @return The created Environment.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Environment createEnvironmentFrom(String fromEnvironment, Object network) {
+        return createEnvironment(CreateEnvironmentRequest.builder().fromEnvironment(fromEnvironment).network(NetworkConfiguration.of(network)).build());
+    }
+
+    /**
      * Retrieves an Environment by ID.
      *
      * @param id The environment ID.

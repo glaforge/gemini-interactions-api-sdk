@@ -432,6 +432,22 @@
             "description": "Successful operation",
             "content": {
               "application/json": {
+                "examples": {
+                  "list": {
+                    "summary": "List Environments",
+                    "value": {
+                      "environments": [
+                        {
+                          "created": "2026-08-19T00:00:00Z",
+                          "id": "env_abc123",
+                          "last_accessed": "2026-08-19T00:00:00Z",
+                          "status": "active",
+                          "updated": "2026-08-19T00:00:00Z"
+                        }
+                      ]
+                    }
+                  }
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ListEnvironmentsResponse"
                 }
@@ -439,6 +455,28 @@
             }
           }
         },
+        "x-codeSamples": [
+          {
+            "label": "list",
+            "lang": "sh",
+            "source": "curl -X GET https://generativelanguage.googleapis.com/v1beta/environments \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\"\n"
+          },
+          {
+            "label": "list",
+            "lang": "python",
+            "source": "from google import genai\n\nclient = genai.Client()\nresponse = client.environments.list()\nfor environment in response.environments or []:\n    print(environment.id)\n"
+          },
+          {
+            "label": "list",
+            "lang": "javascript",
+            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst response = await ai.environments.list();\nfor (const env of (response.environments ?? [])) {\n    console.log(env.id);\n}\n"
+          },
+          {
+            "label": "list",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.environments.Environment;\nimport com.google.genai.gaos.models.operations.ListEnvironmentsResponse;\nimport java.util.List;\n\nClient client = new Client();\nListEnvironmentsResponse response = client.environments.listEnvironmentsDirect();\nfor (Environment env : response.listEnvironmentsResponse().flatMap(res -> res.environments()).orElse(List.of())) {\n    System.out.println(env.id().orElse(\"\"));\n}\n"
+          }
+        ],
         "x-speakeasy-group": "environments"
       },
       "post": {
@@ -460,6 +498,25 @@
             "description": "Successful operation",
             "content": {
               "application/json": {
+                "examples": {
+                  "create": {
+                    "summary": "Create Environment",
+                    "value": {
+                      "created": "2026-08-19T00:00:00Z",
+                      "id": "env_abc123",
+                      "last_accessed": "2026-08-19T00:00:00Z",
+                      "sources": [
+                        {
+                          "type": "inline",
+                          "content": "print('Hello, World!')",
+                          "target": "main.py"
+                        }
+                      ],
+                      "status": "active",
+                      "updated": "2026-08-19T00:00:00Z"
+                    }
+                  }
+                },
                 "schema": {
                   "$ref": "#/components/schemas/Environment"
                 }
@@ -467,6 +524,28 @@
             }
           }
         },
+        "x-codeSamples": [
+          {
+            "label": "create",
+            "lang": "sh",
+            "source": "curl -X POST https://generativelanguage.googleapis.com/v1beta/environments \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"sources\": [{\n      \"type\": \"inline\",\n      \"target\": \"main.py\",\n      \"content\": \"print(\\\"Hello, World!\\\")\"\n    }]\n  }'\n"
+          },
+          {
+            "label": "create",
+            "lang": "python",
+            "source": "from google import genai\n\nclient = genai.Client()\nenvironment = client.environments.create(\n    sources=[{\n        \"type\": \"inline\",\n        \"target\": \"main.py\",\n        \"content\": \"print('Hello, World!')\",\n    }]\n)\nprint(environment.id)\n\n# [cleanup]\nclient.environments.delete(id=environment.id)\n# [/cleanup]\n"
+          },
+          {
+            "label": "create",
+            "lang": "javascript",
+            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\nconst environment = await ai.environments.create({\n    sources: [{\n        type: 'inline',\n        target: 'main.py',\n        content: \"print('Hello, World!')\",\n    }],\n});\nif (!environment.id) {\n    throw new Error('Environment creation failed: ID is undefined');\n}\nconsole.log(environment.id);\n\n// [cleanup]\nawait ai.environments.delete(environment.id);\n// [/cleanup]\n"
+          },
+          {
+            "label": "create",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.environments.CreateEnvironmentRequest;\nimport com.google.genai.gaos.models.environments.Environment;\nimport com.google.genai.gaos.models.interactions.Source;\nimport com.google.genai.gaos.models.interactions.SourceType;\nimport java.util.List;\n\nClient client = new Client();\nCreateEnvironmentRequest request = CreateEnvironmentRequest.builder()\n    .sources(List.of(Source.builder()\n        .type(SourceType.INLINE)\n        .target(\"main.py\")\n        .content(\"print('Hello, World!')\")\n        .build()))\n    .build();\nEnvironment environment = client.environments.createEnvironment(request).environment().orElseThrow();\nSystem.out.println(environment.id().orElse(\"\"));\n\n// [cleanup]\nenvironment.id().ifPresent(id -> client.environments.deleteEnvironment(id));\n// [/cleanup]\n"
+          }
+        ],
         "x-speakeasy-group": "environments"
       }
     },
@@ -494,7 +573,7 @@
       ],
       "get": {
         "operationId": "GetEnvironmentFiles",
-        "description": "Retrieves a file or directory from an environment's snapshot.",
+        "description": "Retrieves file metadata or directory contents from an environment's snapshot. To download file contents directly, pass ?alt=media or use the files.download helper.",
         "parameters": [
           {
             "name": "page_size",
@@ -527,6 +606,61 @@
             "description": "Successful operation",
             "content": {
               "application/json": {
+                "examples": {
+                  "download_file": {
+                    "summary": "Download File Content",
+                    "value": {
+                      "files": [
+                        {
+                          "name": "main.py",
+                          "type": "file",
+                          "mime_type": "text/x-python",
+                          "path": "main.py",
+                          "size_bytes": "22"
+                        }
+                      ]
+                    }
+                  },
+                  "get_file": {
+                    "summary": "Get File Metadata",
+                    "value": {
+                      "files": [
+                        {
+                          "name": "main.py",
+                          "type": "file",
+                          "created": "2026-08-19T00:00:00Z",
+                          "mime_type": "text/x-python",
+                          "modified": "2026-08-19T00:00:00Z",
+                          "path": "main.py",
+                          "size_bytes": "22"
+                        }
+                      ]
+                    }
+                  },
+                  "list_files": {
+                    "summary": "List Files in Environment",
+                    "value": {
+                      "files": [
+                        {
+                          "name": "src",
+                          "type": "directory",
+                          "created": "2026-08-19T00:00:00Z",
+                          "modified": "2026-08-19T00:00:00Z",
+                          "path": "src"
+                        },
+                        {
+                          "name": "main.py",
+                          "type": "file",
+                          "created": "2026-08-19T00:00:00Z",
+                          "mime_type": "text/x-python",
+                          "modified": "2026-08-19T00:00:00Z",
+                          "path": "main.py",
+                          "size_bytes": "22"
+                        }
+                      ]
+                    }
+                  }
+                },
                 "schema": {
                   "$ref": "#/components/schemas/GetEnvironmentFilesResponse"
                 }
@@ -534,6 +668,58 @@
             }
           }
         },
+        "x-codeSamples": [
+          {
+            "label": "list_files",
+            "lang": "sh",
+            "source": "curl -X GET 'https://generativelanguage.googleapis.com/v1beta/environments/env_abc123/files/src' \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\"\n"
+          },
+          {
+            "label": "list_files",
+            "lang": "python",
+            "source": "from google import genai\n\nclient = genai.Client()\n\n# [setup]\ncreated = client.environments.create(\n    sources=[{\"type\": \"inline\", \"target\": \"src/main.py\", \"content\": \"print('Hello')\"}]\n)\n# [/setup]\n\nresponse = client.environments.files.list(\n    environment=created.id,\n    path=\"src\",\n)\nfor file in response.files or []:\n    print(file.name, file.type, file.size_bytes)\n\n# [cleanup]\nclient.environments.delete(id=created.id)\n# [/cleanup]\n"
+          },
+          {
+            "label": "list_files",
+            "lang": "javascript",
+            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst created = await ai.environments.create({\n    sources: [{type: 'inline', target: 'src/main.py', content: \"print('Hello')\"}],\n});\nif (!created.id) throw new Error('Failed to create environment');\n// [/setup]\n\nconst response = await ai.environments.files.list({\n    environment: created.id,\n    path: 'src',\n});\nfor (const file of (response.files ?? [])) {\n    console.log(file.name, file.type, file.size_bytes);\n}\n\n// [cleanup]\nawait ai.environments.delete(created.id);\n// [/cleanup]\n"
+          },
+          {
+            "label": "list_files",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.environments.CreateEnvironmentRequest;\nimport com.google.genai.gaos.models.environments.Environment;\nimport com.google.genai.gaos.models.environments.EnvironmentFile;\nimport com.google.genai.gaos.models.environments.GetEnvironmentFilesResponse;\nimport com.google.genai.gaos.models.interactions.Source;\nimport com.google.genai.gaos.models.interactions.SourceType;\nimport com.google.genai.gaos.models.operations.GetEnvironmentFilesRequest;\nimport java.util.List;\n\nClient client = new Client();\n\n// [setup]\nCreateEnvironmentRequest createReq = CreateEnvironmentRequest.builder()\n    .sources(List.of(Source.builder()\n        .type(SourceType.INLINE)\n        .target(\"src/main.py\")\n        .content(\"print('Hello')\")\n        .build()))\n    .build();\nEnvironment created = client.environments.createEnvironment(createReq).environment().orElseThrow();\nString envId = created.id().orElseThrow();\n// [/setup]\n\ncom.google.genai.gaos.models.operations.GetEnvironmentFilesResponse response = client.environments.files().list(\n    GetEnvironmentFilesRequest.builder()\n        .environment(envId)\n        .path(\"src\")\n        .build());\nGetEnvironmentFilesResponse filesResponse = response.getEnvironmentFilesResponse().orElseThrow();\nfor (EnvironmentFile file : filesResponse.files().orElse(List.of())) {\n    System.out.println(file.name().orElse(\"\") + \" \" + file.type().map(Object::toString).orElse(\"\") + \" \" + file.sizeBytes().orElse(\"\"));\n}\n\n// [cleanup]\nclient.environments.deleteEnvironment(envId);\n// [/cleanup]\n"
+          },
+          {
+            "label": "get_file",
+            "lang": "sh",
+            "source": "curl -X GET 'https://generativelanguage.googleapis.com/v1beta/environments/env_abc123/files/main.py' \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\"\n"
+          },
+          {
+            "label": "get_file",
+            "lang": "python",
+            "source": "from google import genai\n\nclient = genai.Client()\n\n# [setup]\ncreated = client.environments.create(\n    sources=[{\"type\": \"inline\", \"target\": \"main.py\", \"content\": \"print('Hello')\"}]\n)\n# [/setup]\n\nresponse = client.environments.files.get(\n    environment=created.id,\n    path=\"main.py\",\n)\nfor file in response.files or []:\n    print(file.name, file.size_bytes)\n\n# [cleanup]\nclient.environments.delete(id=created.id)\n# [/cleanup]\n"
+          },
+          {
+            "label": "get_file",
+            "lang": "javascript",
+            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst created = await ai.environments.create({\n    sources: [{type: 'inline', target: 'main.py', content: \"print('Hello')\"}],\n});\nif (!created.id) throw new Error('Failed to create environment');\n// [/setup]\n\nconst response = await ai.environments.files.list({\n    environment: created.id,\n    path: 'main.py',\n});\nfor (const file of (response.files ?? [])) {\n    console.log(file.name, file.size_bytes);\n}\n\n// [cleanup]\nawait ai.environments.delete(created.id);\n// [/cleanup]\n"
+          },
+          {
+            "label": "get_file",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.environments.CreateEnvironmentRequest;\nimport com.google.genai.gaos.models.environments.Environment;\nimport com.google.genai.gaos.models.environments.EnvironmentFile;\nimport com.google.genai.gaos.models.environments.GetEnvironmentFilesResponse;\nimport com.google.genai.gaos.models.interactions.Source;\nimport com.google.genai.gaos.models.interactions.SourceType;\nimport com.google.genai.gaos.models.operations.GetEnvironmentFilesRequest;\nimport java.util.List;\n\nClient client = new Client();\n\n// [setup]\nCreateEnvironmentRequest createReq = CreateEnvironmentRequest.builder()\n    .sources(List.of(Source.builder()\n        .type(SourceType.INLINE)\n        .target(\"main.py\")\n        .content(\"print('Hello')\")\n        .build()))\n    .build();\nEnvironment created = client.environments.createEnvironment(createReq).environment().orElseThrow();\nString envId = created.id().orElseThrow();\n// [/setup]\n\ncom.google.genai.gaos.models.operations.GetEnvironmentFilesResponse response = client.environments.files().list(\n    GetEnvironmentFilesRequest.builder()\n        .environment(envId)\n        .path(\"main.py\")\n        .build());\nGetEnvironmentFilesResponse filesResponse = response.getEnvironmentFilesResponse().orElseThrow();\nfor (EnvironmentFile file : filesResponse.files().orElse(List.of())) {\n    System.out.println(file.name().orElse(\"\") + \" \" + file.sizeBytes().orElse(\"\"));\n}\n\n// [cleanup]\nclient.environments.deleteEnvironment(envId);\n// [/cleanup]\n"
+          },
+          {
+            "label": "download_file",
+            "lang": "sh",
+            "source": "curl -X GET 'https://generativelanguage.googleapis.com/v1beta/environments/env_abc123/files/src/main.py?alt=media' \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  --output main.py\n"
+          },
+          {
+            "label": "download_file",
+            "lang": "python",
+            "source": "from google import genai\n\nclient = genai.Client()\n\n# [setup]\ncreated = client.environments.create(\n    sources=[{\"type\": \"inline\", \"target\": \"src/main.py\", \"content\": \"print('Hello')\"}]\n)\n# [/setup]\n\ncontent = client.environments.files.download(\n    environment=created.id,\n    path=\"src/main.py\",\n)\nprint(content.decode(\"utf-8\"))\n\n# [cleanup]\nclient.environments.delete(id=created.id)\n# [/cleanup]\n"
+          }
+        ],
         "x-speakeasy-group": "environments.files",
         "x-speakeasy-name-override": "list"
       }
@@ -561,6 +747,12 @@
             "description": "Successful operation",
             "content": {
               "application/json": {
+                "examples": {
+                  "delete": {
+                    "summary": "Delete Environment",
+                    "value": {}
+                  }
+                },
                 "schema": {
                   "$ref": "#/components/schemas/Empty"
                 }
@@ -568,6 +760,28 @@
             }
           }
         },
+        "x-codeSamples": [
+          {
+            "label": "delete",
+            "lang": "sh",
+            "source": "curl -X DELETE https://generativelanguage.googleapis.com/v1beta/environments/env_abc123 \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\"\n"
+          },
+          {
+            "label": "delete",
+            "lang": "python",
+            "source": "from google import genai\n\nclient = genai.Client()\n\n# [setup]\ncreated = client.environments.create(\n    sources=[{\"type\": \"inline\", \"target\": \"main.py\", \"content\": \"print('Hello')\"}]\n)\n# [/setup]\n\nclient.environments.delete(id=created.id)\nprint(\"Environment deleted successfully.\")\n"
+          },
+          {
+            "label": "delete",
+            "lang": "javascript",
+            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst created = await ai.environments.create({\n    sources: [{type: 'inline', target: 'main.py', content: \"print('Hello')\"}],\n});\nif (!created.id) throw new Error('Failed to create environment');\n// [/setup]\n\nawait ai.environments.delete(created.id);\nconsole.log('Environment deleted successfully.');\n"
+          },
+          {
+            "label": "delete",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.environments.CreateEnvironmentRequest;\nimport com.google.genai.gaos.models.environments.Environment;\nimport com.google.genai.gaos.models.interactions.Source;\nimport com.google.genai.gaos.models.interactions.SourceType;\nimport java.util.List;\n\nClient client = new Client();\n\n// [setup]\nCreateEnvironmentRequest request = CreateEnvironmentRequest.builder()\n    .sources(List.of(Source.builder()\n        .type(SourceType.INLINE)\n        .target(\"main.py\")\n        .content(\"print('Hello')\")\n        .build()))\n    .build();\nEnvironment created = client.environments.createEnvironment(request).environment().orElseThrow();\nString envId = created.id().orElseThrow();\n// [/setup]\n\nclient.environments.deleteEnvironment(envId);\nSystem.out.println(\"Environment deleted successfully.\");\n"
+          }
+        ],
         "x-speakeasy-group": "environments"
       },
       "get": {
@@ -578,6 +792,25 @@
             "description": "Successful operation",
             "content": {
               "application/json": {
+                "examples": {
+                  "get": {
+                    "summary": "Get Environment",
+                    "value": {
+                      "created": "2026-08-19T00:00:00Z",
+                      "id": "env_abc123",
+                      "last_accessed": "2026-08-19T00:00:00Z",
+                      "sources": [
+                        {
+                          "type": "inline",
+                          "content": "print('Hello, World!')",
+                          "target": "main.py"
+                        }
+                      ],
+                      "status": "active",
+                      "updated": "2026-08-19T00:00:00Z"
+                    }
+                  }
+                },
                 "schema": {
                   "$ref": "#/components/schemas/Environment"
                 }
@@ -585,6 +818,28 @@
             }
           }
         },
+        "x-codeSamples": [
+          {
+            "label": "get",
+            "lang": "sh",
+            "source": "curl -X GET https://generativelanguage.googleapis.com/v1beta/environments/env_abc123 \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\"\n"
+          },
+          {
+            "label": "get",
+            "lang": "python",
+            "source": "from google import genai\n\nclient = genai.Client()\n\n# [setup]\ncreated = client.environments.create(\n    sources=[{\"type\": \"inline\", \"target\": \"main.py\", \"content\": \"print('Hello')\"}]\n)\n# [/setup]\n\nenvironment = client.environments.get(id=created.id)\nprint(environment.id)\n\n# [cleanup]\nclient.environments.delete(id=created.id)\n# [/cleanup]\n"
+          },
+          {
+            "label": "get",
+            "lang": "javascript",
+            "source": "import {GoogleGenAI} from '@google/genai';\n\nconst ai = new GoogleGenAI({});\n\n// [setup]\nconst created = await ai.environments.create({\n    sources: [{type: 'inline', target: 'main.py', content: \"print('Hello')\"}],\n});\nif (!created.id) throw new Error('Failed to create environment');\n// [/setup]\n\nconst environment = await ai.environments.get(created.id);\nconsole.log(environment.id);\n\n// [cleanup]\nawait ai.environments.delete(created.id);\n// [/cleanup]\n"
+          },
+          {
+            "label": "get",
+            "lang": "java",
+            "source": "import com.google.genai.Client;\nimport com.google.genai.gaos.models.environments.CreateEnvironmentRequest;\nimport com.google.genai.gaos.models.environments.Environment;\nimport com.google.genai.gaos.models.interactions.Source;\nimport com.google.genai.gaos.models.interactions.SourceType;\nimport java.util.List;\n\nClient client = new Client();\n\n// [setup]\nCreateEnvironmentRequest request = CreateEnvironmentRequest.builder()\n    .sources(List.of(Source.builder()\n        .type(SourceType.INLINE)\n        .target(\"main.py\")\n        .content(\"print('Hello')\")\n        .build()))\n    .build();\nEnvironment created = client.environments.createEnvironment(request).environment().orElseThrow();\nString envId = created.id().orElseThrow();\n// [/setup]\n\nEnvironment environment = client.environments.getEnvironment(envId).environment().orElseThrow();\nSystem.out.println(environment.id().orElse(\"\"));\n\n// [cleanup]\nclient.environments.deleteEnvironment(envId);\n// [/cleanup]\n"
+          }
+        ],
         "x-speakeasy-group": "environments"
       }
     },
@@ -2953,190 +3208,6 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
-      "ContentDelta": {
-        "type": "object",
-        "properties": {
-          "delta": {
-            "$ref": "#/components/schemas/ContentDeltaData"
-          },
-          "event_id": {
-            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
-            "type": "string"
-          },
-          "event_type": {
-            "const": "content.delta"
-          },
-          "index": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "required": [
-          "delta",
-          "event_type",
-          "index"
-        ],
-        "examples": [
-          {
-            "content_delta": {
-              "summary": "Content Delta",
-              "value": {
-                "delta": {
-                  "type": "text",
-                  "text": "Elara\u2019s life was a symphony of quiet moments. A librarian, she found solace in the hushed aisles, the scent of aged paper, and the predictable rhythm of her days. Her small apartment, meticulously ordered, reflected this internal calm, save"
-                },
-                "event_type": "content.delta",
-                "index": 1
-              }
-            }
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "ContentDeltaData": {
-        "description": "The delta content data for a content block.",
-        "type": "object",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/AudioDelta"
-          },
-          {
-            "$ref": "#/components/schemas/CodeExecutionCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/CodeExecutionResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/DocumentDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FileSearchCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FileSearchResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FunctionCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/FunctionResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMapsCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleMapsResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleSearchCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/GoogleSearchResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/ImageDelta"
-          },
-          {
-            "$ref": "#/components/schemas/McpServerToolCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/McpServerToolResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/TextAnnotationDelta"
-          },
-          {
-            "$ref": "#/components/schemas/TextDelta"
-          },
-          {
-            "$ref": "#/components/schemas/ThoughtSignatureDelta"
-          },
-          {
-            "$ref": "#/components/schemas/ThoughtSummaryDelta"
-          },
-          {
-            "$ref": "#/components/schemas/UrlContextCallDelta"
-          },
-          {
-            "$ref": "#/components/schemas/UrlContextResultDelta"
-          },
-          {
-            "$ref": "#/components/schemas/VideoDelta"
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "ContentStart": {
-        "type": "object",
-        "properties": {
-          "content": {
-            "$ref": "#/components/schemas/Content"
-          },
-          "event_id": {
-            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
-            "type": "string"
-          },
-          "event_type": {
-            "const": "content.start"
-          },
-          "index": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "required": [
-          "content",
-          "event_type",
-          "index"
-        ],
-        "examples": [
-          {
-            "content_start": {
-              "summary": "Content Start",
-              "value": {
-                "content": {
-                  "type": "text"
-                },
-                "event_type": "content.start",
-                "index": 1
-              }
-            }
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
-      "ContentStop": {
-        "type": "object",
-        "properties": {
-          "event_id": {
-            "description": "The event_id token to be used to resume the interaction stream, from\nthis event.",
-            "type": "string"
-          },
-          "event_type": {
-            "const": "content.stop"
-          },
-          "index": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "required": [
-          "event_type",
-          "index"
-        ],
-        "examples": [
-          {
-            "content_stop": {
-              "summary": "Content Stop",
-              "value": {
-                "event_type": "content.stop",
-                "index": 1
-              }
-            }
-          }
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
       "CreateAgentInteractionParams": {
         "description": "Parameters for creating agent interactions",
         "properties": {
@@ -3335,6 +3406,10 @@
         "description": "Request for `CreateEnvironment`.",
         "type": "object",
         "properties": {
+          "from_environment": {
+            "description": "Optional. The source environment to copy/fork from.\nFormat: `environments/{environment_id}` or `{environment_id}`.\nWhen specified, `sources` and `env` must be empty.",
+            "type": "string"
+          },
           "network": {
             "description": "Network configuration for the environment.",
             "oneOf": [
@@ -4393,34 +4468,6 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
-      "FunctionCallDelta": {
-        "type": "object",
-        "properties": {
-          "arguments": {
-            "type": "object",
-            "additionalProperties": {
-              "description": "Properties of the object."
-            }
-          },
-          "id": {
-            "description": "Required. A unique ID for this specific tool call.",
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "type": {
-            "const": "function_call"
-          }
-        },
-        "required": [
-          "arguments",
-          "id",
-          "name",
-          "type"
-        ],
-        "x-speakeasy-model-namespace": "interactions"
-      },
       "FunctionCallStep": {
         "description": "A function tool call step.",
         "type": "object",
@@ -4476,10 +4523,6 @@
       "FunctionResultDelta": {
         "type": "object",
         "properties": {
-          "call_id": {
-            "description": "Required. ID to match the ID from the function call block.",
-            "type": "string"
-          },
           "is_error": {
             "type": "boolean"
           },
@@ -4514,7 +4557,6 @@
           }
         },
         "required": [
-          "call_id",
           "result",
           "type"
         ],
@@ -6617,6 +6659,7 @@
           "gemini-3.5-flash",
           "gemini-3.6-flash",
           "gemini-3.7-flash",
+          "gemini-3.8-flash",
           "lyria-3-clip-preview",
           "lyria-3-pro-preview",
           "gemini-robotics-er-1.6-preview",
@@ -6639,9 +6682,10 @@
           "Gemini 3 Pro Image",
           "Gemini 3 Pro Image Preview",
           "Gemini 3.1 Flash Image.",
-          "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
-          "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
-          "Our most intelligent model for sustained frontier performance in agentic and coding tasks.",
+          "Gemini 3.5 Flash - Our earlier Flash model, built for speed and foundational performance across routine, high-throughput workloads.",
+          "Gemini 3.6 Flash - Our previous generation Flash model, balancing speed and multimodal capabilities across general agentic and everyday tasks.",
+          "Gemini 3.7 Flash - Our high-speed, efficient Flash model built for everyday coding, agentic tool use, and reliable multi-step execution.",
+          "Gemini 3.8 Flash - Our most intelligent Flash model, engineered for long-horizon software engineering, autonomous agents, and complex enterprise workflows.",
           "Our low-latency, music generation model optimized for high-fidelity audio clips and precise rhythmic control.",
           "Our advanced, full-song generative model with deep compositional understanding, optimized for precise structural control and complex transitions across diverse musical styles.",
           "Gemini Robotics-ER 1.6 Preview",
@@ -7208,6 +7252,12 @@
             "$ref": "#/components/schemas/ProcessingResultStep"
           },
           {
+            "$ref": "#/components/schemas/RetrievalCallStep"
+          },
+          {
+            "$ref": "#/components/schemas/RetrievalResultStep"
+          },
+          {
             "$ref": "#/components/schemas/ThoughtStep"
           },
           {
@@ -7635,50 +7685,6 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
-      "ThoughtContent": {
-        "description": "A thought content block.",
-        "type": "object",
-        "properties": {
-          "signature": {
-            "description": "Signature to match the backend source to be part of the generation.",
-            "type": "string",
-            "format": "byte",
-            "x-speakeasy-base64-input-mode": "file"
-          },
-          "summary": {
-            "description": "A summary of the thought.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ThoughtSummaryContent"
-            }
-          },
-          "type": {
-            "const": "thought"
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "examples": [
-          {
-            "thought": {
-              "summary": "Thought",
-              "value": {
-                "type": "thought",
-                "signature": "CoMDAXLI2nynRYojJIy6B1Jh9os2crpWLfB0+19xcLsGG46bd8wjkF/6RNlRUdvHrXyjsHkG0BZFcuO/bPOyA6Xh5jANNgx82wPHjGExN8A4ZQn56FlMwyZoqFVQz0QyY1lfibFJ2zU3J87uw26OewzcuVX0KEcs+GIsZa3EA6WwqhbsOd3wtZB3Ua2Qf98VAWZTS5y/tWpql7jnU3/CU7pouxQr/Bwft3hwnJNesQ9/dDJTuaQ8Zprh9VRWf1aFFjpIueOjBRrlT3oW6/y/eRl/Gt9BQXCYTqg/38vHFUU4Wo/d9dUpvfCe/a3o97t2Jgxp34oFKcsVb4S5WJrykIkw+14DzVnTpCpbQNFckqvFLuqnJCkL0EQFtunBXI03FJpPu3T1XU6id8S7ojoJQZSauGUCgmaLqUGdMrd08oo81ecoJSLs51Re9N/lISGmjWFPGpqJLoGq6uo4FHz58hmeyXCgHG742BHz2P3MiH1CXHUT2J8mF6zLhf3SR9Qb3lkrobAh",
-                "summary": [
-                  {
-                    "type": "text",
-                    "text": "The user is asking about the weather. I should use the get_weather tool."
-                  }
-                ]
-              }
-            }
-          }
-        ],
-        "deprecated": true,
-        "x-speakeasy-model-namespace": "interactions"
-      },
       "ThoughtSignatureDelta": {
         "type": "object",
         "properties": {
@@ -7756,7 +7762,10 @@
             "$ref": "#/components/schemas/TextContent"
           }
         ],
-        "x-speakeasy-model-namespace": "interactions"
+        "x-speakeasy-model-namespace": "interactions",
+        "discriminator": {
+          "propertyName": "type"
+        }
       },
       "ThoughtSummaryDelta": {
         "type": "object",

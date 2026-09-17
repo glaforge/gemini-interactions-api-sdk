@@ -17,20 +17,33 @@
 package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
 /**
  * Request payload for creating an execution environment.
  *
+ * @param fromEnvironment Optional. The source environment to copy/fork from.
  * @param network Network configuration for the environment.
  * @param sources Sources to be mounted into the environment.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CreateEnvironmentRequest(
+    @JsonProperty("from_environment") String fromEnvironment,
     NetworkConfiguration network,
     List<Source> sources
 ) {
+    /**
+     * Creates a CreateEnvironmentRequest with network and sources.
+     *
+     * @param network Network configuration for the environment.
+     * @param sources Sources to be mounted into the environment.
+     */
+    public CreateEnvironmentRequest(NetworkConfiguration network, List<Source> sources) {
+        this(null, network, sources);
+    }
+
     /**
      * Returns a new builder for CreateEnvironmentRequest.
      * @return a new builder.
@@ -44,8 +57,16 @@ public record CreateEnvironmentRequest(
         /** Creates a new Builder. */
         public Builder() {}
 
+        private String fromEnvironment;
         private NetworkConfiguration network;
         private List<Source> sources;
+
+        /**
+         * Sets the source environment to copy/fork from.
+         * @param fromEnvironment Source environment ID or format environments/{environment_id}.
+         * @return This builder.
+         */
+        public Builder fromEnvironment(String fromEnvironment) { this.fromEnvironment = fromEnvironment; return this; }
 
         /**
          * Sets the network configuration.
@@ -80,7 +101,7 @@ public record CreateEnvironmentRequest(
          * @return The CreateEnvironmentRequest.
          */
         public CreateEnvironmentRequest build() {
-            return new CreateEnvironmentRequest(network, sources);
+            return new CreateEnvironmentRequest(fromEnvironment, network, sources);
         }
     }
 }

@@ -26,6 +26,7 @@ import io.github.glaforge.gemini.interactions.model.Events.ThoughtSummaryDelta;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
 import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Tool.GoogleSearch;
 import io.github.glaforge.gemini.schema.GSchema;
@@ -37,7 +38,7 @@ public class ResearchFrontend {
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
     public static void main(String[] args) {
-        int port = 8080;
+        int port = 8888;
         String portEnv = System.getenv("PORT");
         if (portEnv != null && !portEnv.isBlank()) {
             try {
@@ -94,7 +95,7 @@ public class ResearchFrontend {
                 Jt.info("Preparing topics...").icon(":hourglass:").use(topicsContainer);
 
                 ModelInteractionParams planParams = ModelInteractionParams.builder()
-                        .model("gemini-3.5-flash")
+                        .model(ModelOption.GEMINI_3_8_FLASH)
                         .input(String.format("""
                                 Find a list of topics to research on the following subject:
                                 %s
@@ -190,7 +191,7 @@ public class ResearchFrontend {
 
             // compute/fetch summary
             ModelInteractionParams summaryParams = ModelInteractionParams.builder()
-                    .model("gemini-3.5-flash")
+                    .model(ModelOption.GEMINI_3_8_FLASH)
                     .input(String.format("""
                             Create a concise summary of the research below.
                             Go straight with the summary, don't introduce the summary
@@ -207,7 +208,7 @@ public class ResearchFrontend {
 
             // compute/fetch infographics
             ModelInteractionParams infographicParams = ModelInteractionParams.builder()
-                    .model("gemini-3-pro-image-preview")
+                    .model(ModelOption.GEMINI_3_PRO_IMAGE)
                     .input(String.format("""
                             Create a hand-drawn and hand-written sketchnote style summary infographic,
                             with a pure white background, use fluo highlighters for the key points,

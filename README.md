@@ -568,6 +568,9 @@ System.out.println("Status: " + retrieved.status() + ", files: " + retrieved.fil
 ListEnvironmentsResponse response = client.listEnvironments(10, null);
 response.environments().forEach(e -> System.out.println(e.id() + ": " + e.status()));
 
+// Clone / fork an existing environment directly from a snapshot
+Environment cloned = client.createEnvironmentFrom(env.id());
+
 // Delete environment
 client.deleteEnvironment(env.id());
 ```
