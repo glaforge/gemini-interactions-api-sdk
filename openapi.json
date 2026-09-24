@@ -13,6 +13,82 @@
     }
   ],
   "paths": {
+    "/upload/{api_version}/environments/{environment}/files/{path}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        },
+        {
+          "name": "environment",
+          "in": "path",
+          "description": "The ID of the environment that owns the destination file.",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "path",
+          "in": "path",
+          "description": "The relative destination path inside the environment workspace.",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "x-speakeasy-param-encoding-override": "allowReserved"
+        }
+      ],
+      "put": {
+        "operationId": "StartEnvironmentFileUpload",
+        "description": "Starts a resumable upload session for a file in an environment workspace.\nUpload the file bytes to the URL returned in the `X-Goog-Upload-URL`\nresponse header, using the resumable upload protocol.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/EnvironmentFileExtract"
+          },
+          {
+            "$ref": "#/components/parameters/EnvironmentFileOverwrite"
+          },
+          {
+            "$ref": "#/components/parameters/EnvironmentFileUploadCommand"
+          },
+          {
+            "$ref": "#/components/parameters/EnvironmentFileUploadContentLength"
+          },
+          {
+            "$ref": "#/components/parameters/EnvironmentFileUploadContentType"
+          },
+          {
+            "$ref": "#/components/parameters/EnvironmentFileUploadProtocol"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Upload session created successfully. Send the file bytes to the returned upload URL.",
+            "headers": {
+              "X-Goog-Upload-URL": {
+                "$ref": "#/components/headers/EnvironmentFileUploadUrl"
+              }
+            }
+          },
+          "4XX": {
+            "description": "The upload session request failed with a client error."
+          },
+          "5XX": {
+            "description": "The upload session request failed with a server error."
+          }
+        },
+        "summary": "Start an environment file upload",
+        "x-codeSamples": [
+          {
+            "label": "start_upload",
+            "lang": "sh",
+            "source": "curl -i -X PUT \\\n  'https://generativelanguage.googleapis.com/upload/v1beta/environments/env_abc123/files/main.py?overwrite=true' \\\n  -H \"x-goog-api-key: $GEMINI_API_KEY\" \\\n  -H 'X-Goog-Upload-Protocol: resumable' \\\n  -H 'X-Goog-Upload-Command: start' \\\n  -H \"X-Goog-Upload-Header-Content-Length: $(wc -c < main.py)\" \\\n  -H 'X-Goog-Upload-Header-Content-Type: text/x-python'\n"
+          }
+        ],
+        "x-speakeasy-group": "environments._internal",
+        "x-speakeasy-name-override": "startUpload"
+      }
+    },
     "/{api_version}/agents": {
       "parameters": [
         {
@@ -399,6 +475,205 @@
         "x-speakeasy-name-override": "get"
       }
     },
+    "/{api_version}/credentials": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        }
+      ],
+      "get": {
+        "operationId": "ListCredentials",
+        "description": "Lists credentials for a project.",
+        "parameters": [
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Optional. Maximum number of credentials to return.\nIf unspecified, defaults to 50. Maximum is 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "Optional. Pagination token.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCredentialsResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "CredentialListParams",
+            "group": "credentials",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-group": "credentials",
+        "x-speakeasy-name-override": "list"
+      },
+      "post": {
+        "operationId": "CreateCredential",
+        "description": "Creates a credential.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialCreateParams"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Credential"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "CredentialCreateParams",
+            "group": "credentials",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-group": "credentials",
+        "x-speakeasy-name-override": "create"
+      }
+    },
+    "/{api_version}/credentials/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Resource ID segment making up resource `name`. It identifies the resource within its parent collection as described in https://google.aip.dev/122.",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "operationId": "DeleteCredential",
+        "description": "Deletes a credential. Fails if referenced by active triggers.",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "CredentialDeleteParams",
+            "group": "credentials",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-group": "credentials",
+        "x-speakeasy-name-override": "delete"
+      },
+      "get": {
+        "operationId": "GetCredential",
+        "description": "Gets metadata of a single credential (no secret fields).",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Credential"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "CredentialGetParams",
+            "group": "credentials",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-group": "credentials",
+        "x-speakeasy-name-override": "get"
+      },
+      "patch": {
+        "operationId": "UpdateCredential",
+        "description": "Updates a credential.",
+        "parameters": [
+          {
+            "name": "update_mask",
+            "in": "query",
+            "description": "Optional. The list of fields to update.",
+            "schema": {
+              "type": "string",
+              "format": "google-fieldmask",
+              "pattern": "^(\\s*[^,\\s.]+(\\s*[,.]\\s*[^,\\s.]+)*)?$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialUpdateParams"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Credential"
+                }
+              }
+            }
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "CredentialUpdate",
+            "group": "credentials",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-group": "credentials",
+        "x-speakeasy-name-override": "update"
+      }
+    },
     "/{api_version}/environments": {
       "parameters": [
         {
@@ -568,7 +843,8 @@
           "required": true,
           "schema": {
             "type": "string"
-          }
+          },
+          "x-speakeasy-param-encoding-override": "allowReserved"
         }
       ],
       "get": {
@@ -2032,6 +2308,280 @@
         "x-speakeasy-name-override": "run"
       }
     },
+    "/{api_version}/voices": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        }
+      ],
+      "get": {
+        "operationId": "ListVoices",
+        "description": "Lists custom stored voices owned by the caller (ordered newest first)\nfollowed by prebuilt system voices from Google's voice catalog.",
+        "parameters": [
+          {
+            "name": "accent",
+            "in": "query",
+            "description": "Optional. Filter by accent description (e.g. \"American\", \"British\").\nCase-insensitive exact match. If multiple values are specified, matches\nvoices with any of the specified accents (OR).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "Optional. Filter by intended context or domain (e.g. \"News, Commercial\").\nCase-insensitive exact match. If multiple values are specified, matches\nvoices with any of the specified contexts (OR).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "x-speakeasy-name-override": "contexts"
+          },
+          {
+            "name": "gender",
+            "in": "query",
+            "description": "Optional. Filter by gender presentation (e.g. \"female\", \"male\", \"neutral\").\nCase-insensitive exact match. If multiple values are specified, matches\nvoices with any of the specified genders (OR).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "language_code",
+            "in": "query",
+            "description": "Optional. Filter by BCP-47 language code (e.g. \"en-US\").\nCase-insensitive exact match. If multiple values are specified, matches\nvoices with any of the specified language codes (OR).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Optional. The maximum number of voices to return per page. The service may\nreturn fewer than this value. If unspecified, at most 50 voices are\nreturned. The maximum value is 1000; values above 1000 are coerced to\n1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "description": "Optional. A page token received from a previous `ListVoices` call. Provide\nthis to retrieve the subsequent page.\n\nWhen paginating, all filter query parameters (`language_code`,\n`region_code`, `accent`, `persona`, `context`, `gender`, `pitch`, `type`,\nand `search`) must match the call that returned this token; otherwise the\nrequest fails with `INVALID_ARGUMENT`. `page_size` may change between\npages.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "persona",
+            "in": "query",
+            "description": "Optional. Filter by vocal persona (e.g. \"Warm, Friendly\").\nCase-insensitive exact match. If multiple values are specified, matches\nvoices with any of the specified personas (OR).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "pitch",
+            "in": "query",
+            "description": "Optional. Filter by vocal pitch. Accepts \"low\", \"medium\", \"high\" or\n\"PITCH_LOW\", \"PITCH_MEDIUM\", \"PITCH_HIGH\" (case-insensitive). If multiple\nvalues are specified, matches voices with any of the specified pitches\n(OR).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "region_code",
+            "in": "query",
+            "description": "Optional. Filter by ISO 3166-1 alpha-2 or UN M.49 region code (e.g. \"US\",\n\"001\").\nCase-insensitive exact match. If multiple values are specified, matches\nvoices with any of the specified region codes (OR).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional. Free-text substring search query matched case-insensitively\nagainst both `display_name` and `description`. Maximum 2048 bytes.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Optional. Filter by voice type. Accepts \"prebuilt\", \"replicated\",\n\"prompted\" or \"VOICE_TYPE_PREBUILT\", \"VOICE_TYPE_REPLICATED\",\n\"VOICE_TYPE_PROMPTED\" (case-insensitive). If multiple values are specified,\nmatches voices with any of the specified types (OR).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListVoicesResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "voices"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "VoiceListParams",
+            "group": "voices",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-name-override": "list"
+      },
+      "post": {
+        "operationId": "CreateVoice",
+        "description": "Creates a custom voice from a natural-language prompt\n(`VOICE_TYPE_PROMPTED`) or from reference and consent audio recordings\n(`VOICE_TYPE_REPLICATED`).",
+        "parameters": [],
+        "requestBody": {
+          "description": "The request body.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVoiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Voice"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "voices"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "VoiceCreateParams",
+            "group": "voices",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-name-override": "create"
+      }
+    },
+    "/{api_version}/voices/{voicesId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_version"
+        }
+      ],
+      "delete": {
+        "operationId": "DeleteVoice",
+        "description": "Deletes a custom stored voice (`store = true`) by resource name.\nPrebuilt catalog voices (`VOICE_TYPE_PREBUILT`) cannot be deleted.",
+        "parameters": [
+          {
+            "name": "voicesId",
+            "in": "path",
+            "description": "Required. The resource name of the custom stored voice to delete\n(for example, `voices/voice_abc123def456`).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-speakeasy-name-override": "id"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteVoiceResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "voices"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "VoiceDeleteParams",
+            "group": "voices",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-name-override": "delete"
+      },
+      "get": {
+        "operationId": "GetVoice",
+        "description": "Gets a custom stored voice (`store = true`) by resource name.\nPrebuilt catalog voices (`VOICE_TYPE_PREBUILT`) cannot be retrieved via\n`GetVoice`; use `ListVoices` instead.",
+        "parameters": [
+          {
+            "name": "voicesId",
+            "in": "path",
+            "description": "Required. The resource name of the custom stored voice to retrieve\n(for example, `voices/voice_abc123def456`).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-speakeasy-name-override": "id"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Voice"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "voices"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "VoiceGetParams",
+            "group": "voices",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-name-override": "get"
+      }
+    },
     "/{api_version}/webhooks": {
       "parameters": [
         {
@@ -2367,6 +2917,65 @@
   },
   "components": {
     "parameters": {
+      "EnvironmentFileExtract": {
+        "name": "extract",
+        "in": "query",
+        "description": "Optional. If true, treats the uploaded file as a tar/tar.gz archive and unpacks it into `path`.",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "EnvironmentFileOverwrite": {
+        "name": "overwrite",
+        "in": "query",
+        "description": "Optional. Whether to overwrite the destination file if it already exists.",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "EnvironmentFileUploadCommand": {
+        "name": "X-Goog-Upload-Command",
+        "in": "header",
+        "description": "Command that starts the resumable upload session.",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "const": "start",
+          "default": "start"
+        }
+      },
+      "EnvironmentFileUploadContentLength": {
+        "name": "X-Goog-Upload-Header-Content-Length",
+        "in": "header",
+        "description": "Total number of file bytes that will be uploaded to the session URL.",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0
+        }
+      },
+      "EnvironmentFileUploadContentType": {
+        "name": "X-Goog-Upload-Header-Content-Type",
+        "in": "header",
+        "description": "MIME type of the file that will be uploaded to the session URL.",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "EnvironmentFileUploadProtocol": {
+        "name": "X-Goog-Upload-Protocol",
+        "in": "header",
+        "description": "Resumable upload protocol selector.",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "const": "resumable",
+          "default": "resumable"
+        }
+      },
       "api_version": {
         "name": "api_version",
         "in": "path",
@@ -2384,6 +2993,15 @@
           "type": "string"
         },
         "x-speakeasy-name-override": "user_project"
+      }
+    },
+    "headers": {
+      "EnvironmentFileUploadUrl": {
+        "description": "Opaque URL to which file chunks are uploaded and finalized.",
+        "schema": {
+          "type": "string",
+          "format": "uri"
+        }
       }
     },
     "schemas": {
@@ -2537,6 +3155,10 @@
         "description": "A single domain allowlist rule with optional header injection.",
         "type": "object",
         "properties": {
+          "credential": {
+            "description": "Optional. Reference to a server-managed Credential resource by ID.",
+            "type": "string"
+          },
           "domain": {
             "description": "Domain to allow outbound requests to. Supports wildcards (e.g. '*.googleapis.com'). Use '*' to allow all domains.",
             "type": "string"
@@ -2579,6 +3201,9 @@
           },
           {
             "$ref": "#/components/schemas/PlaceCitation"
+          },
+          {
+            "$ref": "#/components/schemas/SpeechAnnotation"
           },
           {
             "$ref": "#/components/schemas/UrlCitation"
@@ -2720,6 +3345,27 @@
             "name": "AudioContent",
             "group": "interactions"
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "AudioData": {
+        "description": "Audio payload used for voice creation.",
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Required. The raw audio bytes.",
+            "type": "string",
+            "format": "byte",
+            "x-speakeasy-base64-input-mode": "file"
+          },
+          "mime_type": {
+            "description": "Required. The IANA MIME type of the audio data (for example, `audio/wav` or\n`audio/mpeg`).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "mime_type"
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
@@ -3402,6 +4048,18 @@
         "x-speakeasy-model-namespace": "interactions",
         "x-speakeasy-name-override": "CreateAgentInteraction"
       },
+      "CreateCredentialRequest": {
+        "type": "object",
+        "properties": {
+          "credential": {
+            "$ref": "#/components/schemas/CredentialCreateParams"
+          }
+        },
+        "required": [
+          "credential"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
       "CreateEnvironmentRequest": {
         "description": "Request for `CreateEnvironment`.",
         "type": "object",
@@ -3622,6 +4280,142 @@
         "x-speakeasy-model-namespace": "interactions",
         "x-speakeasy-name-override": "CreateModelInteraction"
       },
+      "CreateVoiceRequest": {
+        "description": "Request message for `VoicesService.CreateVoice`.",
+        "type": "object",
+        "properties": {
+          "store": {
+            "description": "Optional. Whether the created voice is persisted and managed by Google.\n\n* When `true`, Google stores the voice and returns `Voice.id` (for example,\n  `voice_abc123def456`), which can be managed via `GetVoice`, `ListVoices`,\n  and `DeleteVoice` and referenced by ID in synthesis requests. Projects\n  are subject to a maximum active stored voice quota; exceeding the quota\n  returns `RESOURCE_EXHAUSTED`.\n* When `false` (default), the voice is not stored by Google and `Voice.key`\n  (for example, `voicekey_...`) is returned for client-side storage and\n  synthesis. Optional discovery metadata fields on `voice` are not\n  persisted or returned when `store` is `false`.\n* Required to be `true` when `voice.type` is `\"prompted\"`\n  (otherwise fails with `INVALID_ARGUMENT`).",
+            "type": "boolean"
+          },
+          "voice": {
+            "description": "Required. The voice to create.\n`voice.model` is optional; if omitted, the service selects the default\nvoice creation model. Output-only fields on `Voice` (`id`, `key`,\n`expire_time`, `usage`) are ignored if set.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Voice"
+              }
+            ]
+          }
+        },
+        "required": [
+          "voice"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "Credential": {
+        "description": "Server-managed credential resource stored in Secret Manager.",
+        "type": "object",
+        "properties": {
+          "create_time": {
+            "description": "Output only. The timestamp when the credential was created.",
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "id": {
+            "description": "Required. Output only. Identifier. Unique identifier for the credential.",
+            "type": "string",
+            "readOnly": true,
+            "x-google-identifier": true
+          },
+          "status": {
+            "description": "Output only. Current status of the credential.",
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked"
+            ],
+            "readOnly": true,
+            "x-google-enum-descriptions": [
+              "The credential is active and valid for use.",
+              "The credential has been revoked and is no longer valid."
+            ]
+          },
+          "type": {
+            "description": "Required. Output only. The type of credential.",
+            "type": "string",
+            "enum": [
+              "bearer_token",
+              "oauth2",
+              "environment_variable"
+            ],
+            "readOnly": true,
+            "x-google-enum-descriptions": [
+              "Static token injected as header. No refresh logic.",
+              "Auto-refresh expired access tokens using stored refresh token.",
+              "Environment variable injected into sandbox container."
+            ]
+          },
+          "update_time": {
+            "description": "Output only. The timestamp when the credential was last updated.",
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "Credential",
+            "group": "credentials",
+            "representation": "model"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
+      },
+      "CredentialCreateParams": {
+        "description": "Represents the fields of a Credential provided on creation.",
+        "type": "object",
+        "required": [
+          "id",
+          "type"
+        ],
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EnvironmentVariableConfig"
+          },
+          {
+            "$ref": "#/components/schemas/HttpBearerConfig"
+          },
+          {
+            "$ref": "#/components/schemas/OAuth2Config"
+          }
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "CredentialCreateParams",
+            "group": "credentials",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
+      },
+      "CredentialUpdateParams": {
+        "description": "Represents the fields of a Credential that can be updated.",
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EnvironmentVariableUpdateConfig"
+          },
+          {
+            "$ref": "#/components/schemas/HttpBearerUpdateConfig"
+          },
+          {
+            "$ref": "#/components/schemas/OAuth2UpdateConfig"
+          }
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "CredentialUpdate",
+            "group": "credentials",
+            "representation": "input"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials",
+        "x-speakeasy-name-override": "CredentialUpdate"
+      },
       "DeepResearchAgentConfig": {
         "description": "Configuration for the Deep Research agent.",
         "type": "object",
@@ -3659,6 +4453,11 @@
             "group": "interactions"
           }
         ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "DeleteVoiceResponse": {
+        "description": "Response message for `VoicesService.DeleteVoice`.",
+        "type": "object",
         "x-speakeasy-model-namespace": "interactions"
       },
       "DocumentContent": {
@@ -3790,10 +4589,29 @@
           {
             "name": "EnvironmentDeleteResponse",
             "group": "environments"
+          },
+          {
+            "name": "CredentialDeleteResponse",
+            "group": "credentials"
           }
         ],
         "x-speakeasy-model-namespace": "interactions",
         "x-stainless-empty-object": true
+      },
+      "EnvVar": {
+        "description": "An environment variable to set in the execution environment.",
+        "type": "object",
+        "properties": {
+          "credential": {
+            "description": "Optional reference to a server-managed Credential resource by ID.",
+            "type": "string"
+          },
+          "value": {
+            "description": "Direct string value for plain environment variables.",
+            "type": "string"
+          }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "Environment": {
         "description": "An execution environment for an agent.",
@@ -3884,6 +4702,20 @@
         "description": "Configuration for a custom environment.",
         "type": "object",
         "properties": {
+          "env": {
+            "description": "Environment variables to set in the sandbox environment.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EnvVar"
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/EnvVar"
+                }
+              }
+            ]
+          },
           "environment_id": {
             "description": "Optional. The environment ID for the interaction. If specified, the request will\nupdate the existing environment instead of creating a new one.",
             "type": "string"
@@ -4117,6 +4949,102 @@
           }
         ],
         "x-speakeasy-model-namespace": "interactions"
+      },
+      "EnvironmentVariableConfig": {
+        "description": "Configuration for environment variable credentials.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "injection_location": {
+            "description": "Required. Locations where the environment variable can be injected in\noutgoing HTTP requests. Must contain at least one location.\nAccepts either a single location (e.g. \"header\") or an array of locations.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/InjectionLocation"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/InjectionLocation"
+                }
+              }
+            ]
+          },
+          "trusted_domains": {
+            "description": "Optional. List of domains allowed to receive this environment variable\nvalue in HTTP requests.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "const": "environment_variable"
+          },
+          "value": {
+            "description": "Required. Input only. Secret value of the environment variable. Write-only; never\nreturned in responses.",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "injection_location",
+          "type",
+          "value"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "EnvironmentVariableConfig",
+            "group": "credentials"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
+      },
+      "EnvironmentVariableUpdateConfig": {
+        "description": "Configuration for updating environment variable credentials.",
+        "type": "object",
+        "properties": {
+          "injection_location": {
+            "description": "Optional. Locations where the environment variable can be injected in\noutgoing HTTP requests.\nAccepts either a single location (e.g. \"header\") or an array of locations.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/InjectionLocation"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/InjectionLocation"
+                }
+              }
+            ]
+          },
+          "trusted_domains": {
+            "description": "Optional. List of domains allowed to receive this environment variable\nvalue in HTTP requests.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "const": "environment_variable"
+          },
+          "value": {
+            "description": "Optional. Input only. Secret value of the environment variable. Write-only; never\nreturned in responses.",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "EnvironmentVariableUpdateConfig",
+            "group": "credentials"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
       },
       "Error": {
         "description": "Error message from an interaction.",
@@ -5362,6 +6290,75 @@
         },
         "x-speakeasy-model-namespace": "interactions"
       },
+      "HttpBearerConfig": {
+        "description": "Configuration for HTTP Bearer token credentials.",
+        "type": "object",
+        "properties": {
+          "header_name": {
+            "description": "Optional. Header name to inject the token into. Defaults to\n'Authorization'.",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "prefix": {
+            "description": "Optional. Prefix to prepend to the token. Defaults to 'Bearer'. Set to ''\nfor no prefix.",
+            "type": "string"
+          },
+          "token": {
+            "description": "Required. Input only. The static bearer token. Write-only; never returned in responses.",
+            "type": "string",
+            "writeOnly": true
+          },
+          "type": {
+            "const": "bearer_token"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "type"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "HttpBearerConfig",
+            "group": "credentials"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
+      },
+      "HttpBearerUpdateConfig": {
+        "description": "Configuration for updating HTTP Bearer token credentials.",
+        "type": "object",
+        "properties": {
+          "header_name": {
+            "description": "Optional. Header name to inject the token into. Defaults to\n'Authorization'.",
+            "type": "string"
+          },
+          "prefix": {
+            "description": "Optional. Prefix to prepend to the token. Defaults to 'Bearer'. Set to ''\nfor no prefix.",
+            "type": "string"
+          },
+          "token": {
+            "description": "Optional. Input only. The static bearer token. Write-only; never returned in responses.",
+            "type": "string",
+            "writeOnly": true
+          },
+          "type": {
+            "const": "bearer_token"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "HttpBearerUpdateConfig",
+            "group": "credentials"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
+      },
       "ImageConfig": {
         "description": "The configuration for image interaction.",
         "type": "object",
@@ -5646,6 +6643,26 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
+      "InjectionLocation": {
+        "type": "string",
+        "enum": [
+          "header",
+          "query",
+          "body"
+        ],
+        "x-google-enum-descriptions": [
+          "Injected into HTTP request headers.",
+          "Injected into HTTP URL query parameters.",
+          "Injected into HTTP request body."
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "InjectionLocation",
+            "group": "credentials"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
+      },
       "Interaction": {
         "description": "The Interaction resource.",
         "properties": {
@@ -5797,7 +6814,7 @@
               "The interaction failed.",
               "The interaction was cancelled.",
               "The interaction is completed, but contains incomplete results (e.g.\nhitting max_tokens).",
-              "The interaction was halted because the token budget was exceeded.",
+              "Deprecated: Token and execution budget exhaustion returns INCOMPLETE\n(11).",
               "The interaction is queued, waiting for processing."
             ]
           },
@@ -6152,6 +7169,15 @@
               "incomplete",
               "budget_exceeded"
             ],
+            "x-google-enum-deprecated": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              true
+            ],
             "x-google-enum-descriptions": [
               "The interaction is in progress.",
               "The interaction requires action/input from the user.",
@@ -6159,7 +7185,7 @@
               "The interaction failed.",
               "The interaction was cancelled.",
               "The interaction is completed, but contains incomplete results (e.g.\nhitting max_tokens).",
-              "The interaction was halted because the token budget was exceeded."
+              "Deprecated: Token and execution budget exhaustion returns INCOMPLETE\n(11)."
             ]
           }
         },
@@ -6218,12 +7244,14 @@
         "type": "object",
         "properties": {
           "agents": {
+            "description": "The list of agents.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Agent"
             }
           },
           "next_page_token": {
+            "description": "A token to retrieve the next page of results.",
             "type": "string"
           }
         },
@@ -6235,6 +7263,28 @@
         ],
         "x-speakeasy-model-namespace": "agents",
         "x-speakeasy-name-override": "AgentListResponse"
+      },
+      "ListCredentialsResponse": {
+        "type": "object",
+        "properties": {
+          "credentials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Credential"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
+          }
+        },
+        "x-speakeasy-exports": [
+          {
+            "name": "CredentialListResponse",
+            "group": "credentials"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials",
+        "x-speakeasy-name-override": "CredentialListResponse"
       },
       "ListEnvironmentsResponse": {
         "description": "Response for `ListEnvironments`.",
@@ -6307,6 +7357,24 @@
           }
         ],
         "x-speakeasy-model-namespace": "triggers"
+      },
+      "ListVoicesResponse": {
+        "description": "Response message for `VoicesService.ListVoices`.",
+        "type": "object",
+        "properties": {
+          "next_page_token": {
+            "description": "A token that can be sent as `page_token` to retrieve the next page.\nIf empty, there are no subsequent pages.",
+            "type": "string"
+          },
+          "voices": {
+            "description": "The voices from the specified collection.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Voice"
+            }
+          }
+        },
+        "x-speakeasy-model-namespace": "interactions"
       },
       "ListWebhooksResponse": {
         "description": "Response message for WebhookService.ListWebhooks.",
@@ -6743,6 +7811,102 @@
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
+      "OAuth2Config": {
+        "description": "Configuration for OAuth2 credentials with automatic token refresh.",
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "description": "Required. OAuth2 client ID.",
+            "type": "string"
+          },
+          "client_secret": {
+            "description": "Required. Input only. OAuth2 client secret. Write-only; never returned in responses.",
+            "type": "string",
+            "writeOnly": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "description": "Required. Input only. OAuth2 refresh token. Write-only; never returned in responses.",
+            "type": "string",
+            "writeOnly": true
+          },
+          "scopes": {
+            "description": "Optional. List of OAuth2 scopes.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "token_url": {
+            "description": "Required. OAuth2 token endpoint URL for refreshing access tokens.",
+            "type": "string"
+          },
+          "type": {
+            "const": "oauth2"
+          }
+        },
+        "required": [
+          "client_id",
+          "client_secret",
+          "id",
+          "refresh_token",
+          "token_url",
+          "type"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "OAuth2Config",
+            "group": "credentials"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
+      },
+      "OAuth2UpdateConfig": {
+        "description": "Configuration for updating OAuth2 credentials.",
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "description": "Optional. OAuth2 client ID.",
+            "type": "string"
+          },
+          "client_secret": {
+            "description": "Optional. Input only. OAuth2 client secret. Write-only; never returned in responses.",
+            "type": "string",
+            "writeOnly": true
+          },
+          "refresh_token": {
+            "description": "Optional. Input only. OAuth2 refresh token. Write-only; never returned in responses.",
+            "type": "string",
+            "writeOnly": true
+          },
+          "scopes": {
+            "description": "Optional. List of OAuth2 scopes.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "token_url": {
+            "description": "Optional. OAuth2 token endpoint URL for refreshing access tokens.",
+            "type": "string"
+          },
+          "type": {
+            "const": "oauth2"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "x-speakeasy-exports": [
+          {
+            "name": "OAuth2UpdateConfig",
+            "group": "credentials"
+          }
+        ],
+        "x-speakeasy-model-namespace": "credentials"
+      },
       "PingWebhookRequest": {
         "description": "Request message for WebhookService.PingWebhook.",
         "type": "object",
@@ -6768,6 +7932,20 @@
         "x-speakeasy-model-namespace": "webhooks",
         "x-speakeasy-name-override": "WebhookPingResponse",
         "x-stainless-empty-object": true
+      },
+      "Pitch": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "x-google-enum-descriptions": [
+          "Lower pitch voice.",
+          "Medium pitch voice.",
+          "Higher pitch voice."
+        ],
+        "x-speakeasy-model-namespace": "interactions"
       },
       "PlaceCitation": {
         "description": "A place citation annotation.",
@@ -6937,6 +8115,47 @@
             "name": "ProcessingResultStep",
             "group": "interactions"
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "PromptedVoice": {
+        "description": "Parameters for prompted voice generation.\nRequired in `CreateVoice` when `type` is `\"prompted\"`. Returned in\n`CreateVoice`, `GetVoice`, and `ListVoices` responses for prompted voices.",
+        "type": "object",
+        "properties": {
+          "input": {
+            "description": "Required. The natural-language prompt describing the desired voice, e.g.\n\"A deep, booming male voice of a massive evil ogre in his middle years.\"",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "ReplicatedVoice": {
+        "description": "Input only. Parameters for replicated voice generation.\nRequired on input when `type` is `\"replicated\"`. Not returned in\nresponses.",
+        "type": "object",
+        "properties": {
+          "consent_audio": {
+            "description": "Required. Audio recording of the same speaker reading the required\nconsent phrase, confirming authorization to replicate the voice.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AudioData"
+              }
+            ]
+          },
+          "source_audio": {
+            "description": "Required. The reference audio sample of the speaker's voice to replicate.\nMust be an unmodified recording of an adult human voice.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AudioData"
+              }
+            ]
+          }
+        },
+        "required": [
+          "consent_audio",
+          "source_audio"
         ],
         "x-speakeasy-model-namespace": "interactions"
       },
@@ -7148,6 +8367,37 @@
             }
           }
         },
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "SpeechAnnotation": {
+        "description": "Speech annotation for text content.",
+        "type": "object",
+        "properties": {
+          "end_index": {
+            "description": "End of the attributed segment, exclusive.",
+            "type": "integer",
+            "format": "int32"
+          },
+          "speaker": {
+            "description": "The speaker to associate with this turn.",
+            "type": "string"
+          },
+          "start_index": {
+            "description": "Start of segment of the response that is attributed to this source.\n\nIndex indicates the start of the segment, measured in bytes.",
+            "type": "integer",
+            "format": "int32"
+          },
+          "style": {
+            "description": "Style instruction for the speech synthesis.",
+            "type": "string"
+          },
+          "type": {
+            "const": "speech_metadata"
+          }
+        },
+        "required": [
+          "type"
+        ],
         "x-speakeasy-model-namespace": "interactions"
       },
       "SpeechConfig": {
@@ -8218,6 +9468,52 @@
         ],
         "x-speakeasy-model-namespace": "triggers"
       },
+      "UpdateCredentialRequest": {
+        "type": "object",
+        "properties": {
+          "credential": {
+            "$ref": "#/components/schemas/CredentialUpdateParams"
+          },
+          "update_mask": {
+            "type": "string",
+            "format": "google-fieldmask",
+            "pattern": "^(\\s*[^,\\s.]+(\\s*[,.]\\s*[^,\\s.]+)*)?$"
+          }
+        },
+        "required": [
+          "credential"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "UploadEnvironmentFileRequest": {
+        "description": "Request for `UploadEnvironmentFile`.",
+        "type": "object",
+        "properties": {
+          "extract": {
+            "description": "Optional. If true, treats the uploaded file as a tar/tar.gz archive and\nunpacks it into `path`.",
+            "type": "boolean"
+          },
+          "overwrite": {
+            "description": "Optional. Whether to overwrite the destination file if it already exists.",
+            "type": "boolean"
+          }
+        },
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "UploadEnvironmentFileResponse": {
+        "description": "Response for `UploadEnvironmentFile`.",
+        "type": "object",
+        "properties": {
+          "files": {
+            "description": "List of files created or extracted in the environment.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentFile"
+            }
+          }
+        },
+        "x-speakeasy-model-namespace": "interactions"
+      },
       "UrlCitation": {
         "description": "A URL citation annotation.",
         "type": "object",
@@ -8904,6 +10200,133 @@
             "name": "VideoResponseFormat",
             "group": "interactions"
           }
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "Voice": {
+        "description": "A voice resource representing either a custom voice (created via\n`CreateVoice`) or a prebuilt system voice (returned by `ListVoices`).",
+        "type": "object",
+        "properties": {
+          "accent": {
+            "description": "Optional. Regional accent descriptor (e.g. \"American\", \"British\").",
+            "type": "string"
+          },
+          "context": {
+            "description": "Optional. Optimal usage context or domain (e.g. \"Conversational\",\n\"Audiobook\", \"News\").",
+            "type": "string"
+          },
+          "description": {
+            "description": "Optional. Descriptive summary of vocal timbre, personality, and tone.",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Optional. User-provided display name for a stored voice (`store = true`),\nor the catalog name for a prebuilt voice.",
+            "type": "string"
+          },
+          "expire_time": {
+            "description": "Output only. The timestamp at which a custom stored voice (`store = true`)\nor replicated voice key (`store = false`) expires. Unset for prebuilt\ncatalog voices (`\"prebuilt\"`), which do not expire.",
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "gender": {
+            "description": "Optional. Perceived voice gender presentation (e.g. \"female\", \"male\",\n\"neutral\").",
+            "type": "string"
+          },
+          "id": {
+            "description": "Output only. The unique identifier of the voice.\n\n* For Google-managed custom voices (`store = true`), this is a generated ID\n  with prefix `voice_` (for example, `voice_abc123def456`). Pass\n  `voices/{id}` as the `name` in `GetVoice` and `DeleteVoice`, and pass\n  `{id}` directly to `SpeechConfig.voice_config.voice` (or\n  `SpeechConfig.voice`) during speech synthesis.\n* For prebuilt catalog voices (`\"prebuilt\"` returned by `ListVoices`), this\n  is the speaker name (for example, `Puck` or `Charon`).\n* Unset when `CreateVoice` is called with `store = false`.",
+            "type": "string",
+            "readOnly": true
+          },
+          "key": {
+            "description": "Output only. The client-managed voice replication key (with prefix\n`voicekey_`). Returned only by `CreateVoice` when `type` is `\"replicated\"`\nand `store` is `false`. Pass this key to `SpeechConfig.voice_config.voice`\n(or `SpeechConfig.voice`) during speech synthesis.",
+            "type": "string",
+            "readOnly": true
+          },
+          "language_code": {
+            "description": "Optional. Primary BCP-47 language tag (e.g. \"en-US\", \"fr-FR\").",
+            "type": "string"
+          },
+          "model": {
+            "description": "Optional. The model used to design or replicate the voice.\nIf omitted in `CreateVoice`, defaults to the latest supported voice design\nmodel. Returned in `CreateVoice`, `GetVoice`, and `ListVoices` responses\nfor custom voices (`\"prompted\"` and `\"replicated\"`); unset for `\"prebuilt\"`\nvoices. Created voices can be synthesized across any supported TTS\nsynthesis model.",
+            "type": "string"
+          },
+          "persona": {
+            "description": "Optional. Intended persona or character archetype (e.g. \"Warm, Friendly\",\n\"Narrator\").",
+            "type": "string"
+          },
+          "pitch": {
+            "description": "Optional. Voice pitch classification.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Pitch"
+              }
+            ]
+          },
+          "prompted": {
+            "description": "Parameters for prompted voice generation.\nRequired in `CreateVoice` when `type` is `\"prompted\"`. Returned in\n`CreateVoice`, `GetVoice`, and `ListVoices` responses for prompted voices.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PromptedVoice"
+              }
+            ]
+          },
+          "region_code": {
+            "description": "Optional. ISO 3166-1 alpha-2 or UN M.49 geographic region code (e.g. \"US\",\n\"GB\", \"001\").",
+            "type": "string"
+          },
+          "replicated": {
+            "description": "Input only. Parameters for replicated voice generation.\nRequired on input when `type` is `\"replicated\"`. Not returned in\nresponses.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReplicatedVoice"
+              }
+            ],
+            "writeOnly": true
+          },
+          "sample_audio": {
+            "description": "Output only. Sample audio (synthesizer prompt audio) generated for a\nprompted voice.\nPopulated only in `CreateVoice` and `GetVoice` responses when `type` is\n`\"prompted\"`; unset in `ListVoices` responses and for `\"replicated\"` or\n`\"prebuilt\"` voices.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AudioData"
+              }
+            ],
+            "readOnly": true
+          },
+          "type": {
+            "description": "Required. The type of the voice. In `CreateVoice`, must be `\"replicated\"`\nor `\"prompted\"`. In `ListVoices` responses, may also be `\"prebuilt\"`.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VoiceType"
+              }
+            ]
+          },
+          "usage": {
+            "description": "Output only. Token usage statistics for the voice creation request.\nPopulated only in the response of `CreateVoice` when `type` is\n`\"prompted\"`; unset for `\"replicated\"` and in `GetVoice` and `ListVoices`\nresponses.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Usage"
+              }
+            ],
+            "readOnly": true
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "x-speakeasy-model-namespace": "interactions"
+      },
+      "VoiceType": {
+        "type": "string",
+        "enum": [
+          "replicated",
+          "prompted",
+          "prebuilt"
+        ],
+        "x-google-enum-descriptions": [
+          "A custom voice replicated from a reference audio sample and speaker consent\nrecording.",
+          "A custom voice generated from a natural-language text prompt.",
+          "A built-in system voice from Google's voice catalog (e.g., `Puck`,\n`Charon`). Returned in responses; cannot be specified as the type in\n`CreateVoice`."
         ],
         "x-speakeasy-model-namespace": "interactions"
       },

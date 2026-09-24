@@ -17,6 +17,7 @@
 package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -335,11 +336,43 @@ public class Config {
      * Configuration for multi-speaker and speech generation.
      *
      * @param speakers Individual speaker configurations.
+     * @param mode     Optional turn-taking cadence mode (e.g. "conversational").
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record SpeakerConfig(
-        List<SpeechConfig> speakers
-    ) {}
+        List<SpeechConfig> speakers,
+        String mode
+    ) {
+        /**
+         * Creates a SpeakerConfig with a list of speakers.
+         *
+         * @param speakers Individual speaker configurations.
+         */
+        public SpeakerConfig(List<SpeechConfig> speakers) {
+            this(speakers, null);
+        }
+
+        /**
+         * Creates a conversational multi-speaker configuration.
+         *
+         * @param speakers Individual speaker configurations.
+         * @return A conversational SpeakerConfig.
+         */
+        public static SpeakerConfig conversational(List<SpeechConfig> speakers) {
+            return new SpeakerConfig(speakers, "conversational");
+        }
+
+        /**
+         * Creates a conversational multi-speaker configuration.
+         *
+         * @param speakers Individual speaker configurations.
+         * @return A conversational SpeakerConfig.
+         */
+        public static SpeakerConfig conversational(SpeechConfig... speakers) {
+            return new SpeakerConfig(List.of(speakers), "conversational");
+        }
+    }
 
     /**
      * Sealed interface for response formats.

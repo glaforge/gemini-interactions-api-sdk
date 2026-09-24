@@ -112,6 +112,16 @@ public sealed interface Content permits
         public TextContent(String text) {
             this("text", text, null);
         }
+
+        /**
+         * Creates a new TextContent with text and annotations.
+         *
+         * @param text        The text content.
+         * @param annotations List of annotations.
+         */
+        public TextContent(String text, List<Annotation> annotations) {
+            this("text", text, annotations != null ? List.copyOf(annotations) : null);
+        }
     }
 
     /**
@@ -127,9 +137,10 @@ public sealed interface Content permits
         @JsonSubTypes.Type(value = Content.UrlCitation.class, name = "url_citation"),
         @JsonSubTypes.Type(value = Content.FileCitation.class, name = "file_citation"),
         @JsonSubTypes.Type(value = Content.PlaceCitation.class, name = "place_citation"),
-        @JsonSubTypes.Type(value = Content.WordInfo.class, name = "word_info")
+        @JsonSubTypes.Type(value = Content.WordInfo.class, name = "word_info"),
+        @JsonSubTypes.Type(value = Content.SpeechAnnotation.class, name = "speech_metadata")
     })
-    sealed interface Annotation permits UrlCitation, FileCitation, PlaceCitation, WordInfo {
+    sealed interface Annotation permits UrlCitation, FileCitation, PlaceCitation, WordInfo, SpeechAnnotation {
         /**
          * Returns the type of annotation.
          *
@@ -224,6 +235,50 @@ public sealed interface Content permits
             if (type == null) {
                 type = "word_info";
             }
+        }
+    }
+
+    /**
+     * Speech annotation for text content styling and speaker assignment.
+     *
+     * @param type       The annotation type ("speech_metadata").
+     * @param startIndex Start of segment of response attributed to source.
+     * @param endIndex   End of attributed segment, exclusive.
+     * @param speaker    The speaker to associate with this turn.
+     * @param style      Style instruction for speech synthesis.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record SpeechAnnotation(
+        String type,
+        @JsonProperty("start_index") Integer startIndex,
+        @JsonProperty("end_index") Integer endIndex,
+        String speaker,
+        String style
+    ) implements Annotation {
+        /** Compact constructor establishing default type. */
+        public SpeechAnnotation {
+            if (type == null) {
+                type = "speech_metadata";
+            }
+        }
+
+        /**
+         * Creates a speech annotation with speaker and style.
+         *
+         * @param speaker The speaker name.
+         * @param style   The speech style instruction.
+         */
+        public SpeechAnnotation(String speaker, String style) {
+            this("speech_metadata", null, null, speaker, style);
+        }
+
+        /**
+         * Creates a speech annotation with style.
+         *
+         * @param style The speech style instruction.
+         */
+        public SpeechAnnotation(String style) {
+            this("speech_metadata", null, null, null, style);
         }
     }
 
@@ -514,5 +569,28 @@ public sealed interface Content permits
                 raw = new HashMap<>();
             }
         }
+    }
+
+    /**
+     * Creates a text content with speech style delivery metadata.
+     *
+     * @param text  The verbatim text to synthesize.
+     * @param style The speech style/delivery instruction.
+     * @return A TextContent instance configured with speech metadata.
+     */
+    static TextContent speech(String text, String style) {
+        return new TextContent(text, List.of(new SpeechAnnotation(style)));
+    }
+
+    /**
+     * Creates a text content with a speaker name and speech style delivery metadata.
+     *
+     * @param text    The verbatim text to synthesize.
+     * @param speaker The speaker name.
+     * @param style   The speech style/delivery instruction.
+     * @return A TextContent instance configured with speech metadata.
+     */
+    static TextContent speech(String text, String speaker, String style) {
+        return new TextContent(text, List.of(new SpeechAnnotation(speaker, style)));
     }
 }

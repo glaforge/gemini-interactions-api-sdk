@@ -48,6 +48,11 @@ import io.github.glaforge.gemini.interactions.model.Source;
 import io.github.glaforge.gemini.interactions.model.Credential;
 import io.github.glaforge.gemini.interactions.model.CredentialUpdate;
 import io.github.glaforge.gemini.interactions.model.ListCredentialsResponse;
+import io.github.glaforge.gemini.interactions.model.CreateVoiceRequest;
+import io.github.glaforge.gemini.interactions.model.DeleteVoiceResponse;
+import io.github.glaforge.gemini.interactions.model.ListVoicesResponse;
+import io.github.glaforge.gemini.interactions.model.Voice;
+import io.github.glaforge.gemini.interactions.model.VoiceListFilter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -662,6 +667,148 @@ public class GeminiInteractionsClient {
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             checkError(response);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    // --- Voice Operations ---
+
+    /**
+     * Creates a custom voice from a prompt (Voice Design) or audio samples (Voice Replication).
+     *
+     * @param request The voice creation request.
+     * @return The created Voice.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Voice createVoice(CreateVoiceRequest request) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(request);
+            String url = buildUrl("voices");
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Voice.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Creates a custom voice with default storage behavior.
+     *
+     * @param voice The voice specification.
+     * @return The created Voice.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Voice createVoice(Voice voice) {
+        return createVoice(CreateVoiceRequest.of(voice));
+    }
+
+    /**
+     * Creates a custom voice specifying whether it should be stored.
+     *
+     * @param voice The voice specification.
+     * @param store Whether to store the voice in Google's managed project storage.
+     * @return The created Voice.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Voice createVoice(Voice voice, boolean store) {
+        return createVoice(CreateVoiceRequest.of(voice, store));
+    }
+
+    /**
+     * Retrieves a stored custom voice by ID or resource name.
+     *
+     * @param id The voice ID (e.g. "voice_abc123") or resource name (e.g. "voices/voice_abc123").
+     * @return The Voice.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Voice getVoice(String id) {
+        try {
+            String voiceId = id != null && id.startsWith("voices/") ? id.substring("voices/".length()) : id;
+            String url = String.format("%s/%s/voices/%s", baseUrl, version, voiceId);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Voice.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Lists voices from Google's voice catalog and project-stored custom voices.
+     *
+     * @return The ListVoicesResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListVoicesResponse listVoices() {
+        return listVoices(null);
+    }
+
+    /**
+     * Lists voices with filtering parameters (language, gender, pitch, type, search, etc.).
+     *
+     * @param filter The filter parameters.
+     * @return The ListVoicesResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListVoicesResponse listVoices(VoiceListFilter filter) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("voices"));
+            if (filter != null) {
+                filter.appendQueryParams(urlBuilder);
+            }
+
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), ListVoicesResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new GeminiInteractionsException(e);
+        }
+    }
+
+    /**
+     * Deletes a stored custom voice by ID or resource name.
+     *
+     * @param id The voice ID (e.g. "voice_abc123") or resource name (e.g. "voices/voice_abc123").
+     * @return The DeleteVoiceResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public DeleteVoiceResponse deleteVoice(String id) {
+        try {
+            String voiceId = id != null && id.startsWith("voices/") ? id.substring("voices/".length()) : id;
+            String url = String.format("%s/%s/voices/%s", baseUrl, version, voiceId);
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .DELETE()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), DeleteVoiceResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new GeminiInteractionsException(e);
         }

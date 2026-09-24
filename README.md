@@ -26,7 +26,7 @@ To use the core client SDK, add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.0.1</version>
+    <version>2.0.2</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ If you are implementing the server-side webhook handler (`InteractionsHandler`),
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-server</artifactId>
-    <version>2.0.1</version>
+    <version>2.0.2</version>
 </dependency>
 ```
 
@@ -298,50 +298,80 @@ interaction.steps().forEach(step -> {
 });
 ```
 
-### Audio Output & Multi-Speaker Synthesis
+### Audio Output, Voice Design & Speech Synthesis
+
+With Gemini 3.8 TTS models (`gemini-3.8-flash-tts` and `gemini-3.8-flash-lite-tts`), you can synthesize high-fidelity audio with turn-level delivery styles, conversational cadence, and custom designed or cloned vocal personas:
+
 ```java
-import io.github.glaforge.gemini.interactions.model.Content.*;
-import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
-import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
+import io.github.glaforge.gemini.interactions.model.*;
 import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
 import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
 import io.github.glaforge.gemini.interactions.model.Config.SpeakerConfig;
-import io.github.glaforge.gemini.interactions.model.SpeechConfiguration;
-import java.util.List;
+import io.github.glaforge.gemini.interactions.model.Interaction.Turn;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 
-// Single speaker configuration
-GenerationConfig genConfig = GenerationConfig.builder()
-    .speechConfig(List.of(new SpeechConfig("Puck", "en-US")))
-    .build();
-
-// Or multi-speaker configuration
-SpeakerConfig multiSpeaker = new SpeakerConfig(List.of(
-    new SpeechConfig("Algenib", "en-US", "speaker1"),
-    new SpeechConfig("Kore", "en-US", "speaker2")
-));
-GenerationConfig multiSpeakerGenConfig = GenerationConfig.builder()
-    .speechConfig(multiSpeaker)
-    .build();
-
+// 1. Synthesize single-speaker audio with delivery style metadata
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash-preview-tts")
-    .input("Hey, we can generate audio too!")
-    .responseModalities(Modality.AUDIO, Modality.TEXT)
-    .generationConfig(genConfig)
+    .model(ModelOption.GEMINI_3_8_FLASH_TTS)
+    .input(Turn.user(Content.speech(
+        "Look out past the rings of Saturn. Those faint photons left their source millions of years ago.",
+        "reflective and awe-inspired"
+    )))
+    .generationConfig(GenerationConfig.builder()
+        .speechConfig(List.of(new SpeechConfig("Kore", "en-US")))
+        .build())
     .build();
 
 Interaction interaction = client.create(request);
+byte[] audioBytes = interaction.outputAudio().data(); // Default is audio/wav
 
-interaction.steps().forEach(step -> {
-    if (step instanceof Step.ModelOutputStep modelOutputStep) {
-        modelOutputStep.content().forEach(content -> {
-            if (content instanceof AudioContent audio) {
-                byte[] audioBytes = audio.data();
-                // Save audioBytes to a raw PCM file (16-bit little-endian, 24kHz, mono)
-            }
-        });
-    }
-});
+// 2. Multi-speaker dialogue with conversational cadence
+SpeakerConfig multiSpeaker = SpeakerConfig.conversational(
+    new SpeechConfig("Puck", "en-US", "Joe"),
+    new SpeechConfig("Kore", "en-US", "Jane")
+);
+
+ModelInteractionParams dialogueRequest = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_8_FLASH_TTS)
+    .input(Turn.user(
+        Content.speech("How's it going today Jane?", "Joe", "cheerful and friendly"),
+        Content.speech("Not too bad, ready to test these new voices!", "Jane", "calm and relaxed")
+    ))
+    .generationConfig(GenerationConfig.builder()
+        .speechConfig(multiSpeaker)
+        .build())
+    .build();
+
+// 3. Voice Design: Create a brand new custom voice from natural language
+Voice astronomer = client.createVoice(Voice.prompted(
+    ModelOption.GEMINI_3_8_FLASH_TTS,
+    "Warm British Astronomer",
+    "A warm, thoughtful astronomer in his late 60s with a gentle British accent."
+));
+
+// Pass the persistent voice ID (voice_...) in synthesis requests:
+GenerationConfig customVoiceConfig = GenerationConfig.builder()
+    .speechConfig(List.of(new SpeechConfig(astronomer.id(), "en-GB")))
+    .build();
+
+// 4. Voice Replication: Clone a voice from source and consent audio clips
+AudioData sourceAudio = AudioData.fromFile("audio/wav", Path.of("reference_speaker.wav"));
+AudioData consentAudio = AudioData.fromFile("audio/wav", Path.of("speaker_consent.wav"));
+
+Voice clonedVoice = client.createVoice(Voice.replicated(
+    ModelOption.GEMINI_3_8_FLASH_TTS,
+    "Cloned Speaker",
+    sourceAudio,
+    consentAudio
+));
+
+// 5. Query and search the Voice library
+ListVoicesResponse voices = client.listVoices(VoiceListFilter.builder()
+    .types(VoiceType.PROMPTED, VoiceType.PREBUILT)
+    .languageCodes("en-US", "en-GB")
+    .genders("female")
+    .search("warm")
+    .build());
 ```
 
 ### Agentic Video Understanding

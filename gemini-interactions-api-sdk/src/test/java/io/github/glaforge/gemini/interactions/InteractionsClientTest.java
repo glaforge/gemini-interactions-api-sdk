@@ -27,6 +27,12 @@ import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretResponse;
 import io.github.glaforge.gemini.interactions.model.Webhook;
 import io.github.glaforge.gemini.interactions.model.WebhookUpdate;
+import io.github.glaforge.gemini.interactions.model.CreateVoiceRequest;
+import io.github.glaforge.gemini.interactions.model.DeleteVoiceResponse;
+import io.github.glaforge.gemini.interactions.model.ListVoicesResponse;
+import io.github.glaforge.gemini.interactions.model.Voice;
+import io.github.glaforge.gemini.interactions.model.VoiceListFilter;
+import io.github.glaforge.gemini.interactions.model.VoiceType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -395,6 +401,95 @@ class InteractionsClientTest {
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("/v1beta/agents/test-agent", recordedRequest.getPath());
+        assertEquals("DELETE", recordedRequest.getMethod());
+    }
+
+    @Test
+    void testCreateVoice() throws Exception {
+        Voice created = Voice.builder()
+            .id("voice-123")
+            .name("voices/voice-123")
+            .type(VoiceType.PROMPTED)
+            .displayName("Custom Voice")
+            .build();
+
+        mockWebServer.enqueue(new MockResponse()
+            .setBody(objectMapper.writeValueAsString(created))
+            .addHeader("Content-Type", "application/json"));
+
+        Voice result = client.createVoice(Voice.prompted("Gentle British narrator"));
+        assertNotNull(result);
+        assertEquals("voice-123", result.id());
+        assertEquals("Custom Voice", result.displayName());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/v1beta/voices", recordedRequest.getPath());
+        assertEquals("POST", recordedRequest.getMethod());
+    }
+
+    @Test
+    void testGetVoice() throws Exception {
+        Voice voice = Voice.builder()
+            .id("voice-123")
+            .name("voices/voice-123")
+            .type(VoiceType.PROMPTED)
+            .displayName("Custom Voice")
+            .build();
+
+        mockWebServer.enqueue(new MockResponse()
+            .setBody(objectMapper.writeValueAsString(voice))
+            .addHeader("Content-Type", "application/json"));
+
+        Voice result = client.getVoice("voices/voice-123");
+        assertNotNull(result);
+        assertEquals("voice-123", result.id());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/v1beta/voices/voice-123", recordedRequest.getPath());
+        assertEquals("GET", recordedRequest.getMethod());
+    }
+
+    @Test
+    void testListVoices() throws Exception {
+        Voice voice = Voice.builder()
+            .id("voice-123")
+            .type(VoiceType.PROMPTED)
+            .displayName("Custom Voice")
+            .build();
+        ListVoicesResponse expected = new ListVoicesResponse(
+            Collections.singletonList(voice),
+            "next-page"
+        );
+
+        mockWebServer.enqueue(new MockResponse()
+            .setBody(objectMapper.writeValueAsString(expected))
+            .addHeader("Content-Type", "application/json"));
+
+        VoiceListFilter filter = VoiceListFilter.builder()
+            .types(VoiceType.PROMPTED)
+            .languageCodes("en-US")
+            .build();
+
+        ListVoicesResponse result = client.listVoices(filter);
+        assertEquals(1, result.voices().size());
+        assertEquals("voice-123", result.voices().get(0).id());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/v1beta/voices?type=prompted&language_code=en-US", recordedRequest.getPath());
+        assertEquals("GET", recordedRequest.getMethod());
+    }
+
+    @Test
+    void testDeleteVoice() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+            .setBody("{}")
+            .addHeader("Content-Type", "application/json"));
+
+        DeleteVoiceResponse response = client.deleteVoice("voice-123");
+        assertNotNull(response);
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/v1beta/voices/voice-123", recordedRequest.getPath());
         assertEquals("DELETE", recordedRequest.getMethod());
     }
 }

@@ -210,6 +210,74 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 Interaction response = client.create(request);
 ```
 
+### Text-to-Speech (TTS), Voice Design & Voice Replication
+
+Synthesize speech using Gemini 3.8 TTS models (`gemini-3.8-flash-tts`), attach turn-level style instructions (`speech_metadata`), configure multi-speaker dialogues with conversational cadence, or create custom designed/replicated voices:
+
+```java
+import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
+import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+import io.github.glaforge.gemini.interactions.model.Config.SpeakerConfig;
+import io.github.glaforge.gemini.interactions.model.Interaction.Turn;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+
+GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
+
+// 1. Single-speaker speech synthesis with style delivery metadata
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_8_FLASH_TTS)
+    .input(Turn.user(Content.speech(
+        "Look out past the rings of Saturn. Those faint photons left their source millions of years ago.",
+        "reflective and awe-inspired"
+    )))
+    .generationConfig(GenerationConfig.builder()
+        .speechConfig(List.of(new SpeechConfig("Kore", "en-US")))
+        .build())
+    .build();
+
+Interaction interaction = client.create(request);
+byte[] wavBytes = interaction.outputAudio().data();
+
+// 2. Conversational multi-speaker synthesis
+SpeakerConfig multiSpeaker = SpeakerConfig.conversational(
+    new SpeechConfig("Puck", "en-US", "Joe"),
+    new SpeechConfig("Kore", "en-US", "Jane")
+);
+
+ModelInteractionParams dialogue = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_8_FLASH_TTS)
+    .input(Turn.user(
+        Content.speech("How's it going today Jane?", "Joe", "cheerful and friendly"),
+        Content.speech("Ready to test these new voices!", "Jane", "calm and relaxed")
+    ))
+    .generationConfig(GenerationConfig.builder().speechConfig(multiSpeaker).build())
+    .build();
+
+// 3. Voice Design: Create a custom persona from natural language
+Voice designedVoice = client.createVoice(Voice.prompted(
+    ModelOption.GEMINI_3_8_FLASH_TTS,
+    "Warm British Astronomer",
+    "A warm, thoughtful astronomer in his late 60s with a gentle British accent."
+));
+
+// 4. Voice Replication: Clone a voice from reference and consent audio clips
+Voice clonedVoice = client.createVoice(Voice.replicated(
+    ModelOption.GEMINI_3_8_FLASH_TTS,
+    "Cloned Voice",
+    AudioData.fromFile("audio/wav", Path.of("source.wav")),
+    AudioData.fromFile("audio/wav", Path.of("consent.wav"))
+));
+
+// 5. Query the Voice catalog
+ListVoicesResponse voices = client.listVoices(VoiceListFilter.builder()
+    .types(VoiceType.PROMPTED, VoiceType.PREBUILT)
+    .languageCodes("en-US", "en-GB")
+    .search("warm")
+    .build());
+```
+
 ### Stateful Conversation (Multi-Turn)
 
 Use `store(true)` to persist the conversation in the cloud, and `previousInteractionId` to continue the thread.
