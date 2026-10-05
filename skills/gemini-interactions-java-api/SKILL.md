@@ -517,6 +517,54 @@ if (response.status().isIncomplete()) {
 }
 ```
 
+### CodeMender Agent Configuration
+
+Configure the CodeMender agent for discovering or remediating vulnerabilities in codebases:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Config.CodeMenderAgentConfig;
+import io.github.glaforge.gemini.interactions.model.Config.FileContent;
+import io.github.glaforge.gemini.interactions.model.Config.FindRequest;
+import io.github.glaforge.gemini.interactions.model.Config.FixRequest;
+import io.github.glaforge.gemini.interactions.model.Config.SessionConfig;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+
+// Vulnerability discovery session
+AgentInteractionParams findParams = AgentInteractionParams.builder()
+    .agent("code-mender")
+    .input("Scan the repository for SQL injection flaws.")
+    .agentConfig(CodeMenderAgentConfig.builder()
+        .sessionId("sess-security-scan-01")
+        .sessionConfig(SessionConfig.of(5))
+        .findRequest(FindRequest.builder()
+            .mode("verify")
+            .findingId("FINDING-42")
+            .description("Verify SQL injection in users query")
+            .sourceFiles(FileContent.of("src/db.py", "query = f'SELECT * FROM users WHERE id = {user_id}'"))
+            .build())
+        .build())
+    .build();
+
+Interaction findResponse = client.create(findParams);
+
+// Remediation session
+AgentInteractionParams fixParams = AgentInteractionParams.builder()
+    .agent("code-mender")
+    .input("Apply parameter binding to remediate the vulnerability.")
+    .agentConfig(CodeMenderAgentConfig.builder()
+        .sessionId("sess-security-scan-01")
+        .fixRequest(FixRequest.builder()
+            .findingId("FINDING-42")
+            .description("Remediate SQL injection with parameterized query")
+            .sourceFiles(FileContent.of("src/db.py", "query = 'SELECT * FROM users WHERE id = ?'"))
+            .build())
+        .build())
+    .build();
+
+Interaction fixResponse = client.create(fixParams);
+```
+
 ### Environment Workspace (Reading & Extracting Sandbox Files)
 
 After an agent interaction completes, inspect its remote sandbox files using `EnvironmentWorkspace`, or download/upload files directly:
@@ -563,9 +611,11 @@ import io.github.glaforge.gemini.interactions.model.AllowlistEntry;
 import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
 import java.util.List;
 
-// Provision environment with egress allowlist
+// Provision environment with egress allowlist and optional server-managed credential ID
 Environment env = client.createEnvironment(
-    new EnvironmentNetworkEgressAllowlist(List.of(new AllowlistEntry("github.com"))),
+    new EnvironmentNetworkEgressAllowlist(List.of(
+        AllowlistEntry.of("github.com", "cred-github-service-token")
+    )),
     null
 );
 
@@ -692,6 +742,13 @@ TriggerExecution execution = client.runTrigger(trigger.id());
 // List triggers with optional filter and pagination
 ListTriggersResponse activeTriggers = client.listTriggers("status=active", 10, null);
 
+// Inspect the scheduled agent interaction template
+TriggerInteraction interaction = trigger.interaction();
+if (interaction.agentInteraction() != null) {
+    AgentInteractionParams agentParams = interaction.agentInteraction();
+    System.out.println("Scheduled agent: " + agentParams.agent());
+}
+
 // List trigger executions
 ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id());
 ```
@@ -700,7 +757,7 @@ ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.
 
 The SDK uses specialized union records instead of untyped `Object` fields to handle polymorphic API configuration payloads:
 
-- **`TriggerInteraction`**: Wraps either an interaction request template (`InteractionParams.Request`) or a hydrated `Interaction` resource (`isRequest()`, `isResource()`).
+- **`TriggerInteraction`**: Wraps either an agent/request interaction template (`agentInteraction()`, `request()`) or a hydrated `Interaction` resource (`isRequest()`, `isResource()`, `agentInteraction()`).
 - **`ToolChoiceConfiguration`**: Wraps either a preset mode string (`"auto"`, `"any"`, `"none"`, `"validated"`) or a detailed `Tool.ToolChoiceConfig` (`isMode()`, `isConfig()`).
 - **`SpeechConfiguration`**: Wraps either single-speaker `List<SpeechConfig>` or multi-speaker `SpeakerConfig` (`isSingleSpeaker()`, `isMultiSpeaker()`).
 - **`NetworkConfiguration`**: Wraps either a preset network string (e.g. `"disabled"`, `"allow_all"`) or custom `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`).

@@ -15,6 +15,13 @@ import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
+import io.github.glaforge.gemini.interactions.model.AllowlistEntry;
+import io.github.glaforge.gemini.interactions.model.Config.AgentConfig;
+import io.github.glaforge.gemini.interactions.model.Config.CodeMenderAgentConfig;
+import io.github.glaforge.gemini.interactions.model.Config.FileContent;
+import io.github.glaforge.gemini.interactions.model.Config.FindRequest;
+import io.github.glaforge.gemini.interactions.model.Config.FixRequest;
+import io.github.glaforge.gemini.interactions.model.Config.SessionConfig;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -153,5 +160,105 @@ class ModelsParityTest {
         assertNotNull(trigger.interaction());
         assertNotNull(trigger.interactionAsInteraction());
         assertEquals("inter-111", trigger.interactionAsInteraction().id());
+    }
+
+    @Test
+    void testCodeMenderAgentConfigSerializationAndDeserialization() throws Exception {
+        CodeMenderAgentConfig config = CodeMenderAgentConfig.builder()
+                .model("gemini-2.5-pro")
+                .sessionId("sess-12345")
+                .sessionConfig(SessionConfig.of(10))
+                .findRequest(FindRequest.builder()
+                        .mode("verify")
+                        .findingId("VULN-001")
+                        .description("Check SQL injection vulnerability")
+                        .sourceFiles(FileContent.of("src/main/db.py", "query = f'SELECT * FROM users WHERE id = {user_id}'"))
+                        .build())
+                .fixRequest(FixRequest.builder()
+                        .findingId("VULN-001")
+                        .description("Remediate SQL injection")
+                        .sourceFiles(FileContent.of("src/main/db.py", "query = 'SELECT * FROM users WHERE id = ?'"))
+                        .build())
+                .build();
+
+        String json = mapper.writeValueAsString(config);
+        assertTrue(json.contains("\"type\":\"code-mender\""));
+        assertTrue(json.contains("\"model\":\"gemini-2.5-pro\""));
+        assertTrue(json.contains("\"session_id\":\"sess-12345\""));
+        assertTrue(json.contains("\"max_rounds\":10"));
+        assertTrue(json.contains("\"finding_id\":\"VULN-001\""));
+        assertTrue(json.contains("\"mode\":\"verify\""));
+
+        CodeMenderAgentConfig deserialized = mapper.readValue(json, CodeMenderAgentConfig.class);
+        assertEquals("code-mender", deserialized.type());
+        assertEquals("gemini-2.5-pro", deserialized.model());
+        assertEquals("sess-12345", deserialized.sessionId());
+        assertNotNull(deserialized.sessionConfig());
+        assertEquals(10, deserialized.sessionConfig().maxRounds());
+        assertNotNull(deserialized.findRequest());
+        assertEquals("verify", deserialized.findRequest().mode());
+        assertEquals("VULN-001", deserialized.findRequest().findingId());
+        assertEquals(1, deserialized.findRequest().sourceFiles().size());
+        assertEquals("src/main/db.py", deserialized.findRequest().sourceFiles().getFirst().path());
+        assertNotNull(deserialized.fixRequest());
+        assertEquals("VULN-001", deserialized.fixRequest().findingId());
+    }
+
+    @Test
+    void testCodeMenderAgentConfigPolymorphicDeserialization() throws Exception {
+        String hyphenJson = """
+                {
+                  "type": "code-mender",
+                  "model": "gemini-2.5-flash",
+                  "session_id": "session-abc"
+                }
+                """;
+
+        AgentConfig agentConfig = mapper.readValue(hyphenJson, AgentConfig.class);
+        assertInstanceOf(CodeMenderAgentConfig.class, agentConfig);
+        CodeMenderAgentConfig menderConfig = (CodeMenderAgentConfig) agentConfig;
+        assertEquals("code-mender", menderConfig.type());
+        assertEquals("gemini-2.5-flash", menderConfig.model());
+        assertEquals("session-abc", menderConfig.sessionId());
+
+        String underscoreJson = """
+                {
+                  "type": "code_mender",
+                  "max_total_tokens": 50000
+                }
+                """;
+
+        AgentConfig legacyConfig = mapper.readValue(underscoreJson, AgentConfig.class);
+        assertInstanceOf(CodeMenderAgentConfig.class, legacyConfig);
+        CodeMenderAgentConfig legacyMender = (CodeMenderAgentConfig) legacyConfig;
+        assertEquals("code_mender", legacyMender.type());
+        assertEquals(50000L, legacyMender.maxTotalTokens());
+    }
+
+    @Test
+    void testAllowlistEntryWithCredential() throws Exception {
+        AllowlistEntry entry = AllowlistEntry.builder()
+                .domain("api.github.com")
+                .transform("Authorization", "Bearer gh-token-123")
+                .credential("cred-456")
+                .build();
+
+        String json = mapper.writeValueAsString(entry);
+        assertTrue(json.contains("\"domain\":\"api.github.com\""));
+        assertTrue(json.contains("\"credential\":\"cred-456\""));
+        assertTrue(json.contains("\"Authorization\":\"Bearer gh-token-123\""));
+
+        AllowlistEntry deserialized = mapper.readValue(json, AllowlistEntry.class);
+        assertEquals("api.github.com", deserialized.domain());
+        assertEquals("cred-456", deserialized.credential());
+        assertNotNull(deserialized.transform());
+        assertEquals(1, deserialized.transform().size());
+        assertEquals("Bearer gh-token-123", deserialized.transform().getFirst().get("Authorization"));
+
+        // Test static factory method with credential
+        AllowlistEntry simpleEntry = AllowlistEntry.of("*.google.com", "cred-google");
+        assertEquals("*.google.com", simpleEntry.domain());
+        assertEquals("cred-google", simpleEntry.credential());
+        assertNull(simpleEntry.transform());
     }
 }

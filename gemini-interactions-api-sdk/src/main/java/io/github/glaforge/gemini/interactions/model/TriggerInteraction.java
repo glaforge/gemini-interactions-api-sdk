@@ -37,6 +37,16 @@ public record TriggerInteraction(
     Interaction resource
 ) {
     /**
+     * Creates a TriggerInteraction wrapping an {@link InteractionParams.AgentInteractionParams}.
+     *
+     * @param agentParams The agent interaction request template.
+     * @return A TriggerInteraction instance.
+     */
+    public static TriggerInteraction of(InteractionParams.AgentInteractionParams agentParams) {
+        return new TriggerInteraction(agentParams, null);
+    }
+
+    /**
      * Creates a TriggerInteraction wrapping an {@link InteractionParams.Request}.
      *
      * @param request The interaction request template.
@@ -94,5 +104,14 @@ public record TriggerInteraction(
      */
     public boolean isResource() {
         return resource != null;
+    }
+
+    /**
+     * Returns the agent interaction parameters if this trigger interaction represents agent parameters.
+     *
+     * @return The agent interaction parameters, or null if not an agent request.
+     */
+    public InteractionParams.AgentInteractionParams agentInteraction() {
+        return request instanceof InteractionParams.AgentInteractionParams agentParams ? agentParams : null;
     }
 }

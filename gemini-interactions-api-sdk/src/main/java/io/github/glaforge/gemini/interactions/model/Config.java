@@ -35,8 +35,8 @@ public class Config {
     /**
      * Configuration options for model generation.
      *
-     * @param temperature       Controls randomness in generation.
-     * @param topP             The maximum cumulative probability of tokens to consider when sampling.
+     * @param temperature       Controls randomness in generation. Deprecated in the Gemini Interactions API.
+     * @param topP             The maximum cumulative probability of tokens to consider when sampling. Deprecated in the Gemini Interactions API.
      * @param seed             Seed for random number generation.
      * @param stopSequences    List of strings that stop generation.
      * @param toolChoice       Configuration for tool use.
@@ -51,8 +51,8 @@ public class Config {
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GenerationConfig(
-        Double temperature,
-        @JsonProperty("top_p") Double topP,
+        @Deprecated Double temperature,
+        @Deprecated @JsonProperty("top_p") Double topP,
         Integer seed,
         @JsonProperty("stop_sequences") List<String> stopSequences,
         @JsonProperty("tool_choice") ToolChoiceConfiguration toolChoice,
@@ -142,7 +142,9 @@ public class Config {
              *
              * @param temperature The temperature.
              * @return This builder.
+             * @deprecated Deprecated in the Gemini Interactions API.
              */
+            @Deprecated
             public Builder temperature(Double temperature) { this.temperature = temperature; return this; }
 
             /**
@@ -150,7 +152,9 @@ public class Config {
              *
              * @param topP The top_p value.
              * @return This builder.
+             * @deprecated Deprecated in the Gemini Interactions API.
              */
+            @Deprecated
             public Builder topP(Double topP) { this.topP = topP; return this; }
 
             /**
@@ -626,6 +630,7 @@ public class Config {
     @JsonSubTypes({
         @JsonSubTypes.Type(value = DynamicAgentConfig.class, name = "dynamic"),
         @JsonSubTypes.Type(value = DeepResearchAgentConfig.class, name = "deep-research"), // mapping key from spec
+        @JsonSubTypes.Type(value = CodeMenderAgentConfig.class, name = "code-mender"),
         @JsonSubTypes.Type(value = CodeMenderAgentConfig.class, name = "code_mender"),
         @JsonSubTypes.Type(value = AntigravityAgentConfig.class, name = "antigravity")
     })
@@ -784,26 +789,409 @@ public class Config {
     }
 
     /**
-     * Configuration for the Code Mender agent runtime.
+     * Content of a single file in the codebase.
      *
-     * @param type           The type ("code_mender").
-     * @param maxTotalTokens Max total tokens.
+     * @param path    The relative path of the file from the project root.
+     * @param content The UTF-8 encoded text content of the file.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record FileContent(
+        String path,
+        String content
+    ) {
+        /**
+         * Creates a new FileContent.
+         *
+         * @param path    The relative path of the file.
+         * @param content The content of the file.
+         * @return A new FileContent instance.
+         */
+        public static FileContent of(String path, String content) {
+            return new FileContent(path, content);
+        }
+    }
+
+    /**
+     * Session configuration for CodeMender.
+     *
+     * @param maxRounds The maximum number of interaction rounds before reaching timeout.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record SessionConfig(
+        @JsonProperty("max_rounds") Integer maxRounds
+    ) {
+        /**
+         * Creates a new SessionConfig.
+         *
+         * @param maxRounds Maximum rounds.
+         * @return A new SessionConfig instance.
+         */
+        public static SessionConfig of(Integer maxRounds) {
+            return new SessionConfig(maxRounds);
+        }
+    }
+
+    /**
+     * Request parameters specific to FIND sessions, used for discovering vulnerabilities in a codebase.
+     *
+     * @param mode        The mode of the find session ("scan" or "verify").
+     * @param findingId   The identifier of a specific finding to verify.
+     * @param description Additional context or custom instructions.
+     * @param sourceFiles A list of source files to provide as context.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record FindRequest(
+        String mode,
+        @JsonProperty("finding_id") String findingId,
+        String description,
+        @JsonProperty("source_files") List<FileContent> sourceFiles
+    ) {
+        /**
+         * Creates a builder for FindRequest.
+         *
+         * @return A new Builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link FindRequest}. */
+        public static class Builder {
+            private String mode;
+            private String findingId;
+            private String description;
+            private List<FileContent> sourceFiles;
+
+            /**
+             * Creates a new Builder instance.
+             */
+            public Builder() {}
+
+            /**
+             * Sets the mode ("scan" or "verify").
+             *
+             * @param mode The find session mode.
+             * @return This builder.
+             */
+            public Builder mode(String mode) {
+                this.mode = mode;
+                return this;
+            }
+
+            /**
+             * Sets the finding ID.
+             *
+             * @param findingId The finding ID.
+             * @return This builder.
+             */
+            public Builder findingId(String findingId) {
+                this.findingId = findingId;
+                return this;
+            }
+
+            /**
+             * Sets the description.
+             *
+             * @param description The description or custom instructions.
+             * @return This builder.
+             */
+            public Builder description(String description) {
+                this.description = description;
+                return this;
+            }
+
+            /**
+             * Sets the source files.
+             *
+             * @param sourceFiles The source files.
+             * @return This builder.
+             */
+            public Builder sourceFiles(List<FileContent> sourceFiles) {
+                this.sourceFiles = sourceFiles;
+                return this;
+            }
+
+            /**
+             * Sets the source files.
+             *
+             * @param sourceFiles The source files.
+             * @return This builder.
+             */
+            public Builder sourceFiles(FileContent... sourceFiles) {
+                this.sourceFiles = sourceFiles != null ? List.of(sourceFiles) : null;
+                return this;
+            }
+
+            /**
+             * Builds the FindRequest.
+             *
+             * @return A new FindRequest instance.
+             */
+            public FindRequest build() {
+                return new FindRequest(mode, findingId, description, sourceFiles);
+            }
+        }
+    }
+
+    /**
+     * Request parameters specific to FIX sessions, used for generating and validating security patches.
+     *
+     * @param findingId   The identifier of the specific security finding to be remediated.
+     * @param description Additional context or custom instructions.
+     * @param sourceFiles A list of source files providing context for remediation.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record FixRequest(
+        @JsonProperty("finding_id") String findingId,
+        String description,
+        @JsonProperty("source_files") List<FileContent> sourceFiles
+    ) {
+        /**
+         * Creates a builder for FixRequest.
+         *
+         * @return A new Builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link FixRequest}. */
+        public static class Builder {
+            private String findingId;
+            private String description;
+            private List<FileContent> sourceFiles;
+
+            /**
+             * Creates a new Builder instance.
+             */
+            public Builder() {}
+
+            /**
+             * Sets the finding ID.
+             *
+             * @param findingId The finding ID.
+             * @return This builder.
+             */
+            public Builder findingId(String findingId) {
+                this.findingId = findingId;
+                return this;
+            }
+
+            /**
+             * Sets the description.
+             *
+             * @param description The description or custom instructions.
+             * @return This builder.
+             */
+            public Builder description(String description) {
+                this.description = description;
+                return this;
+            }
+
+            /**
+             * Sets the source files.
+             *
+             * @param sourceFiles The source files.
+             * @return This builder.
+             */
+            public Builder sourceFiles(List<FileContent> sourceFiles) {
+                this.sourceFiles = sourceFiles;
+                return this;
+            }
+
+            /**
+             * Sets the source files.
+             *
+             * @param sourceFiles The source files.
+             * @return This builder.
+             */
+            public Builder sourceFiles(FileContent... sourceFiles) {
+                this.sourceFiles = sourceFiles != null ? List.of(sourceFiles) : null;
+                return this;
+            }
+
+            /**
+             * Builds the FixRequest.
+             *
+             * @return A new FixRequest instance.
+             */
+            public FixRequest build() {
+                return new FixRequest(findingId, description, sourceFiles);
+            }
+        }
+    }
+
+    /**
+     * Configuration for the CodeMender agent runtime.
+     *
+     * @param type           The type ("code-mender").
+     * @param findRequest    Parameters for finding vulnerabilities.
+     * @param fixRequest     Parameters for fixing vulnerabilities.
+     * @param model          The name of the model to use for the CodeMender session.
+     * @param sessionConfig  Session-specific configuration (e.g. max_rounds).
+     * @param sessionId      Parameter for grouping multiple interactions that belong to the same session.
+     * @param maxTotalTokens Max total tokens (deprecated).
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record CodeMenderAgentConfig(
         String type,
-        @JsonProperty("max_total_tokens") Long maxTotalTokens
+        @JsonProperty("find_request") FindRequest findRequest,
+        @JsonProperty("fix_request") FixRequest fixRequest,
+        String model,
+        @JsonProperty("session_config") SessionConfig sessionConfig,
+        @JsonProperty("session_id") String sessionId,
+        @Deprecated @JsonProperty("max_total_tokens") Long maxTotalTokens
     ) implements AgentConfig {
-        /** Creates a CodeMenderAgentConfig. */
-        public CodeMenderAgentConfig() {
-            this("code_mender", null);
-        }
-        /** 
-         * Creates a CodeMenderAgentConfig with token limit. 
-         * @param maxTotalTokens Max total tokens.
+
+        /**
+         * Compact constructor setting default type "code-mender" if null.
          */
+        public CodeMenderAgentConfig {
+            if (type == null) {
+                type = "code-mender";
+            }
+        }
+
+        /**
+         * Creates a CodeMenderAgentConfig with default settings.
+         */
+        public CodeMenderAgentConfig() {
+            this("code-mender", null, null, null, null, null, null);
+        }
+
+        /**
+         * Backward-compatible constructor for token limit.
+         *
+         * @param maxTotalTokens Max total tokens.
+         * @deprecated Use {@link #builder()} to configure the CodeMender agent.
+         */
+        @Deprecated
         public CodeMenderAgentConfig(Long maxTotalTokens) {
-            this("code_mender", maxTotalTokens);
+            this("code-mender", null, null, null, null, null, maxTotalTokens);
+        }
+
+        /**
+         * Creates a builder for CodeMenderAgentConfig.
+         *
+         * @return A new Builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link CodeMenderAgentConfig}. */
+        public static class Builder {
+            private String type = "code-mender";
+            private FindRequest findRequest;
+            private FixRequest fixRequest;
+            private String model;
+            private SessionConfig sessionConfig;
+            private String sessionId;
+            private Long maxTotalTokens;
+
+            /**
+             * Creates a new Builder instance.
+             */
+            public Builder() {}
+
+            /**
+             * Sets the type (defaults to "code-mender").
+             *
+             * @param type The agent config type.
+             * @return This builder.
+             */
+            public Builder type(String type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * Sets the find request.
+             *
+             * @param findRequest The find request.
+             * @return This builder.
+             */
+            public Builder findRequest(FindRequest findRequest) {
+                this.findRequest = findRequest;
+                return this;
+            }
+
+            /**
+             * Sets the fix request.
+             *
+             * @param fixRequest The fix request.
+             * @return This builder.
+             */
+            public Builder fixRequest(FixRequest fixRequest) {
+                this.fixRequest = fixRequest;
+                return this;
+            }
+
+            /**
+             * Sets the model name.
+             *
+             * @param model The model name.
+             * @return This builder.
+             */
+            public Builder model(String model) {
+                this.model = model;
+                return this;
+            }
+
+            /**
+             * Sets the session config.
+             *
+             * @param sessionConfig The session config.
+             * @return This builder.
+             */
+            public Builder sessionConfig(SessionConfig sessionConfig) {
+                this.sessionConfig = sessionConfig;
+                return this;
+            }
+
+            /**
+             * Sets the session config with max rounds.
+             *
+             * @param maxRounds Maximum rounds.
+             * @return This builder.
+             */
+            public Builder sessionConfig(Integer maxRounds) {
+                this.sessionConfig = new SessionConfig(maxRounds);
+                return this;
+            }
+
+            /**
+             * Sets the session ID.
+             *
+             * @param sessionId The session ID.
+             * @return This builder.
+             */
+            public Builder sessionId(String sessionId) {
+                this.sessionId = sessionId;
+                return this;
+            }
+
+            /**
+             * Sets the max total tokens.
+             *
+             * @param maxTotalTokens Max total tokens.
+             * @return This builder.
+             * @deprecated Deprecated in the remote specification.
+             */
+            @Deprecated
+            public Builder maxTotalTokens(Long maxTotalTokens) {
+                this.maxTotalTokens = maxTotalTokens;
+                return this;
+            }
+
+            /**
+             * Builds the CodeMenderAgentConfig.
+             *
+             * @return The CodeMenderAgentConfig.
+             */
+            public CodeMenderAgentConfig build() {
+                return new CodeMenderAgentConfig(type, findRequest, fixRequest, model, sessionConfig, sessionId, maxTotalTokens);
+            }
         }
     }
 

@@ -19,9 +19,6 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -29,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
@@ -71,21 +69,14 @@ public class Gemini31SpeechGenerationTest {
         try (Stream<Events> eventStream = client.stream(request)) {
             // Audio format: 24kHz, 16-bit, Mono, Signed, Little Endian
             AudioFormat format = new AudioFormat(24000, 16, 1, true, false);
-            DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
 
-            try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info);
-                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-                line.open(format);
-                line.start();
-                System.out.println("Streaming audio playback in real-time...");
-
+            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
                 eventStream.forEach(event -> {
                     System.out.println("Received event: " + event.getClass().getSimpleName());
 
                     // Handle streaming deltas
                     if (event instanceof Events.StepDelta cd && cd.delta() instanceof Events.AudioDelta audioDelta) {
                         byte[] audioData = Base64.getDecoder().decode(audioDelta.data());
-                        line.write(audioData, 0, audioData.length);
                         try {
                             outputStream.write(audioData);
                         } catch (IOException e) {
@@ -99,7 +90,6 @@ public class Gemini31SpeechGenerationTest {
                             if (out.content() != null) {
                                 out.content().forEach(content -> {
                                     if (content instanceof Content.AudioContent audioContent) {
-                                        line.write(audioContent.data(), 0, audioContent.data().length);
                                         try {
                                             outputStream.write(audioContent.data());
                                         } catch (IOException e) {
@@ -110,18 +100,14 @@ public class Gemini31SpeechGenerationTest {
                             }
                         }
                     }
-
-                    // Check StepStop - actually wait, StepStop doesn't have Step object, just index
-                    // Events.StepStop only has index according to Events.java
                 });
 
-                line.drain();
-                System.out.println("Playback complete.");
+                byte[] fullAudioData = outputStream.toByteArray();
+                assertTrue(fullAudioData.length > 0, "Should have received audio data");
 
                 try {
                     Path targetPath = Paths.get("target", "gemini-3.1-streaming-audio.wav");
                     Files.createDirectories(targetPath.getParent());
-                    byte[] fullAudioData = outputStream.toByteArray();
 
                     try (AudioInputStream audioInputStream = new AudioInputStream(
                             new ByteArrayInputStream(fullAudioData),
@@ -130,12 +116,12 @@ public class Gemini31SpeechGenerationTest {
                         AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, targetPath.toFile());
                     }
                     System.out.println("Saved audio stream to: " + targetPath.toAbsolutePath());
+                    assertTrue(Files.exists(targetPath));
+                    assertTrue(Files.size(targetPath) > 0);
                 } catch (IOException e) {
                     fail("Failed to save audio file: " + e.getMessage());
                 }
             }
-        } catch (LineUnavailableException e) {
-            fail("Failed to open audio line: " + e.getMessage());
         }
     }
 }

@@ -18,7 +18,9 @@ package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.glaforge.gemini.interactions.model.deserializer.InteractionRequestDeserializer;
 import io.github.glaforge.gemini.schema.Schema;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 import static io.github.glaforge.gemini.schema.GSchema.fromJson;
 

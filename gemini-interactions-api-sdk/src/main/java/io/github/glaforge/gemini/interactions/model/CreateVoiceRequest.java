@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * Request message for creating a custom voice (VoicesService.CreateVoice).
  *
  * @param voice The voice specification to create.
- * @param store Whether the created voice is persisted and managed by Google (defaults to true for prompted voices).
+ * @param store Whether the created voice is persisted and managed by Google (defaults to true for prompted voices). Stored voices expire after 1 year of inactivity; using in speech synthesis or as base_voice extends expire_time.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)

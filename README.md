@@ -374,6 +374,9 @@ ListVoicesResponse voices = client.listVoices(VoiceListFilter.builder()
     .build());
 ```
 
+> [!NOTE]
+> Custom stored voices (`store = true`) expire after 1 year of inactivity. Using a stored voice in speech synthesis or as a `base_voice` in `createVoice` automatically extends its `expireTime`. Catalog prebuilt voices do not expire.
+
 ### Agentic Video Understanding
 Enable model-driven dynamic video navigation (`"processing": "agentic"`) to let Gemini models actively search, zoom, and inspect video segments rather than relying purely on fixed-interval frame sampling:
 
@@ -823,6 +826,38 @@ if (response.status().isIncomplete()) {
 }
 ```
 
+### CodeMender (Automated Vulnerability Discovery & Remediation)
+
+The `CodeMender` agent can scan codebases for vulnerabilities or generate and validate security patches:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Config.CodeMenderAgentConfig;
+import io.github.glaforge.gemini.interactions.model.Config.FileContent;
+import io.github.glaforge.gemini.interactions.model.Config.FindRequest;
+import io.github.glaforge.gemini.interactions.model.Config.FixRequest;
+import io.github.glaforge.gemini.interactions.model.Config.SessionConfig;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+
+// Scan & verify a vulnerability
+AgentInteractionParams scanParams = AgentInteractionParams.builder()
+    .agent("code-mender")
+    .input("Verify if the users query is vulnerable to SQL injection.")
+    .agentConfig(CodeMenderAgentConfig.builder()
+        .sessionId("sec-scan-01")
+        .sessionConfig(SessionConfig.of(5))
+        .findRequest(FindRequest.builder()
+            .mode("verify")
+            .findingId("SQL-INJ-1")
+            .description("Verify SQL injection in db.py")
+            .sourceFiles(FileContent.of("src/db.py", "query = f'SELECT * FROM users WHERE id = {user_id}'"))
+            .build())
+        .build())
+    .build();
+
+Interaction scanResponse = client.create(scanParams);
+```
+
 ### Triggers (Scheduling & Automation)
 
 You can set up CRON-like schedules to automatically run agents in the background. This is useful for periodic auditing, continuous integration, or recurring tasks.
@@ -859,7 +894,10 @@ ListTriggersResponse activeTriggers = client.listTriggers("status=active", 10, n
 
 // Inspect the trigger's scheduled interaction template or resource in a type-safe way
 TriggerInteraction interaction = trigger.interaction();
-if (interaction.isRequest()) {
+if (interaction.agentInteraction() != null) {
+    AgentInteractionParams agentParams = interaction.agentInteraction();
+    System.out.println("Scheduled agent: " + agentParams.agent());
+} else if (interaction.isRequest()) {
     InteractionParams.Request req = interaction.request();
 } else if (interaction.isResource()) {
     Interaction res = interaction.resource();
@@ -1098,7 +1136,7 @@ To avoid untyped `Object` fields and provide compile-time safety when working wi
 - **`InteractionInput`**: Represents the polymorphic input to an interaction (`String text`, `List<Content> contents`, `List<Turn> turns`, `List<Step> steps`). Inspect with `input.isText()`, `input.isContents()`, `input.isTurns()`, `input.isSteps()`, or extract with `input.text()`, `input.contents()`, `input.turns()`, `input.steps()`.
 - **`TurnContent`**: Represents multi-turn conversation turn content (`String text` or `List<Content> parts`). Inspect with `content.isText()`, `content.isParts()`, or use convenience methods directly on `Turn`: `turn.text()` and `turn.parts()`.
 - **`BaseEnvironment`**: Configures an agent's sandbox environment as either a preset string (e.g. `"default"`, `"remote"`) or custom `EnvironmentConfig` (`isPreset()`, `isCustom()`, `preset()`, `config()`).
-- **`TriggerInteraction`**: Encapsulates scheduled trigger interactions as either an interaction template `InteractionParams.Request` or a hydrated `Interaction` resource (`isRequest()`, `isResource()`, `request()`, `resource()`).
+- **`TriggerInteraction`**: Encapsulates scheduled trigger interactions as an interaction template (`InteractionParams.Request` or `agentInteraction()`) or a hydrated `Interaction` resource (`isRequest()`, `isResource()`, `agentInteraction()`, `request()`, `resource()`).
 - **`ToolChoiceConfiguration`**: Configures tool choice mode as either a preset string (`"auto"`, `"any"`, `"none"`, `"validated"`) or detailed `Tool.ToolChoiceConfig` (`isMode()`, `isConfig()`).
 - **`SpeechConfiguration`**: Encapsulates speech config as single-speaker `List<SpeechConfig>` or multi-speaker `SpeakerConfig` (`isSingleSpeaker()`, `isMultiSpeaker()`).
 - **`NetworkConfiguration`**: Configures environment networking as a preset string (e.g. `"disabled"`, `"allow_all"`) or custom allowlist `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`).

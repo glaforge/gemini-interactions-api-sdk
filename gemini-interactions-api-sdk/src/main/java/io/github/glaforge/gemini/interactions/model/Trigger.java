@@ -217,6 +217,14 @@ public record Trigger(
          * @return This builder.
          */
         public Builder interaction(TriggerInteraction interaction) { this.interaction = interaction; return this; }
+
+        /**
+         * Sets the interaction request parameters using agent interaction parameters.
+         * @param interaction The agent interaction parameters.
+         * @return This builder.
+         */
+        public Builder interaction(InteractionParams.AgentInteractionParams interaction) { this.interaction = interaction != null ? TriggerInteraction.of(interaction) : null; return this; }
+
         /**
          * Sets the interaction request parameters.
          * @param interaction The interaction parameters.

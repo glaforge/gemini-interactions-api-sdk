@@ -44,7 +44,7 @@ import java.util.List;
  * @param replicated  Input-only parameters for replicated voice generation.
  * @param usage       Token usage statistics for voice creation.
  * @param createTime  Creation timestamp.
- * @param expireTime  Expiration timestamp.
+ * @param expireTime  Expiration timestamp. For custom stored voices ({@code store = true}), this expiration time (1 year after inactivity) is extended when the voice is used for speech synthesis or as a base voice in {@code CreateVoice}. Unset for prebuilt catalog voices.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)

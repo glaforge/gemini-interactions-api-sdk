@@ -2,6 +2,8 @@ package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.glaforge.gemini.interactions.model.deserializer.InteractionRequestDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Parameters for creating a trigger.
@@ -19,7 +21,7 @@ public record TriggerCreateParams(
     @JsonProperty("display_name") String displayName,
     @JsonProperty("environment_id") String environmentId,
     @JsonProperty("execution_timeout_seconds") Integer executionTimeoutSeconds,
-    InteractionParams.Request interaction,
+    @JsonDeserialize(using = InteractionRequestDeserializer.class) InteractionParams.Request interaction,
     @JsonProperty("max_consecutive_failures") Integer maxConsecutiveFailures,
     String schedule,
     @JsonProperty("time_zone") String timeZone
@@ -63,6 +65,13 @@ public record TriggerCreateParams(
          * @return This builder.
          */
         public Builder executionTimeoutSeconds(Integer executionTimeoutSeconds) { this.executionTimeoutSeconds = executionTimeoutSeconds; return this; }
+        /**
+         * Sets the interaction parameters using agent interaction parameters.
+         * @param interaction The agent interaction parameters.
+         * @return This builder.
+         */
+        public Builder interaction(InteractionParams.AgentInteractionParams interaction) { this.interaction = interaction; return this; }
+
         /**
          * Sets the interaction parameters.
          * @param interaction The interaction parameters.

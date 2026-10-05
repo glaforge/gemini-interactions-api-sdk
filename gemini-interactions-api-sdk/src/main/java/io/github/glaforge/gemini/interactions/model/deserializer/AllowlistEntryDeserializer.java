@@ -47,6 +47,7 @@ public class AllowlistEntryDeserializer extends ValueDeserializer<AllowlistEntry
         }
 
         String domain = node.has("domain") && !node.get("domain").isNull() ? node.get("domain").asText() : null;
+        String credential = node.has("credential") && !node.get("credential").isNull() ? node.get("credential").asText() : null;
         List<Map<String, String>> transform = null;
 
         if (node.has("transform") && !node.get("transform").isNull()) {
@@ -63,6 +64,6 @@ public class AllowlistEntryDeserializer extends ValueDeserializer<AllowlistEntry
             }
         }
 
-        return new AllowlistEntry(domain, transform);
+        return new AllowlistEntry(domain, transform, credential);
     }
 }
