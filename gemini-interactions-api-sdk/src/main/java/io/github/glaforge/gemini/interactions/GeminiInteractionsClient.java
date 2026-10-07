@@ -200,6 +200,7 @@ public class GeminiInteractionsClient {
             String url = buildUrl("interactions?alt=sse");
 
             HttpRequest httpRequest = newRequestBuilder(url)
+                .timeout(java.time.Duration.ofMinutes(30))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
