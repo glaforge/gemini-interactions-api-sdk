@@ -78,6 +78,8 @@ public final class ModelOption {
     public static final String GEMINI_3_1_FLASH_IMAGE_PREVIEW = "gemini-3.1-flash-image-preview";
     /** Model option constant. */
     public static final String GEMINI_3_1_FLASH_LITE = "gemini-3.1-flash-lite";
+    /** Model option constant for Gemini 3.1 Flash Lite Image. */
+    public static final String GEMINI_3_1_FLASH_LITE_IMAGE = "gemini-3.1-flash-lite-image";
     /** Model option constant. */
     public static final String GEMINI_3_1_FLASH_LITE_PREVIEW = "gemini-3.1-flash-lite-preview";
     /** Model option constant. */
@@ -114,6 +116,12 @@ public final class ModelOption {
     public static final String GEMINI_FLASH_LATEST = "gemini-flash-latest";
     /** Model option constant. */
     public static final String GEMINI_FLASH_LITE_LATEST = "gemini-flash-lite-latest";
+    /** Model option constant for Gemini Nano Banana 2.1. */
+    public static final String GEMINI_NANO_BANANA_2_1 = "gemini-nano-banana-2.1";
+    /** Model option constant for Gemini Omni 1.1 Flash. */
+    public static final String GEMINI_OMNI_1_1_FLASH = "gemini-omni-1.1-flash";
+    /** Model option constant for Gemini Omni Flash Preview. */
+    public static final String GEMINI_OMNI_FLASH_PREVIEW = "gemini-omni-flash-preview";
     /** Model option constant. */
     public static final String GEMINI_PRO_LATEST = "gemini-pro-latest";
     /** Model option constant. */
@@ -136,6 +144,8 @@ public final class ModelOption {
     public static final String LYRIA_3_CLIP_PREVIEW = "lyria-3-clip-preview";
     /** Model option constant. */
     public static final String LYRIA_3_PRO_PREVIEW = "lyria-3-pro-preview";
+    /** Model option constant for Lyria 3.5. */
+    public static final String LYRIA_3_5 = "lyria-3.5";
     /** Model option constant. */
     public static final String NANO_BANANA_PRO_PREVIEW = "nano-banana-pro-preview";
     /** Model option constant. */

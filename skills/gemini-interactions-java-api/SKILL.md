@@ -753,6 +753,34 @@ if (interaction.agentInteraction() != null) {
 ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id());
 ```
 
+### Resuming Long Decodes & Stream Checkpoints (`continuationToken`)
+
+When an interaction finishes with `Interaction.Status.INCOMPLETE`, or during streaming when `Events.InteractionStatusUpdate` is emitted, an opaque `continuationToken` is returned. Pass it back unchanged in `ModelInteractionParams` or `AgentInteractionParams` to resume decoding from the latest checkpoint:
+
+```java
+// Resuming an incomplete interaction
+if (response.status() == Interaction.Status.INCOMPLETE && response.continuationToken() != null) {
+    ModelInteractionParams resumeRequest = ModelInteractionParams.builder()
+        .model("gemini-3.8-flash")
+        .continuationToken(response.continuationToken())
+        .build();
+
+    Interaction resumedResponse = client.create(resumeRequest);
+}
+
+// Inspecting checkpoint usage & continuation token during streaming
+client.stream(request).forEach(event -> {
+    if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
+        if (statusUpdate.usage() != null) {
+            System.out.println("Checkpoint tokens: " + statusUpdate.usage().totalTokens());
+        }
+        if (statusUpdate.continuationToken() != null) {
+            String token = statusUpdate.continuationToken();
+        }
+    }
+});
+```
+
 ### Type-Safe Union Configuration Records
 
 The SDK uses specialized union records instead of untyped `Object` fields to handle polymorphic API configuration payloads:
@@ -760,11 +788,12 @@ The SDK uses specialized union records instead of untyped `Object` fields to han
 - **`TriggerInteraction`**: Wraps either an agent/request interaction template (`agentInteraction()`, `request()`) or a hydrated `Interaction` resource (`isRequest()`, `isResource()`, `agentInteraction()`).
 - **`ToolChoiceConfiguration`**: Wraps either a preset mode string (`"auto"`, `"any"`, `"none"`, `"validated"`) or a detailed `Tool.ToolChoiceConfig` (`isMode()`, `isConfig()`).
 - **`SpeechConfiguration`**: Wraps either single-speaker `List<SpeechConfig>` or multi-speaker `SpeakerConfig` (`isSingleSpeaker()`, `isMultiSpeaker()`).
-- **`NetworkConfiguration`**: Wraps either a preset network string (e.g. `"disabled"`, `"allow_all"`) or custom `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`).
+- **`NetworkConfiguration`**: Wraps either a preset network string (e.g. `"disabled"`, `"allow_all"`) or custom `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`). `EnvironmentNetworkEgressAllowlist` also supports `EnvironmentNetworkEgressAllowlist.disabled()` (`{"allowlist": "disabled"}`) as well as `EnvironmentNetworkEgressAllowlist.of(AllowlistEntry...)`.
 - **`BaseEnvironment`**: Wraps either a preset base environment string (e.g. `"default"`, `"remote"`) or custom `EnvironmentConfig` (`isPreset()`, `isCustom()`).
 - **`MediaProcessingConfiguration`**: Wraps either a preset media mode string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
 - **`TranscriptionModeConfiguration`**: Wraps either a preset transcription mode string (e.g. `"verbatim"`, `"smart"`) or custom `SmartTranscriptionMode` / `VerbatimTranscriptionMode` (`isPreset()`, `isCustom()`).
 - **`TurnContent`**: Wraps either a plain text string or multimodal `List<Content>` parts for conversation turns (`isText()`, `isParts()`, `text()`, `parts()`).
 - **`InteractionInput`**: Wraps polymorphic input to an interaction: plain text string, `List<Content>` contents, `List<Turn>` turns, or `List<Step>` steps (`isText()`, `isContents()`, `isTurns()`, `isSteps()`).
+
 
 

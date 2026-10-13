@@ -83,6 +83,7 @@ public class InteractionParams {
      * @param serviceTier           The service tier for the interaction.
      * @param cachedContent         The cached content to use.
      * @param safetySettings        The safety settings to apply.
+     * @param continuationToken     Opaque token to resume a long decode from the latest checkpoint.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ModelInteractionParams(
@@ -99,8 +100,48 @@ public class InteractionParams {
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier,
         @JsonProperty("cached_content") String cachedContent,
-        @JsonProperty("safety_settings") List<SafetySetting> safetySettings
+        @JsonProperty("safety_settings") List<SafetySetting> safetySettings,
+        @JsonProperty("continuation_token") String continuationToken
     ) implements Request {
+
+        /**
+         * Backward-compatible constructor without continuationToken.
+         *
+         * @param model                 The model.
+         * @param input                 The input.
+         * @param generationConfig      The generation config.
+         * @param tools                 The tools.
+         * @param stream                Whether to stream.
+         * @param store                 Whether to store.
+         * @param background            Whether background.
+         * @param systemInstruction     The system instruction.
+         * @param responseModalities    The response modalities.
+         * @param responseFormat        The response format.
+         * @param previousInteractionId The previous interaction id.
+         * @param serviceTier           The service tier.
+         * @param cachedContent         The cached content.
+         * @param safetySettings        The safety settings.
+         */
+        public ModelInteractionParams(
+            String model,
+            InteractionInput input,
+            Config.GenerationConfig generationConfig,
+            List<Tool> tools,
+            Boolean stream,
+            Boolean store,
+            Boolean background,
+            String systemInstruction,
+            List<Interaction.Modality> responseModalities,
+            Config.ResponseFormat responseFormat,
+            String previousInteractionId,
+            ServiceTier serviceTier,
+            String cachedContent,
+            List<SafetySetting> safetySettings
+        ) {
+            this(model, input, generationConfig, tools, stream, store, background,
+                systemInstruction, responseModalities, responseFormat,
+                previousInteractionId, serviceTier, cachedContent, safetySettings, null);
+        }
 
         /**
          * Backward-compatible constructor accepting Object input.
@@ -138,7 +179,7 @@ public class InteractionParams {
         ) {
             this(model, input != null ? InteractionInput.of(input) : null, generationConfig, tools,
                 stream, store, background, systemInstruction, responseModalities, responseFormat,
-                previousInteractionId, serviceTier, cachedContent, safetySettings);
+                previousInteractionId, serviceTier, cachedContent, safetySettings, null);
         }
 
         /**
@@ -165,6 +206,7 @@ public class InteractionParams {
 
             private String cachedContent;
             private List<SafetySetting> safetySettings;
+            private String continuationToken;
 
             /**
               * Sets the model.
@@ -404,12 +446,20 @@ public class InteractionParams {
             public Builder safetySettings(List<SafetySetting> safetySettings) { this.safetySettings = safetySettings; return this; }
 
             /**
+             * Sets the continuation token to resume a long decode.
+             *
+             * @param continuationToken The continuation token.
+             * @return This builder.
+             */
+            public Builder continuationToken(String continuationToken) { this.continuationToken = continuationToken; return this; }
+
+            /**
              * Builds the CreateModelInteractionParams.
              *
              * @return The CreateModelInteractionParams parameters.
              */
             public ModelInteractionParams build() {
-                return new ModelInteractionParams(model, input, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, cachedContent, safetySettings);
+                return new ModelInteractionParams(model, input, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, cachedContent, safetySettings, continuationToken);
             }
         }
     }
@@ -432,6 +482,7 @@ public class InteractionParams {
      * @param previousInteractionId ID of the previous interaction.
      * @param serviceTier           The service tier for the interaction.
      * @param safetySettings        The safety settings to apply.
+     * @param continuationToken     Opaque token to resume a long decode from the latest checkpoint.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AgentInteractionParams(
@@ -449,8 +500,50 @@ public class InteractionParams {
         @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier,
-        @JsonProperty("safety_settings") List<SafetySetting> safetySettings
+        @JsonProperty("safety_settings") List<SafetySetting> safetySettings,
+        @JsonProperty("continuation_token") String continuationToken
     ) implements Request {
+
+        /**
+         * Backward-compatible constructor without continuationToken.
+         *
+         * @param agent                 The agent name.
+         * @param input                 The input.
+         * @param environment           The environment.
+         * @param agentConfig           The agent config.
+         * @param generationConfig      The generation config.
+         * @param tools                 The tools.
+         * @param stream                Whether to stream.
+         * @param store                 Whether to store.
+         * @param background            Whether background.
+         * @param systemInstruction     The system instruction.
+         * @param responseModalities    The response modalities.
+         * @param responseFormat        The response format.
+         * @param previousInteractionId The previous interaction id.
+         * @param serviceTier           The service tier.
+         * @param safetySettings        The safety settings.
+         */
+        public AgentInteractionParams(
+            String agent,
+            InteractionInput input,
+            BaseEnvironment environment,
+            Config.AgentConfig agentConfig,
+            Config.GenerationConfig generationConfig,
+            List<Tool> tools,
+            Boolean stream,
+            Boolean store,
+            Boolean background,
+            String systemInstruction,
+            List<Interaction.Modality> responseModalities,
+            Config.ResponseFormat responseFormat,
+            String previousInteractionId,
+            ServiceTier serviceTier,
+            List<SafetySetting> safetySettings
+        ) {
+            this(agent, input, environment, agentConfig, generationConfig, tools, stream, store,
+                background, systemInstruction, responseModalities, responseFormat,
+                previousInteractionId, serviceTier, safetySettings, null);
+        }
 
         /**
          * Backward-compatible constructor accepting Object input and Object environment.
@@ -492,7 +585,7 @@ public class InteractionParams {
                 environment != null ? BaseEnvironment.of(environment) : null,
                 agentConfig, generationConfig, tools, stream, store, background,
                 systemInstruction, responseModalities, responseFormat,
-                previousInteractionId, serviceTier, safetySettings);
+                previousInteractionId, serviceTier, safetySettings, null);
         }
 
         /**
@@ -521,6 +614,7 @@ public class InteractionParams {
             private ServiceTier serviceTier;
 
             private List<SafetySetting> safetySettings;
+            private String continuationToken;
 
             /**
              * Sets the agent.
@@ -787,12 +881,20 @@ public class InteractionParams {
             public Builder safetySettings(List<SafetySetting> safetySettings) { this.safetySettings = safetySettings; return this; }
 
             /**
+             * Sets the continuation token to resume a long decode.
+             *
+             * @param continuationToken The continuation token.
+             * @return This builder.
+             */
+            public Builder continuationToken(String continuationToken) { this.continuationToken = continuationToken; return this; }
+
+            /**
              * Builds the CreateAgentInteractionParams.
              *
              * @return The CreateAgentInteractionParams parameters.
              */
             public AgentInteractionParams build() {
-                return new AgentInteractionParams(agent, input, environment, agentConfig, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, safetySettings);
+                return new AgentInteractionParams(agent, input, environment, agentConfig, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, safetySettings, continuationToken);
             }
         }
     }

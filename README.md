@@ -211,6 +211,37 @@ Step.ModelOutputStep step2 = (Step.ModelOutputStep) response2.steps().get(0);
 System.out.println(step2.content().get(0));
 ```
 
+### Resuming Long Decodes & Stream Checkpoints (`continuationToken`)
+
+When an interaction finishes with `Interaction.Status.INCOMPLETE` (or when a stream emits an `InteractionStatusUpdate` checkpoint), the API provides an opaque `continuationToken`. Pass it back unchanged in a subsequent request (`ModelInteractionParams` or `AgentInteractionParams`) to resume decoding from the latest checkpoint:
+
+```java
+if (response.status() == Interaction.Status.INCOMPLETE && response.continuationToken() != null) {
+    ModelInteractionParams resumeRequest = ModelInteractionParams.builder()
+        .model("gemini-3.8-flash")
+        .continuationToken(response.continuationToken())
+        .build();
+
+    Interaction resumedResponse = client.create(resumeRequest);
+    System.out.println(resumedResponse.outputText());
+}
+```
+
+During streaming, `Events.InteractionStatusUpdate` also includes intermediate checkpoint `continuationToken()` and `usage()` metrics:
+
+```java
+client.stream(request).forEach(event -> {
+    if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
+        if (statusUpdate.usage() != null) {
+            System.out.println("Tokens used so far: " + statusUpdate.usage().totalTokens());
+        }
+        if (statusUpdate.continuationToken() != null) {
+            System.out.println("Checkpoint token: " + statusUpdate.continuationToken());
+        }
+    }
+});
+```
+
 ### Multimodal (Image)
 ```java
 import io.github.glaforge.gemini.interactions.model.Content.*;

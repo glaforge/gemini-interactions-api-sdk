@@ -163,11 +163,13 @@ public sealed interface Events permits
     /**
      * Event indicating a status update for an interaction.
      *
-     * @param eventType     The type of event ("interaction.status_update").
-     * @param eventId       The unique identifier for the event.
-     * @param interactionId The ID of the interaction.
-     * @param status        The new status of the interaction.
-     * @param metadata      Stream metadata.
+     * @param eventType         The type of event ("interaction.status_update").
+     * @param eventId           The unique identifier for the event.
+     * @param interactionId     The ID of the interaction.
+     * @param status            The new status of the interaction.
+     * @param metadata          Stream metadata.
+     * @param continuationToken Optional opaque continuation token used to resume decoding from the latest checkpoint.
+     * @param usage             Model usage statistics up to this checkpoint.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record InteractionStatusUpdate(
@@ -175,8 +177,29 @@ public sealed interface Events permits
         @JsonProperty("event_id") String eventId,
         @JsonProperty("interaction_id") String interactionId,
         String status,
-        StreamMetadata metadata
-    ) implements Events {}
+        StreamMetadata metadata,
+        @JsonProperty("continuation_token") String continuationToken,
+        Interaction.Usage usage
+    ) implements Events {
+        /**
+         * Backward-compatible constructor without continuationToken and usage.
+         *
+         * @param eventType     The type of event ("interaction.status_update").
+         * @param eventId       The unique identifier for the event.
+         * @param interactionId The ID of the interaction.
+         * @param status        The new status of the interaction.
+         * @param metadata      Stream metadata.
+         */
+        public InteractionStatusUpdate(
+            EventType eventType,
+            String eventId,
+            String interactionId,
+            String status,
+            StreamMetadata metadata
+        ) {
+            this(eventType, eventId, interactionId, status, metadata, null, null);
+        }
+    }
 
     /**
      * Event indicating the start of a step.

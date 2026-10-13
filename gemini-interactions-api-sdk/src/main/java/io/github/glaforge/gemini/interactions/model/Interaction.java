@@ -38,6 +38,7 @@ import java.time.Instant;
  * @param cachedContent         URI of the cached content used.
  * @param safetySettings        The safety settings to apply.
  * @param errors                Diagnostic faults or platform errors recorded on the interaction.
+ * @param continuationToken     Opaque token to resume a long decode when status is INCOMPLETE.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Interaction(
@@ -54,10 +55,48 @@ public record Interaction(
     @JsonProperty("environment_id") String environmentId,
     @JsonProperty("cached_content") String cachedContent,
     @JsonProperty("safety_settings") List<SafetySetting> safetySettings,
-    List<Events.Error> errors
+    List<Events.Error> errors,
+    @JsonProperty("continuation_token") String continuationToken
 ) {
     /**
-     * Backward-compatible constructor without errors.
+     * Backward-compatible constructor without continuationToken.
+     *
+     * @param id                    The unique identifier for the interaction.
+     * @param model                 The model used for the interaction.
+     * @param agent                 The agent used for the interaction.
+     * @param agentConfig           The agent configuration.
+     * @param created               Creation timestamp.
+     * @param updated               Last update timestamp.
+     * @param status                The status of the interaction.
+     * @param steps                 List of steps.
+     * @param usage                 Token usage details.
+     * @param previousInteractionId ID of the previous interaction in the conversation.
+     * @param environmentId         ID of the environment.
+     * @param cachedContent         URI of the cached content used.
+     * @param safetySettings        The safety settings to apply.
+     * @param errors                Diagnostic faults or platform errors recorded on the interaction.
+     */
+    public Interaction(
+        String id,
+        String model,
+        String agent,
+        Config.AgentConfig agentConfig,
+        Instant created,
+        Instant updated,
+        Status status,
+        List<Step> steps,
+        Usage usage,
+        String previousInteractionId,
+        String environmentId,
+        String cachedContent,
+        List<SafetySetting> safetySettings,
+        List<Events.Error> errors
+    ) {
+        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors, null);
+    }
+
+    /**
+     * Backward-compatible constructor without errors or continuationToken.
      *
      * @param id                    The unique identifier for the interaction.
      * @param model                 The model used for the interaction.
@@ -88,7 +127,7 @@ public record Interaction(
         String cachedContent,
         List<SafetySetting> safetySettings
     ) {
-        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, null);
+        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, null, null);
     }
 
     /**
@@ -489,6 +528,7 @@ public record Interaction(
         private String cachedContent;
         private List<SafetySetting> safetySettings;
         private List<Events.Error> errors;
+        private String continuationToken;
 
         /** Creates a new Builder. */
         public Builder() {}
@@ -592,11 +632,18 @@ public record Interaction(
         public Builder errors(List<Events.Error> errors) { this.errors = errors; return this; }
 
         /**
+         * Sets the continuation token.
+         * @param continuationToken the continuation token.
+         * @return this builder.
+         */
+        public Builder continuationToken(String continuationToken) { this.continuationToken = continuationToken; return this; }
+
+        /**
          * Builds the Interaction.
          * @return the new Interaction.
          */
         public Interaction build() {
-            return new Interaction(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors);
+            return new Interaction(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors, continuationToken);
         }
     }
 }
