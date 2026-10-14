@@ -30,7 +30,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class McpServerTest {
+public class McpServerIT {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
@@ -48,7 +48,7 @@ public class McpServerTest {
 
         // 2. Create Interaction
         InteractionParams.ModelInteractionParams createParams = InteractionParams.ModelInteractionParams.builder()
-            .model("gemini-2.5-flash")
+            .model("gemini-3.8-flash")
             .input("What's the current phase of the moon?")
             .tools(tools)
             .build();

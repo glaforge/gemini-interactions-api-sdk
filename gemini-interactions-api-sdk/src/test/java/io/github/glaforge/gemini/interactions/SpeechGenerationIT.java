@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
-public class SpeechGenerationTest {
+public class SpeechGenerationIT {
 
     @Test
     public void testSpeechGeneration() {

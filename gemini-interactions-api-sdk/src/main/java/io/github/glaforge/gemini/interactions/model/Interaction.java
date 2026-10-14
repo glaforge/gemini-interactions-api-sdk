@@ -131,7 +131,8 @@ public record Interaction(
     }
 
     /**
-     * Extracts the concatenated text from the last consecutive model output steps.
+     * Extracts the concatenated text from the last consecutive model output steps
+     * (including across multi-hop Long Decode steps that may have interleaved thought steps).
      *
      * @return The output text, or null if not found.
      */
@@ -159,6 +160,9 @@ public record Interaction(
                         }
                     }
                 }
+            } else if (step instanceof Step.ThoughtStep) {
+                // Skip interleaved thought steps during multi-hop Long Decode
+                continue;
             } else {
                 break;
             }

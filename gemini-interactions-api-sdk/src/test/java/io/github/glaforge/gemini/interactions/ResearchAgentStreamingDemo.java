@@ -41,7 +41,7 @@ public class ResearchAgentStreamingDemo {
         System.out.println("🚀 Starting Research Agent Streaming Demo");
 
         AgentInteractionParams researchParams = AgentInteractionParams.builder()
-                .agent("deep-research-pro-preview-12-2025")
+                .agent("deep-research-preview-04-2026")
                 .input("Find information about the release date of Java 25")
                 .agentConfig(new DeepResearchAgentConfig(ThinkingSummaries.AUTO))
                 .tools(new GoogleSearch())
@@ -49,10 +49,8 @@ public class ResearchAgentStreamingDemo {
                 .background(true)
                 .build();
 
-        try {
-            System.out.println("Connecting to stream...");
-            Stream<Events> eventStream = client.stream(researchParams);
-
+        System.out.println("Connecting to stream...");
+        try (Stream<Events> eventStream = client.stream(researchParams)) {
             eventStream.forEach(event -> {
                 System.out.println("Received event: " + event.eventType());
 

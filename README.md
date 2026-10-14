@@ -26,7 +26,7 @@ To use the core client SDK, add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.0.2</version>
+    <version>2.1.0</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ If you are implementing the server-side webhook handler (`InteractionsHandler`),
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-server</artifactId>
-    <version>2.0.2</version>
+    <version>2.1.0</version>
 </dependency>
 ```
 
@@ -211,35 +211,89 @@ Step.ModelOutputStep step2 = (Step.ModelOutputStep) response2.steps().get(0);
 System.out.println(step2.content().get(0));
 ```
 
-### Resuming Long Decodes & Stream Checkpoints (`continuationToken`)
+### Gemini 4 Argon, Thinking Levels, & Long Decode (> 64K Output Tokens)
 
-When an interaction finishes with `Interaction.Status.INCOMPLETE` (or when a stream emits an `InteractionStatusUpdate` checkpoint), the API provides an opaque `continuationToken`. Pass it back unchanged in a subsequent request (`ModelInteractionParams` or `AgentInteractionParams`) to resume decoding from the latest checkpoint:
+**Gemini 4 Argon** (`ModelOption.GEMINI_4_ARGON`, `"gemini-4-argon"`) introduces a unified **1 million token context window** shared dynamically across input, thinking, and output tokens.
+
+- **Thinking Levels (`Config.ThinkingLevel`)**: Gemini 4 Argon defaults to `ThinkingLevel.MEDIUM` (and supports `LOW`, `MEDIUM`, and `HIGH`), while Flash / Flash-Lite models also support `ThinkingLevel.MINIMAL`.
+- **Long Decode**: To generate more than 65,536 output tokens in a single interaction (up to the 1M unified context limit), set `background(true)` and configure `maxOutputTokens` > `65536` in `GenerationConfig`. The server automatically chains multiple 64K-token decode hops and appends each hop as a `ModelOutputStep` in `interaction.steps()`. Calling `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep` hops (skipping any interleaved `ThoughtStep`s):
+
+```java
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.Config.ThinkingLevel;
+import io.github.glaforge.gemini.interactions.model.Config.ThinkingSummaries;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
+
+ModelInteractionParams longDecodeRequest = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_4_ARGON)
+    .input("Write a complete, detailed architectural specification and reference implementation...")
+    .background(true) // Required when maxOutputTokens > 65,536
+    .generationConfig(GenerationConfig.builder()
+        .maxOutputTokens(200_000)
+        .thinkingLevel(ThinkingLevel.MEDIUM)
+        .thinkingSummaries(ThinkingSummaries.AUTO)
+        .build())
+    .build();
+
+Interaction initial = client.create(longDecodeRequest);
+
+// Poll until finished (or stream via client.stream(initial.id()))
+Interaction current = initial;
+while (!current.status().isFinished()) {
+    Thread.sleep(10_000);
+    current = client.get(initial.id());
+}
+
+if (current.status().isCompleted()) {
+    // Concatenates text across all Long Decode model_output steps
+    System.out.println(current.outputText());
+}
+```
+
+### Background Execution & Resuming SSE Streams (`last_event_id` & `continuationToken`)
+
+Interactions running in the background (`background(true)` — supported by `gemini-4-argon`, `gemini-3.8-flash`, and agents like `antigravity-preview-09-2026` and `deep-research-pro-preview-12-2025`) can be streamed or resumed if a network connection drops:
+
+1. **Stream or Resume an Existing Interaction by ID (`client.stream(id, lastEventId)`)**:
+   Every SSE event carries an `eventId()`. If a streaming connection is interrupted during a long-running generation, reconnect using `client.stream(interactionId, lastEventId)` to resume from the exact event where you left off without duplicating chunks:
+
+```java
+String lastEventId = null;
+try {
+    var eventStream = (lastEventId == null)
+        ? client.stream(interaction.id())
+        : client.stream(interaction.id(), lastEventId);
+
+    for (Events event : (Iterable<Events>) eventStream::iterator) {
+        if (event.eventId() != null) {
+            lastEventId = event.eventId();
+        }
+        if (event instanceof Events.StepDelta delta && delta.delta() instanceof Events.TextDelta textDelta) {
+            System.out.print(textDelta.text());
+        } else if (event instanceof Events.StepStop stepStop && stepStop.usage() != null) {
+            System.out.println("\nCumulative tokens after step: " + stepStop.usage().totalTokens());
+        }
+    }
+} catch (Exception e) {
+    // Reconnect using client.stream(interaction.id(), lastEventId)
+}
+```
+
+2. **Resuming Incomplete Checkpoints (`continuationToken`)**:
+   When an interaction finishes with `Interaction.Status.INCOMPLETE` (or when a stream emits an `InteractionStatusUpdate` checkpoint), the API provides an opaque `continuationToken`. Pass it back unchanged in a subsequent request (`ModelInteractionParams` or `AgentInteractionParams`) to resume decoding from the latest checkpoint:
 
 ```java
 if (response.status() == Interaction.Status.INCOMPLETE && response.continuationToken() != null) {
     ModelInteractionParams resumeRequest = ModelInteractionParams.builder()
-        .model("gemini-3.8-flash")
+        .model(ModelOption.GEMINI_4_ARGON)
         .continuationToken(response.continuationToken())
         .build();
 
     Interaction resumedResponse = client.create(resumeRequest);
     System.out.println(resumedResponse.outputText());
 }
-```
-
-During streaming, `Events.InteractionStatusUpdate` also includes intermediate checkpoint `continuationToken()` and `usage()` metrics:
-
-```java
-client.stream(request).forEach(event -> {
-    if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
-        if (statusUpdate.usage() != null) {
-            System.out.println("Tokens used so far: " + statusUpdate.usage().totalTokens());
-        }
-        if (statusUpdate.continuationToken() != null) {
-            System.out.println("Checkpoint token: " + statusUpdate.continuationToken());
-        }
-    }
-});
 ```
 
 ### Multimodal (Image)
@@ -819,9 +873,9 @@ public class MyInteractionsServer extends InteractionsHandler {
 
 ### Antigravity Agent & Budget Controls
 
-The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent powered by Gemini 3.8 Flash that can reason, run code (Bash, Python, Node.js), manage files, and search the web inside an isolated remote Linux sandbox.
+The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent that can reason, run code (Bash, Python, Node.js), manage files, and search the web inside an isolated remote Linux sandbox.
 
-You can configure its underlying model (e.g. `gemini-3.8-flash`, `gemini-3.5-flash-lite`), set token budget caps with `AntigravityAgentConfig.builder()`, and seamlessly continue executions when the token budget is reached (`status: "incomplete"`):
+You can configure its underlying model (`ModelOption.GEMINI_4_ARGON`, `ModelOption.GEMINI_3_8_FLASH`, or `ModelOption.GEMINI_3_5_FLASH_LITE`), set token budget caps with `AntigravityAgentConfig.builder()`, and seamlessly continue executions when the token budget is reached (`status: "incomplete"`):
 
 ```java
 import io.github.glaforge.gemini.interactions.model.AgentOption;

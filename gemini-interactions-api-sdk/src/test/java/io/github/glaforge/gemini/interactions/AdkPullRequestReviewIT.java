@@ -1,8 +1,14 @@
 package io.github.glaforge.gemini.interactions;
 
-import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.Agent;
+import io.github.glaforge.gemini.interactions.model.AgentTool;
+import io.github.glaforge.gemini.interactions.model.AllowlistEntry;
+import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
+import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllowlist;
+import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
@@ -19,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".*")
+@Disabled("Manual demo test; GithubAnalyzerAgentIT already covers custom Antigravity agent + GitHub + Python file output + EnvironmentWorkspace in the default IT suite")
+@EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class AdkPullRequestReviewIT {
 
     private static GeminiInteractionsClient client;
@@ -44,7 +51,7 @@ public class AdkPullRequestReviewIT {
         Agent customAgent = Agent.builder()
                 .id(agentId)
                 .description("An agent that analyzes pull requests for the ADK Java project.")
-                .baseAgent("antigravity-preview-05-2026")
+                .baseAgent("antigravity-preview-09-2026")
                 .baseEnvironment(new EnvironmentConfig(
                         new EnvironmentNetworkEgressAllowlist(List.of(
                                 new AllowlistEntry("github.com"))),
@@ -126,6 +133,8 @@ public class AdkPullRequestReviewIT {
                     .agent(agentId)
                     .input("Please review this pull request adding a Spring Boot starter for the ADK Java project: https://github.com/google/adk-java/pull/653")
                     .environment("remote")
+                    .background(true)
+                    .store(true)
                     .build();
 
             System.out.println("Running interaction with agent...");
@@ -165,7 +174,7 @@ public class AdkPullRequestReviewIT {
             }
         } catch (GeminiInteractionsException e) {
             if (e.getStatusCode() == 403 || (e.getMessage() != null && e.getMessage().contains("permission_denied"))) {
-                System.out.println("Skipping test: GEMINI_API_KEY does not have permission for antigravity-preview-05-2026 agent.");
+                System.out.println("Skipping test: GEMINI_API_KEY does not have permission for antigravity-preview-09-2026 agent.");
                 return;
             }
             throw e;

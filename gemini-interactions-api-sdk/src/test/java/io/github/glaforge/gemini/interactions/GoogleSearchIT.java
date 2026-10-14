@@ -31,7 +31,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class GoogleSearchTest {
+public class GoogleSearchIT {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
@@ -53,7 +53,7 @@ public class GoogleSearchTest {
 
         // 2. Create Interaction
         InteractionParams.ModelInteractionParams createParams = InteractionParams.ModelInteractionParams.builder()
-            .model("gemini-2.5-flash")
+            .model("gemini-3.8-flash")
             .input("What is the latest news about the Ukraine / Russia war?")
             .tools(tools)
             .build();

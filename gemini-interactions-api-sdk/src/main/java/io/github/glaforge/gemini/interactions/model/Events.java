@@ -16,6 +16,7 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,7 +38,9 @@ import java.util.Map;
 )
 @JsonSubTypes({
     @JsonSubTypes.Type(value = Events.InteractionCreated.class, name = "interaction.created"),
+    @JsonSubTypes.Type(value = Events.InteractionCreated.class, name = "interaction.start"),
     @JsonSubTypes.Type(value = Events.InteractionCompleted.class, name = "interaction.completed"),
+    @JsonSubTypes.Type(value = Events.InteractionCompleted.class, name = "interaction.complete"),
     @JsonSubTypes.Type(value = Events.InteractionStatusUpdate.class, name = "interaction.status_update"),
     @JsonSubTypes.Type(value = Events.StepStart.class, name = "step.start"),
     @JsonSubTypes.Type(value = Events.StepDelta.class, name = "step.delta"),
@@ -65,9 +68,11 @@ public sealed interface Events permits
     enum EventType {
         /** Interaction has been created. */
         @JsonProperty("interaction.created")
+        @JsonAlias("interaction.start")
         INTERACTION_CREATED("interaction.created"),
         /** Interaction has completed. */
         @JsonProperty("interaction.completed")
+        @JsonAlias("interaction.complete")
         INTERACTION_COMPLETED("interaction.completed"),
         /** Interaction status has been updated. */
         @JsonProperty("interaction.status_update")
@@ -226,14 +231,30 @@ public sealed interface Events permits
      * @param eventId   The unique identifier for the event.
      * @param index     The index of the step.
      * @param metadata  Stream metadata.
+     * @param stepUsage Model usage stats for this step.
+     * @param usage     Cumulative model usage stats for the interaction.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record StepStop(
         @JsonProperty("event_type") EventType eventType,
         @JsonProperty("event_id") String eventId,
         Integer index,
-        StreamMetadata metadata
-    ) implements Events {}
+        StreamMetadata metadata,
+        @JsonProperty("step_usage") Interaction.Usage stepUsage,
+        Interaction.Usage usage
+    ) implements Events {
+        /**
+         * Backward-compatible constructor without stepUsage and usage.
+         *
+         * @param eventType The type of event ("step.stop").
+         * @param eventId   The unique identifier for the event.
+         * @param index     The index of the step.
+         * @param metadata  Stream metadata.
+         */
+        public StepStop(EventType eventType, String eventId, Integer index, StreamMetadata metadata) {
+            this(eventType, eventId, index, metadata, null, null);
+        }
+    }
 
     /**
      * Event indicating an error.

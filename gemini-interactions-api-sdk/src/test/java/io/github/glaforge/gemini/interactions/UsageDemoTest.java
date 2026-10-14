@@ -31,9 +31,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-@EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class UsageDemoTest {
 
     @Test
@@ -41,20 +39,20 @@ public class UsageDemoTest {
         assertDoesNotThrow(() -> {
             // 1. Initialize Client
             GeminiInteractionsClient client = GeminiInteractionsClient.builder()
-                .apiKey(System.getenv("GEMINI_API_KEY"))
+                .apiKey(System.getenv().getOrDefault("GEMINI_API_KEY", "test-api-key"))
                 .build();
             assertNotNull(client);
 
             // 2. Simple Text Interaction
             ModelInteractionParams simpleRequest = ModelInteractionParams.builder()
-                .model("gemini-2.5-flash")
+                .model("gemini-3.8-flash")
                 .input("Hello, how are you?")
                 .build();
             assertNotNull(simpleRequest);
 
             // 3. Multi-turn Interaction
             ModelInteractionParams multiTurnRequest = ModelInteractionParams.builder()
-                .model("gemini-2.5-flash")
+                .model("gemini-3.8-flash")
                 .input(
                     new Turn(Role.USER, "Hello!"),
                     new Turn(Role.MODEL, "Hi there!"),
@@ -65,7 +63,7 @@ public class UsageDemoTest {
 
             // 4. Multimodal Interaction (Text + Image)
             ModelInteractionParams multimodalRequest = ModelInteractionParams.builder()
-                .model("gemini-2.5-flash")
+                .model("gemini-3.8-flash")
                 .input(
                     new TextContent("What is in this picture?"),
                     new ImageContent("BASE64_DATA".getBytes(), "image/png")
@@ -87,7 +85,7 @@ public class UsageDemoTest {
             );
 
             ModelInteractionParams toolRequest = ModelInteractionParams.builder()
-                .model("gemini-2.5-flash")
+                .model("gemini-3.8-flash")
                 .input("Weather in London?")
                 .tools(weatherTool)
                 .build();

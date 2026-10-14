@@ -37,10 +37,15 @@ import io.github.glaforge.gemini.interactions.model.TriggerCreateParams;
 import io.github.glaforge.gemini.interactions.model.TriggerUpdate;
 import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
 import io.github.glaforge.gemini.interactions.model.ListTriggerExecutionsResponse;
+import io.github.glaforge.gemini.interactions.model.TriggerExecution;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import tools.jackson.databind.DeserializationFeature;
@@ -81,6 +86,29 @@ public abstract class InteractionsHandler implements HttpHandler {
     // /v1beta/files/environment-{id}:download
     private static final Pattern ENVIRONMENT_DOWNLOAD_PATTERN = Pattern.compile(".*/files/environment-([^/:]+):download$");
 
+    private static Map<String, String> parseQueryParams(String rawQuery) {
+        if (rawQuery == null || rawQuery.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> params = new HashMap<>();
+        for (String param : rawQuery.split("&")) {
+            int idx = param.indexOf('=');
+            if (idx > 0) {
+                String key = URLDecoder.decode(param.substring(0, idx), StandardCharsets.UTF_8);
+                String value = URLDecoder.decode(param.substring(idx + 1), StandardCharsets.UTF_8);
+                params.put(key, value);
+            } else if (!param.isEmpty()) {
+                params.put(URLDecoder.decode(param, StandardCharsets.UTF_8), "");
+            }
+        }
+        return params;
+    }
+
+    private static Integer parsePageSize(Map<String, String> params) {
+        String val = params.get("page_size");
+        return (val != null && !val.isEmpty()) ? Integer.valueOf(val) : null;
+    }
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
@@ -89,8 +117,8 @@ public abstract class InteractionsHandler implements HttpHandler {
         try {
             if (path.endsWith("/interactions") && method.equalsIgnoreCase("POST")) {
                 // Check for streaming
-                String query = exchange.getRequestURI().getQuery();
-                if (query != null && query.contains("alt=sse")) {
+                Map<String, String> params = parseQueryParams(exchange.getRequestURI().getRawQuery());
+                if ("sse".equals(params.get("alt")) || "true".equals(params.get("stream"))) {
                     handleStream(exchange);
                 } else {
                     handleCreate(exchange);
@@ -198,8 +226,15 @@ public abstract class InteractionsHandler implements HttpHandler {
                 }
 
                 Matcher triggerExecutionsMatcher = TRIGGER_EXECUTIONS_PATTERN.matcher(path);
-                if (triggerExecutionsMatcher.matches() && method.equalsIgnoreCase("GET")) {
-                    handleListTriggerExecutions(exchange, triggerExecutionsMatcher.group(1));
+                if (triggerExecutionsMatcher.matches()) {
+                    String triggerId = triggerExecutionsMatcher.group(1);
+                    if (method.equalsIgnoreCase("GET")) {
+                        handleListTriggerExecutions(exchange, triggerId);
+                    } else if (method.equalsIgnoreCase("POST")) {
+                        handleRunTrigger(exchange, triggerId);
+                    } else {
+                        sendResponse(exchange, 405, "Method Not Allowed");
+                    }
                     return;
                 }
 
@@ -254,36 +289,41 @@ public abstract class InteractionsHandler implements HttpHandler {
                 request = objectMapper.treeToValue(node, InteractionParams.ModelInteractionParams.class);
             }
 
-            Stream<Events> events = stream(request);
-
-            exchange.getResponseHeaders().set("Content-Type", "text/event-stream");
-            exchange.getResponseHeaders().set("Cache-Control", "no-cache");
-            exchange.sendResponseHeaders(200, 0);
-
-            try (OutputStream os = exchange.getResponseBody()) {
-                events.forEach(event -> {
-                    try {
-                        String json = objectMapper.writeValueAsString(event);
-                        os.write(("data: " + json + "\n\n").getBytes(StandardCharsets.UTF_8));
-                        os.flush();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-                os.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
-                os.flush();
-            }
+            writeSseStream(exchange, stream(request));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private void writeSseStream(HttpExchange exchange, Stream<Events> eventsStream) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "text/event-stream");
+        exchange.getResponseHeaders().set("Cache-Control", "no-cache");
+        exchange.sendResponseHeaders(200, 0);
+
+        try (Stream<Events> events = eventsStream;
+             OutputStream os = exchange.getResponseBody()) {
+            events.forEach(event -> {
+                try {
+                    String json = objectMapper.writeValueAsString(event);
+                    os.write(("data: " + json + "\n\n").getBytes(StandardCharsets.UTF_8));
+                    os.flush();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            os.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
+            os.flush();
+        }
+    }
+
     private void handleGet(HttpExchange exchange, String id) throws IOException {
         try {
-            boolean includeInput = false;
-            String query = exchange.getRequestURI().getQuery();
-            if (query != null && query.contains("include_input=true")) {
-                includeInput = true;
+            Map<String, String> params = parseQueryParams(exchange.getRequestURI().getRawQuery());
+            boolean includeInput = "true".equals(params.get("include_input"));
+            if ("true".equals(params.get("stream")) || "sse".equals(params.get("alt"))) {
+                String lastEventId = params.get("last_event_id");
+                writeSseStream(exchange, stream(id, lastEventId, includeInput));
+                return;
             }
             Interaction interaction = get(id, includeInput);
             if (interaction != null) {
@@ -327,22 +367,8 @@ public abstract class InteractionsHandler implements HttpHandler {
 
     private void handleListWebhooks(HttpExchange exchange) throws IOException {
         try {
-            String query = exchange.getRequestURI().getQuery();
-            Integer pageSize = null;
-            String pageToken = null;
-            if (query != null) {
-                for (String param : query.split("&")) {
-                    String[] pair = param.split("=");
-                    if (pair.length > 1) {
-                        if (pair[0].equals("page_size")) {
-                            pageSize = Integer.parseInt(pair[1]);
-                        } else if (pair[0].equals("page_token")) {
-                            pageToken = pair[1];
-                        }
-                    }
-                }
-            }
-            ListWebhooksResponse response = listWebhooks(pageSize, pageToken);
+            Map<String, String> params = parseQueryParams(exchange.getRequestURI().getRawQuery());
+            ListWebhooksResponse response = listWebhooks(parsePageSize(params), params.get("page_token"));
             sendResponse(exchange, 200, response);
         } catch (Exception e) {
             sendResponse(exchange, 500, "Error: " + e.getMessage());
@@ -412,22 +438,8 @@ public abstract class InteractionsHandler implements HttpHandler {
 
     private void handleListAgents(HttpExchange exchange) throws IOException {
         try {
-            String query = exchange.getRequestURI().getQuery();
-            Integer pageSize = null;
-            String pageToken = null;
-            if (query != null) {
-                for (String param : query.split("&")) {
-                    String[] pair = param.split("=");
-                    if (pair.length > 1) {
-                        if (pair[0].equals("page_size")) {
-                            pageSize = Integer.parseInt(pair[1]);
-                        } else if (pair[0].equals("page_token")) {
-                            pageToken = pair[1];
-                        }
-                    }
-                }
-            }
-            ListAgentsResponse response = listAgents(pageSize, pageToken);
+            Map<String, String> params = parseQueryParams(exchange.getRequestURI().getRawQuery());
+            ListAgentsResponse response = listAgents(parsePageSize(params), params.get("page_token"));
             sendResponse(exchange, 200, response);
         } catch (Exception e) {
             sendResponse(exchange, 500, "Error: " + e.getMessage());
@@ -481,22 +493,8 @@ public abstract class InteractionsHandler implements HttpHandler {
 
     private void handleListTriggers(HttpExchange exchange) throws IOException {
         try {
-            String query = exchange.getRequestURI().getQuery();
-            Integer pageSize = null;
-            String pageToken = null;
-            if (query != null) {
-                for (String param : query.split("&")) {
-                    String[] pair = param.split("=");
-                    if (pair.length > 1) {
-                        if (pair[0].equals("page_size")) {
-                            pageSize = Integer.parseInt(pair[1]);
-                        } else if (pair[0].equals("page_token")) {
-                            pageToken = pair[1];
-                        }
-                    }
-                }
-            }
-            ListTriggersResponse response = listTriggers(pageSize, pageToken);
+            Map<String, String> params = parseQueryParams(exchange.getRequestURI().getRawQuery());
+            ListTriggersResponse response = listTriggers(params.get("filter"), parsePageSize(params), params.get("page_token"));
             sendResponse(exchange, 200, response);
         } catch (Exception e) {
             sendResponse(exchange, 500, "Error: " + e.getMessage());
@@ -524,23 +522,18 @@ public abstract class InteractionsHandler implements HttpHandler {
 
     private void handleListTriggerExecutions(HttpExchange exchange, String triggerId) throws IOException {
         try {
-            String query = exchange.getRequestURI().getQuery();
-            Integer pageSize = null;
-            String pageToken = null;
-            if (query != null) {
-                for (String param : query.split("&")) {
-                    String[] pair = param.split("=");
-                    if (pair.length > 1) {
-                        if (pair[0].equals("page_size")) {
-                            pageSize = Integer.parseInt(pair[1]);
-                        } else if (pair[0].equals("page_token")) {
-                            pageToken = pair[1];
-                        }
-                    }
-                }
-            }
-            ListTriggerExecutionsResponse response = listTriggerExecutions(triggerId, pageSize, pageToken);
+            Map<String, String> params = parseQueryParams(exchange.getRequestURI().getRawQuery());
+            ListTriggerExecutionsResponse response = listTriggerExecutions(triggerId, parsePageSize(params), params.get("page_token"));
             sendResponse(exchange, 200, response);
+        } catch (Exception e) {
+            sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
+    private void handleRunTrigger(HttpExchange exchange, String triggerId) throws IOException {
+        try {
+            TriggerExecution execution = runTrigger(triggerId);
+            sendResponse(exchange, 200, execution);
         } catch (Exception e) {
             sendResponse(exchange, 500, "Error: " + e.getMessage());
         }
@@ -607,6 +600,28 @@ public abstract class InteractionsHandler implements HttpHandler {
      * @return A stream of Events.
      */
     public abstract Stream<Events> stream(InteractionParams.Request request);
+
+    /**
+     * Returns a stream of events for an existing interaction by ID, optionally resuming after {@code lastEventId}.
+     * @param id The interaction ID.
+     * @param lastEventId Optional event ID from the last received event to resume the stream.
+     * @return A stream of Events.
+     */
+    public Stream<Events> stream(String id, String lastEventId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Returns a stream of events for an existing interaction by ID, optionally resuming after {@code lastEventId}
+     * and optionally including the original input.
+     * @param id The interaction ID.
+     * @param lastEventId Optional event ID from the last received event to resume the stream.
+     * @param includeInput Whether to include the original input in the stream.
+     * @return A stream of Events.
+     */
+    public Stream<Events> stream(String id, String lastEventId, boolean includeInput) {
+        return stream(id, lastEventId);
+    }
 
     // --- Webhook abstract methods ---
 
@@ -770,6 +785,17 @@ public abstract class InteractionsHandler implements HttpHandler {
     }
 
     /**
+     * Lists Triggers with optional filter expression.
+     * @param filter    Optional filter expression.
+     * @param pageSize  The maximum number of triggers to return.
+     * @param pageToken A page token.
+     * @return The ListTriggersResponse.
+     */
+    public ListTriggersResponse listTriggers(String filter, Integer pageSize, String pageToken) {
+        return listTriggers(pageSize, pageToken);
+    }
+
+    /**
      * Updates a Trigger.
      * @param id     The trigger ID.
      * @param update The trigger update payload.
@@ -784,6 +810,15 @@ public abstract class InteractionsHandler implements HttpHandler {
      * @param id The trigger ID.
      */
     public void deleteTrigger(String id) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Manually triggers an execution of a Trigger immediately.
+     * @param triggerId The trigger ID.
+     * @return The created TriggerExecution.
+     */
+    public TriggerExecution runTrigger(String triggerId) {
         throw new UnsupportedOperationException("Not implemented");
     }
 

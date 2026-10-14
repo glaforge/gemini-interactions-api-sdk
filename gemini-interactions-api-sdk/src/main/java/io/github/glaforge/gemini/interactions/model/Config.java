@@ -296,8 +296,12 @@ public class Config {
      * Level of thinking to use for the model.
      */
     public enum ThinkingLevel {
+        /** Minimal thinking level (supported on Flash and Flash-Lite models). */
+        @JsonProperty("minimal") MINIMAL,
         /** Low thinking level. */
         @JsonProperty("low") LOW,
+        /** Medium thinking level (default for Gemini 4 Argon). */
+        @JsonProperty("medium") MEDIUM,
         /** High thinking level. */
         @JsonProperty("high") HIGH
     }
@@ -1475,7 +1479,7 @@ public class Config {
             /**
              * Sets the model to use for agent reasoning.
              *
-             * @param model The model name (e.g., "gemini-3.8-flash", "gemini-3.5-flash-lite").
+             * @param model The model name (e.g., "gemini-4-argon", "gemini-3.8-flash", "gemini-3.5-flash-lite").
              * @return This builder.
              */
             public Builder model(String model) {

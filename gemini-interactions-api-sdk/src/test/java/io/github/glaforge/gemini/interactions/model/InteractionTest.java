@@ -98,4 +98,76 @@ class InteractionTest {
         assertNull(interaction.outputAudio());
         assertNull(interaction.outputVideo());
     }
+
+    @Test
+    void testLongDecodeMultiHopOutputText() throws JacksonException {
+        String json = """
+            {
+                "id": "interaction-long-decode",
+                "model": "gemini-4-argon",
+                "status": "completed",
+                "steps": [
+                    {
+                        "type": "user_input",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Write a 150K token specification"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "thought",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Planning section 1..."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "model_output",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Hop 1 content. "
+                            }
+                        ]
+                    },
+                    {
+                        "type": "thought",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Continuing section 2..."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "model_output",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Hop 2 content. "
+                            }
+                        ]
+                    },
+                    {
+                        "type": "model_output",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Hop 3 content."
+                            }
+                        ]
+                    }
+                ]
+            }
+            """;
+
+        Interaction interaction = mapper.readValue(json, Interaction.class);
+        assertNotNull(interaction);
+        assertEquals("gemini-4-argon", interaction.model());
+        assertEquals("Hop 1 content. Hop 2 content. Hop 3 content.", interaction.outputText());
+    }
 }

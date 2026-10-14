@@ -16,6 +16,8 @@
 
 package io.github.glaforge.gemini.schema;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,7 +88,7 @@ public class ArraySchema extends Schema {
             map.put("items", items.toMap());
         }
         if (prefixItems != null && prefixItems.length > 0) {
-            java.util.List<Map<String, Object>> prefixItemsList = new java.util.ArrayList<>();
+            List<Map<String, Object>> prefixItemsList = new ArrayList<>();
             for (Schema s : prefixItems) {
                 prefixItemsList.add(s.toMap());
             }

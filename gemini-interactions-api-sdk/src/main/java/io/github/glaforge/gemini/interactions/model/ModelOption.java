@@ -106,6 +106,8 @@ public final class ModelOption {
     public static final String GEMINI_3_8_FLASH_LITE_TTS = "gemini-3.8-flash-lite-tts";
     /** Model option constant. */
     public static final String GEMINI_3_5_LIVE_TRANSLATE_PREVIEW = "gemini-3.5-live-translate-preview";
+    /** Model option constant for Gemini 4 Argon. */
+    public static final String GEMINI_4_ARGON = "gemini-4-argon";
     /** Model option constant. */
     public static final String GEMINI_EMBEDDING_001 = "gemini-embedding-001";
     /** Model option constant. */

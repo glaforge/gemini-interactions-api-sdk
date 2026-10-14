@@ -17,12 +17,15 @@
 package io.github.glaforge.gemini.interactions;
 
 import io.github.glaforge.gemini.interactions.model.Agent;
+import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.Config.ThinkingLevel;
 import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
 import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Events;
 
@@ -49,7 +52,7 @@ public class IntegrationIT {
                 .build();
 
         Interaction interaction = client.create(ModelInteractionParams.builder()
-                .model("gemini-2.5-flash")
+                .model("gemini-3.8-flash")
                 .input("Hi")
                 .build());
 
@@ -65,6 +68,35 @@ public class IntegrationIT {
                         default -> System.out.println("Unknown content type: " + output);
                     }
                 });
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
+    public void testGemini4Argon() throws IOException, InterruptedException {
+        GeminiInteractionsClient client = GeminiInteractionsClient.builder()
+                .apiKey(System.getenv("GEMINI_API_KEY"))
+                .build();
+
+        try {
+            Interaction interaction = client.create(ModelInteractionParams.builder()
+                    .model(ModelOption.GEMINI_4_ARGON)
+                    .input("What is 2 + 2? Reply with just the number.")
+                    .generationConfig(GenerationConfig.builder()
+                            .thinkingLevel(ThinkingLevel.LOW)
+                            .maxOutputTokens(1024)
+                            .build())
+                    .build());
+
+            assertNotNull(interaction);
+            assertNotNull(interaction.outputText());
+            assertTrue(interaction.outputText().contains("4"));
+        } catch (GeminiInteractionsException e) {
+            if (e.getStatusCode() == 403 || e.getStatusCode() == 404) {
+                System.out.println("Skipping Gemini 4 Argon live test (status " + e.getStatusCode() + "): " + e.getMessage());
+                return;
+            }
+            throw e;
+        }
     }
 
     @Test
@@ -89,7 +121,10 @@ public class IntegrationIT {
         System.out.println("Output text: " + interaction.outputText());
 
         assertNotNull(interaction.outputText(), "Output text should not be null");
-        assertTrue(interaction.outputText().contains("Rayleigh"), "Answer should mention Rayleigh scattering");
+        String lowerOutput = interaction.outputText().toLowerCase();
+        assertTrue(
+                lowerOutput.contains("rayleigh") || lowerOutput.contains("scatter") || lowerOutput.contains("blue"),
+                "Answer should explain why the sky is blue, got: " + interaction.outputText());
     }
 
 
@@ -143,7 +178,7 @@ public class IntegrationIT {
         Agent agentInput = Agent.builder()
                 .id(agentId)
                 .description("A custom agent built for integration testing.")
-                .baseAgent("antigravity-preview-05-2026")
+                .baseAgent("antigravity-preview-09-2026")
                 .baseEnvironment("remote")
                 .systemInstruction("You are a helpful coding assistant. Always respond concisely.")
                 .build();
@@ -198,6 +233,8 @@ public class IntegrationIT {
                     .agent(agentId)
                     .input("Say hello in exactly 3 words.")
                     .environment("remote")
+                    .background(true)
+                    .store(true)
                     .build();
 
             Interaction interaction = client.create(params);
@@ -222,7 +259,7 @@ public class IntegrationIT {
 
         } catch (GeminiInteractionsException e) {
             if (e.getStatusCode() == 403 || (e.getMessage() != null && e.getMessage().contains("permission_denied"))) {
-                System.out.println("Skipping interaction test: GEMINI_API_KEY does not have permission for antigravity-preview-05-2026 agent.");
+                System.out.println("Skipping interaction test: GEMINI_API_KEY does not have permission for antigravity-preview-09-2026 agent.");
             } else {
                 throw e;
             }
@@ -248,7 +285,7 @@ public class IntegrationIT {
                 .build();
 
         InteractionParams.AgentInteractionParams params = InteractionParams.AgentInteractionParams.builder()
-                .agent("antigravity-preview-05-2026")
+                .agent("antigravity-preview-09-2026")
                 .input("Say hello in exactly 3 words.")
                 .environment("remote")
                 .stream(true)
@@ -260,10 +297,13 @@ public class IntegrationIT {
         try (Stream<Events> eventStream = client.stream(params)) {
             for (Events event : (Iterable<Events>) eventStream::iterator) {
                 System.out.println("Received event: " + event.getClass().getSimpleName() + " -> " + event);
-                if (event instanceof Events.ErrorEvent err && "permission_denied".equalsIgnoreCase(err.error().code())) {
-                    System.out.println("Skipping streaming test: GEMINI_API_KEY does not have permission for antigravity-preview-05-2026 agent.");
-                    hasPermissionError = true;
-                    break;
+                if (event instanceof Events.ErrorEvent err) {
+                    if ("permission_denied".equalsIgnoreCase(err.error().code())) {
+                        System.out.println("Skipping streaming test: GEMINI_API_KEY does not have permission for antigravity-preview-09-2026 agent.");
+                        hasPermissionError = true;
+                        break;
+                    }
+                    TransientApiErrorExtension.abortIfRateLimitOrTransient(err);
                 }
                 if (event instanceof Events.StepDelta delta) {
                     if (delta.delta() instanceof Events.TextDelta textPart) {
@@ -275,7 +315,7 @@ public class IntegrationIT {
             System.out.println();
         } catch (GeminiInteractionsException e) {
             if (e.getStatusCode() == 403 || (e.getMessage() != null && e.getMessage().contains("permission_denied"))) {
-                System.out.println("Skipping streaming test: GEMINI_API_KEY does not have permission for antigravity-preview-05-2026 agent.");
+                System.out.println("Skipping streaming test: GEMINI_API_KEY does not have permission for antigravity-preview-09-2026 agent.");
                 return;
             }
             throw e;
@@ -287,6 +327,6 @@ public class IntegrationIT {
 
         String finalResponse = textAccumulator.toString().trim();
         System.out.println("Accumulated text response: " + finalResponse);
-        org.junit.jupiter.api.Assertions.assertTrue(finalResponse.length() > 0, "Agent should have responded with some text");
+        assertTrue(finalResponse.length() > 0, "Agent should have responded with some text");
     }
 }

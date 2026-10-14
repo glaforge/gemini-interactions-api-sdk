@@ -16,20 +16,24 @@
 
 package io.github.glaforge.gemini.interactions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.glaforge.gemini.interactions.model.AgentOption;
 import io.github.glaforge.gemini.interactions.model.Config.AntigravityAgentConfig;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
 import io.github.glaforge.gemini.interactions.model.ModelOption;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AntigravityAgentTest {
 
-    private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final ObjectMapper mapper = JsonMapper.builder().build();
 
     @Test
     void testAgentOptionConstants() {

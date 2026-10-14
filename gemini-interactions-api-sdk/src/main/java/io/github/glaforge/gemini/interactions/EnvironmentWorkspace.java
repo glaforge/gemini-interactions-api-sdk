@@ -83,7 +83,8 @@ public class EnvironmentWorkspace implements AutoCloseable {
         cleanupTempFile();
 
         try {
-            tempTarPath = Files.createTempFile("gemini-env-" + environmentId + "-", ".tar");
+            String safeId = environmentId != null ? environmentId.replaceAll("[^a-zA-Z0-9._-]", "_") : "unknown";
+            tempTarPath = Files.createTempFile("gemini-env-" + safeId + "-", ".tar");
             try (InputStream in = client.downloadEnvironment(environmentId)) {
                 Files.copy(in, tempTarPath, StandardCopyOption.REPLACE_EXISTING);
             }
@@ -131,28 +132,13 @@ public class EnvironmentWorkspace implements AutoCloseable {
             return new byte[0];
         }
         TarParser.TarEntryMetadata meta = index.get(normalizePath(path));
-        if (meta == null) {
+        if (meta == null || meta.size() <= 0 || meta.size() > Integer.MAX_VALUE) {
             return new byte[0];
         }
         try (InputStream in = Files.newInputStream(tempTarPath)) {
-            long skipped = in.skip(meta.offset());
-            while (skipped < meta.offset()) {
-                long s = in.skip(meta.offset() - skipped);
-                if (s <= 0) {
-                    break;
-                }
-                skipped += s;
-            }
-            byte[] bytes = new byte[(int) meta.size()];
-            int total = 0;
-            while (total < bytes.length) {
-                int count = in.read(bytes, total, bytes.length - total);
-                if (count < 0) {
-                    break;
-                }
-                total += count;
-            }
-            if (total < bytes.length) {
+            in.skipNBytes(meta.offset());
+            byte[] bytes = in.readNBytes((int) meta.size());
+            if (bytes.length < meta.size()) {
                 return new byte[0];
             }
             return bytes;
@@ -198,14 +184,7 @@ public class EnvironmentWorkspace implements AutoCloseable {
         }
         try (InputStream in = Files.newInputStream(tempTarPath);
                 OutputStream out = Files.newOutputStream(targetLocalPath)) {
-            long skipped = in.skip(meta.offset());
-            while (skipped < meta.offset()) {
-                long s = in.skip(meta.offset() - skipped);
-                if (s <= 0) {
-                    break;
-                }
-                skipped += s;
-            }
+            in.skipNBytes(meta.offset());
             byte[] buffer = new byte[8192];
             long remaining = meta.size();
             while (remaining > 0) {
@@ -263,12 +242,10 @@ public class EnvironmentWorkspace implements AutoCloseable {
         if (path == null) {
             return "";
         }
-        if (path.startsWith("./")) {
-            path = path.substring(2);
+        String p = path;
+        while (p.startsWith("./") || p.startsWith("/")) {
+            p = p.startsWith("./") ? p.substring(2) : p.substring(1);
         }
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        return path;
+        return p;
     }
 }

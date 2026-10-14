@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".*")
+@EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class ResearchAgentIT {
 
     private static GeminiInteractionsClient client;
@@ -61,8 +61,7 @@ public class ResearchAgentIT {
         System.out.println("\nResearching...");
 
         AgentInteractionParams researchParams = AgentInteractionParams.builder()
-                .agent("deep-research-max-preview-04-2026")
-                // .agent("deep-research-pro-preview-12-2025")
+                .agent("deep-research-preview-04-2026")
                 .agentConfig(
                         DeepResearchAgentConfig.builder()
                                 .thinkingSummaries(ThinkingSummaries.AUTO)
@@ -119,10 +118,17 @@ public class ResearchAgentIT {
                 } else if (event instanceof Events.ErrorEvent errorEvent) {
                     System.err.println("\n[Error Event: " + errorEvent.error().code() + " - "
                             + errorEvent.error().message() + "]");
+                    TransientApiErrorExtension.abortIfRateLimitOrTransient(errorEvent);
                 } else {
                     System.out.println("\n[Other Event: " + event.getClass().getSimpleName() + "]");
                 }
             });
+        } catch (GeminiInteractionsException e) {
+            if (TransientApiErrorExtension.isRateLimitOrTransient(e) || capturedResearchId[0] == null) {
+                throw e;
+            }
+            System.err.println("\nStream error: " + e.toString());
+            e.printStackTrace();
         } catch (Exception e) {
             System.err.println("\nStream error: " + e.toString());
             e.printStackTrace();

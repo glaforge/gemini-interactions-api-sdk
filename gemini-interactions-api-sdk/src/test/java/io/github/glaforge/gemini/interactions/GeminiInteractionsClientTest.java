@@ -18,6 +18,7 @@ package io.github.glaforge.gemini.interactions;
 
 import io.github.glaforge.gemini.interactions.model.Agent;
 import io.github.glaforge.gemini.interactions.model.Content;
+import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.ListAgentsResponse;
@@ -30,8 +31,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -311,5 +314,33 @@ public class GeminiInteractionsClientTest {
         });
 
         assertEquals("Either API Key or Project must be provided", exception.getMessage());
+    }
+
+    @Test
+    void testStreamByIdAndResumeWithLastEventId() throws Exception {
+        String sseBody = """
+                data: {"event_type":"step.delta","event_id":"evt-101","index":0,"delta":{"type":"text","text":"Resumed "}}
+
+                data: {"event_type":"step.delta","event_id":"evt-102","index":0,"delta":{"type":"text","text":"stream"}}
+
+                data: {"event_type":"interaction.completed","event_id":"evt-103","interaction":{"id":"inter-bg-1","status":"completed"}}
+
+                data: [DONE]
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .addHeader("Content-Type", "text/event-stream")
+                .setBody(sseBody));
+
+        List<Events> events = client.stream("inter-bg-1", "evt-100").toList();
+        assertEquals(3, events.size());
+        assertInstanceOf(Events.StepDelta.class, events.get(0));
+        assertEquals("evt-101", events.get(0).eventId());
+        assertInstanceOf(Events.InteractionCompleted.class, events.get(2));
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("GET", recordedRequest.getMethod());
+        assertEquals("/v1beta/interactions/inter-bg-1?alt=sse&stream=true&last_event_id=evt-100", recordedRequest.getPath());
+        assertEquals("test-api-key", recordedRequest.getHeader("x-goog-api-key"));
     }
 }

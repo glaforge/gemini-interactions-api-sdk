@@ -46,8 +46,8 @@ public class AllowlistEntryDeserializer extends ValueDeserializer<AllowlistEntry
             return null;
         }
 
-        String domain = node.has("domain") && !node.get("domain").isNull() ? node.get("domain").asText() : null;
-        String credential = node.has("credential") && !node.get("credential").isNull() ? node.get("credential").asText() : null;
+        String domain = node.has("domain") && !node.get("domain").isNull() ? node.get("domain").asString() : null;
+        String credential = node.has("credential") && !node.get("credential").isNull() ? node.get("credential").asString() : null;
         List<Map<String, String>> transform = null;
 
         if (node.has("transform") && !node.get("transform").isNull()) {

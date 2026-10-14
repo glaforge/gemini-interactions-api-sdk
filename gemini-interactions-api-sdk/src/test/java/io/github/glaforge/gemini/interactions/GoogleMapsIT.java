@@ -30,7 +30,7 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class GoogleMapsTest {
+public class GoogleMapsIT {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
@@ -50,7 +50,7 @@ public class GoogleMapsTest {
 
         // 2. Create Interaction
         InteractionParams.ModelInteractionParams createParams = InteractionParams.ModelInteractionParams.builder()
-            .model("gemini-2.5-flash")
+            .model("gemini-3.8-flash")
             .input("Can you recommend some good restaurants near the Eiffel tower in Paris?")
             .tools(googleMaps)
             .build();

@@ -16,8 +16,15 @@
 
 package io.github.glaforge.gemini.interactions;
 
-import io.github.glaforge.gemini.interactions.model.*;
+import io.github.glaforge.gemini.interactions.model.Agent;
+import io.github.glaforge.gemini.interactions.model.AgentTool;
+import io.github.glaforge.gemini.interactions.model.AllowlistEntry;
+import io.github.glaforge.gemini.interactions.model.Content;
+import io.github.glaforge.gemini.interactions.model.EnvironmentConfig;
+import io.github.glaforge.gemini.interactions.model.EnvironmentNetworkEgressAllowlist;
+import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Step;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -29,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".*")
+@EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 public class GithubAnalyzerAgentIT {
 
     private static GeminiInteractionsClient client;
@@ -57,15 +64,15 @@ public class GithubAnalyzerAgentIT {
                         An agent that clones public GitHub repositories,
                         analyzes the codebase structure, and explains its architecture.
                         """)
-                .baseAgent("antigravity-preview-05-2026")
+                .baseAgent("antigravity-preview-09-2026")
                 .baseEnvironment(new EnvironmentConfig(
                         new EnvironmentNetworkEgressAllowlist(List.of(
                                 new AllowlistEntry("github.com"))),
                         List.of()))
                 .systemInstruction("""
                         You are an expert software architect.
-                        Clone the specified repository, analyze its primary directories and code files,
-                        and provide a detailed, technical explanation of its components, architecture, and behavior.
+                        Clone the specified repository, briefly inspect its README.md and directory structure,
+                        and write a short, 1-paragraph summary of its architecture.
                         """)
                 .tools(List.of(
                         new AgentTool.CodeExecution(),
@@ -82,14 +89,17 @@ public class GithubAnalyzerAgentIT {
             AgentInteractionParams runParams = AgentInteractionParams.builder()
                     .agent(agentId)
                     .input("""
-                            Clone the repository https://github.com/glaforge/gemini-interactions-api-sdk,
-                            analyze its main classes, and write a detailed architecture report.
-                            You MUST physically write this report to a file named 'report.md' in the current working directory
+                            Clone the repository https://github.com/glaforge/gemini-interactions-api-sdk (--depth 1),
+                            read its README.md, and write a brief 1-paragraph architecture summary.
+                            Do not inspect every Java file; keep it fast and concise.
+                            You MUST physically write this summary to a file named 'report.md' in the current working directory
                             (using `open("report.md", "w")` in Python, NOT `/report.md` or any absolute path).
                             Make sure to NOT use a leading slash in the file path, so that it is saved in the current directory.
-                            Do not just claim you wrote it; execute code to write the report to the file.
+                            Do not just claim you wrote it; execute code to write the summary to the file.
                             """)
                     .environment("remote")
+                    .background(true)
+                    .store(true)
                     .build();
 
             System.out.println("Running interaction with agent...");
@@ -97,7 +107,7 @@ public class GithubAnalyzerAgentIT {
             System.out.println("Interaction created with ID: " + interaction.id());
 
             // 3. Poll for completion
-            int maxPolls = 60;
+            int maxPolls = 120;
             int polls = 0;
             while (!interaction.status().isFinished() && polls < maxPolls) {
                 System.out.println("Waiting for agent... Current status: " + interaction.status());
@@ -140,7 +150,7 @@ public class GithubAnalyzerAgentIT {
             }
         } catch (GeminiInteractionsException e) {
             if (e.getStatusCode() == 403 || (e.getMessage() != null && e.getMessage().contains("permission_denied"))) {
-                System.out.println("Skipping test: GEMINI_API_KEY does not have permission for antigravity-preview-05-2026 agent.");
+                System.out.println("Skipping test: GEMINI_API_KEY does not have permission for antigravity-preview-09-2026 agent.");
                 return;
             }
             throw e;

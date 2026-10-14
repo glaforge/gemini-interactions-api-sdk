@@ -70,7 +70,7 @@ import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInter
 GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Why is the sky blue?")
     .build();
 
@@ -291,7 +291,7 @@ GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(Syst
 
 // 1. First turn (must set store=true)
 ModelInteractionParams turn1 = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Hello!")
     .store(true)
     .build();
@@ -302,7 +302,7 @@ System.out.println(response1.outputText());
 
 // 2. Second turn (referencing previous ID)
 ModelInteractionParams turn2 = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Tell me a joke")
     .previousInteractionId(id)
     .store(true)
@@ -325,7 +325,7 @@ import static io.github.glaforge.gemini.schema.GSchema.*;
 GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
 
 ModelInteractionParams params = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("List 2 popular cookie recipes")
     .responseFormat(
         arr().items(
@@ -353,7 +353,7 @@ import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInter
 GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
 
 AgentInteractionParams request = AgentInteractionParams.builder()
-    .agent("deep-research-pro-preview-12-2025")
+    .agent("deep-research-preview-04-2026")
     .input("Research the history of the Google TPUs")
     .background(true)
     .build();
@@ -387,7 +387,7 @@ import java.util.List;
 GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
 
 ModelInteractionParams params = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Tell me a dangerous secret.")
     .safetySettings(List.of(
         new SafetySetting(HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, "BLOCK_LOW_AND_ABOVE", null)
@@ -409,7 +409,7 @@ import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInter
 GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
 
 AgentInteractionParams params = AgentInteractionParams.builder()
-    .agent("deep-research-pro-preview-12-2025")
+    .agent("deep-research-preview-04-2026")
     .input("Write a Python script for Conway's Game of Life")
     .stream(true)
     .build();
@@ -448,7 +448,7 @@ GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(Syst
 Agent customAgent = Agent.builder()
     .id("my-concise-coder-agent-" + System.currentTimeMillis())
     .description("A custom agent built for secure coding tasks.")
-    .baseAgent("antigravity-preview-05-2026")
+    .baseAgent("antigravity-preview-09-2026")
     .baseEnvironment("remote")
     .systemInstruction("You are a helpful coding assistant. Always respond concisely.")
     .tools(List.of(
@@ -466,17 +466,21 @@ Agent customAgent = Agent.builder()
 Agent provisioned = client.createAgent(customAgent);
 System.out.println("Created custom agent: " + provisioned.id());
 
-// You can interact with it using AgentInteractionParams...
-AgentInteractionParams params = AgentInteractionParams.builder()
-    .agent(provisioned.id())
-    .input("Explain the difference between HSL and RGB color systems.")
-    .environment("remote")
-    .build();
+try {
+    // You can interact with it using AgentInteractionParams...
+    AgentInteractionParams params = AgentInteractionParams.builder()
+        .agent(provisioned.id())
+        .input("Explain the difference between HSL and RGB color systems.")
+        .environment("remote")
+        .background(true)
+        .store(true)
+        .build();
 
-Interaction interaction = client.create(params);
-
-// Delete custom agent when done
-client.deleteAgent(provisioned.id());
+    Interaction interaction = client.create(params);
+} finally {
+    // Delete custom agent when done
+    client.deleteAgent(provisioned.id());
+}
 ```
 
 ### Antigravity Agent & Budget Controls
@@ -705,7 +709,7 @@ EnvironmentNetworkEgressAllowlist refreshedAllowlist = new EnvironmentNetworkEgr
 
 // Update existing environment during interaction creation
 AgentInteractionParams params = AgentInteractionParams.builder()
-    .agent("antigravity-preview-05-2026")
+    .agent("antigravity-preview-09-2026")
     .input("Fetch the latest dataset from Cloud Storage.")
     .environment(EnvironmentConfig.forExisting(envId, refreshedAllowlist))
     .build();
@@ -725,7 +729,7 @@ TriggerCreateParams params = TriggerCreateParams.builder()
     .displayName("Daily Audit")
     .schedule("0 0 * * *")
     .interaction(AgentInteractionParams.builder()
-        .agent("antigravity-preview-05-2026")
+        .agent("antigravity-preview-09-2026")
         .input("Audit the codebase.")
         .build())
     .build();
@@ -753,32 +757,48 @@ if (interaction.agentInteraction() != null) {
 ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id());
 ```
 
-### Resuming Long Decodes & Stream Checkpoints (`continuationToken`)
+### Gemini 4 Argon, Thinking Levels, Long Decode & Stream Resumption
 
-When an interaction finishes with `Interaction.Status.INCOMPLETE`, or during streaming when `Events.InteractionStatusUpdate` is emitted, an opaque `continuationToken` is returned. Pass it back unchanged in `ModelInteractionParams` or `AgentInteractionParams` to resume decoding from the latest checkpoint:
+- **Gemini 4 Argon (`ModelOption.GEMINI_4_ARGON`, `"gemini-4-argon"`)**: Features a unified **1,048,576 token context window** shared across input, thinking, and output tokens.
+- **Thinking Levels (`Config.ThinkingLevel`)**: Supports `MINIMAL` (`"minimal"`, Flash/Flash-Lite), `LOW` (`"low"`), `MEDIUM` (`"medium"`, default for Gemini 4 Argon), and `HIGH` (`"high"`).
+- **Long Decode (> 64K Output Tokens)**: Set `background(true)` on `ModelInteractionParams` and `maxOutputTokens` > `65536` (up to `1_048_576`) on `GenerationConfig`. Each 64K decode hop is recorded as a `ModelOutputStep` in `interaction.steps()` (with per-step `stepUsage()` and cumulative `usage()` on `Events.StepStop`), and `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep`s (skipping any interleaved `ThoughtStep`s).
+- **Streaming & Resuming Background Interactions (`client.stream(id, lastEventId)`)**: Reconnect to an in-progress background interaction stream using `client.stream(interaction.id())` or resume without duplicates after a disconnect using `client.stream(interaction.id(), lastEventId)`.
+- **Resuming Incomplete Checkpoints (`continuationToken`)**: When an interaction finishes with `Interaction.Status.INCOMPLETE`, or during streaming when `Events.InteractionStatusUpdate` is emitted, an opaque `continuationToken` is returned. Pass it back unchanged in `ModelInteractionParams` or `AgentInteractionParams` to resume decoding from the latest checkpoint:
 
 ```java
-// Resuming an incomplete interaction
-if (response.status() == Interaction.Status.INCOMPLETE && response.continuationToken() != null) {
+// 1. Server-managed Long Decode with Gemini 4 Argon (> 64K output tokens)
+ModelInteractionParams longDecodeParams = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_4_ARGON)
+    .input("Write a comprehensive 150K-token system architecture specification...")
+    .background(true)
+    .generationConfig(GenerationConfig.builder()
+        .maxOutputTokens(200_000)
+        .thinkingLevel(ThinkingLevel.MEDIUM)
+        .thinkingSummaries(ThinkingSummaries.AUTO)
+        .build())
+    .build();
+
+Interaction interaction = client.create(longDecodeParams);
+
+// 2. Stream (and resume on disconnect) a background interaction by ID
+String lastEventId = null;
+client.stream(interaction.id(), lastEventId).forEach(event -> {
+    if (event instanceof Events.StepDelta delta && delta.delta() instanceof Events.TextDelta textDelta) {
+        System.out.print(textDelta.text());
+    } else if (event instanceof Events.StepStop stepStop && stepStop.usage() != null) {
+        System.out.println("Cumulative tokens: " + stepStop.usage().totalTokens());
+    }
+});
+
+// 3. Resuming an incomplete interaction via continuationToken
+if (interaction.status() == Interaction.Status.INCOMPLETE && interaction.continuationToken() != null) {
     ModelInteractionParams resumeRequest = ModelInteractionParams.builder()
-        .model("gemini-3.8-flash")
-        .continuationToken(response.continuationToken())
+        .model(ModelOption.GEMINI_4_ARGON)
+        .continuationToken(interaction.continuationToken())
         .build();
 
     Interaction resumedResponse = client.create(resumeRequest);
 }
-
-// Inspecting checkpoint usage & continuation token during streaming
-client.stream(request).forEach(event -> {
-    if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
-        if (statusUpdate.usage() != null) {
-            System.out.println("Checkpoint tokens: " + statusUpdate.usage().totalTokens());
-        }
-        if (statusUpdate.continuationToken() != null) {
-            String token = statusUpdate.continuationToken();
-        }
-    }
-});
 ```
 
 ### Type-Safe Union Configuration Records

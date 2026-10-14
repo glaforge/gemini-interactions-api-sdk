@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
-public class GemmaTest {
+public class GemmaIT {
 
     private final GeminiInteractionsClient client = GeminiInteractionsClient.builder()
             .apiKey(System.getenv("GEMINI_API_KEY"))

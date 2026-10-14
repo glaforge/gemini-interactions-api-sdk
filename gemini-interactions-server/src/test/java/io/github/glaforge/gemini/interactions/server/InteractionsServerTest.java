@@ -25,8 +25,11 @@ import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.ListAgentsResponse;
 import io.github.glaforge.gemini.interactions.model.ListWebhooksResponse;
 import io.github.glaforge.gemini.interactions.model.PingWebhookResponse;
+import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretResponse;
+import io.github.glaforge.gemini.interactions.model.Trigger;
+import io.github.glaforge.gemini.interactions.model.TriggerExecution;
 import io.github.glaforge.gemini.interactions.model.Webhook;
 import io.github.glaforge.gemini.interactions.model.WebhookUpdate;
 import org.junit.jupiter.api.AfterEach;
@@ -36,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
+import java.util.List;
 import java.time.Instant;
 import java.util.stream.Stream;
 
@@ -130,6 +134,19 @@ class InteractionsServerTest {
             }
 
             @Override
+            public Stream<Events> stream(String id, String lastEventId, boolean includeInput) {
+                return Stream.of(
+                    new Events.StepDelta(
+                        Events.EventType.STEP_DELTA,
+                        "evt-2",
+                        0,
+                        new Events.TextDelta(Events.DeltaType.TEXT, "Resumed " + id + " after " + lastEventId, null),
+                        null
+                    )
+                );
+            }
+
+            @Override
             public Webhook createWebhook(Webhook webhook) {
                 return new Webhook("wh-1", webhook.name(), webhook.uri(), webhook.subscribedEvents(), Webhook.State.ENABLED, "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", Collections.emptyList(), "secret-123");
             }
@@ -179,7 +196,7 @@ class InteractionsServerTest {
                 return Agent.builder()
                     .id(id)
                     .description("Test Description")
-                    .baseAgent("antigravity-preview-05-2026")
+                    .baseAgent("antigravity-preview-09-2026")
                     .build();
             }
 
@@ -194,6 +211,19 @@ class InteractionsServerTest {
             @Override
             public void deleteAgent(String id) {
                 // no-op
+            }
+
+            @Override
+            public ListTriggersResponse listTriggers(String filter, Integer pageSize, String pageToken) {
+                return new ListTriggersResponse(
+                    List.of(Trigger.builder().id("trg-1").displayName(filter).build()),
+                    pageToken
+                );
+            }
+
+            @Override
+            public TriggerExecution runTrigger(String triggerId) {
+                return new TriggerExecution("exec-1", triggerId, null, "int-999", TriggerExecution.Status.IN_PROGRESS, null, Instant.parse("2026-10-14T00:00:00Z"), null, null);
             }
         });
         server.start();
@@ -243,10 +273,22 @@ class InteractionsServerTest {
             .input("Hello")
             .build();
 
-        Stream<Events> eventsStream = client.stream(request);
-        assertNotNull(eventsStream);
-        long count = eventsStream.count();
-        assertEquals(2, count);
+        try (Stream<Events> eventsStream = client.stream(request)) {
+            assertNotNull(eventsStream);
+            long count = eventsStream.count();
+            assertEquals(2, count);
+        }
+    }
+
+    @Test
+    void testStreamExistingInteractionById() {
+        try (Stream<Events> eventsStream = client.stream("interaction-123", "evt+1/a=b")) {
+            List<Events> events = eventsStream.toList();
+            assertEquals(1, events.size());
+            Events.StepDelta stepDelta = (Events.StepDelta) events.get(0);
+            Events.TextDelta textDelta = (Events.TextDelta) stepDelta.delta();
+            assertEquals("Resumed interaction-123 after evt+1/a=b", textDelta.text());
+        }
     }
 
     @Test
@@ -301,13 +343,13 @@ class InteractionsServerTest {
         Agent agent = Agent.builder()
             .id("test-agent")
             .description("A test agent")
-            .baseAgent("antigravity-preview-05-2026")
+            .baseAgent("antigravity-preview-09-2026")
             .systemInstruction("Be helpful")
             .build();
         Agent result = client.createAgent(agent);
         assertEquals("test-agent", result.id());
         assertEquals("A test agent", result.description());
-        assertEquals("antigravity-preview-05-2026", result.baseAgent());
+        assertEquals("antigravity-preview-09-2026", result.baseAgent());
         assertEquals("Be helpful", result.systemInstruction());
     }
 
@@ -316,7 +358,7 @@ class InteractionsServerTest {
         Agent result = client.getAgent("test-agent");
         assertEquals("test-agent", result.id());
         assertEquals("Test Description", result.description());
-        assertEquals("antigravity-preview-05-2026", result.baseAgent());
+        assertEquals("antigravity-preview-09-2026", result.baseAgent());
     }
 
     @Test
@@ -330,5 +372,21 @@ class InteractionsServerTest {
     @Test
     void testDeleteAgent() {
         client.deleteAgent("test-agent"); // Should not throw
+    }
+
+    @Test
+    void testListTriggersWithFilterAndEncodedPageToken() {
+        ListTriggersResponse result = client.listTriggers("status=ACTIVE", 10, "token+with/special=chars");
+        assertEquals(1, result.triggers().size());
+        assertEquals("status=ACTIVE", result.triggers().get(0).displayName());
+        assertEquals("token+with/special=chars", result.nextPageToken());
+    }
+
+    @Test
+    void testRunTrigger() {
+        TriggerExecution exec = client.runTrigger("trg-1");
+        assertEquals("exec-1", exec.id());
+        assertEquals("trg-1", exec.triggerId());
+        assertEquals(TriggerExecution.Status.IN_PROGRESS, exec.status());
     }
 }

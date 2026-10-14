@@ -22,6 +22,7 @@ import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -314,7 +315,7 @@ public class GSchema {
                 Class<?> current = clazz;
                 while (current != null && current != Object.class) {
                     for (Field field : current.getDeclaredFields()) {
-                        if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                        if (Modifier.isStatic(field.getModifiers())) {
                             continue;
                         }
                         if (field.isSynthetic()) {

@@ -191,11 +191,13 @@ public class LyriaIT {
         System.out.println("Running testImageToMusicGeneration");
         try {
             // Downloading a sample image directly from the Generative AI cookbook examples
-            byte[] imageBytes = URI
+            byte[] imageBytes;
+            try (var in = URI
                     .create("https://storage.googleapis.com/generativeai-downloads/images/groceries.jpeg")
                     .toURL()
-                    .openStream()
-                    .readAllBytes();
+                    .openStream()) {
+                imageBytes = in.readAllBytes();
+            }
 
             ModelInteractionParams request = ModelInteractionParams.builder()
                     .model("models/lyria-3-clip-preview")

@@ -20,7 +20,6 @@ import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Step;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
-import com.google.auth.oauth2.GoogleCredentials;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 

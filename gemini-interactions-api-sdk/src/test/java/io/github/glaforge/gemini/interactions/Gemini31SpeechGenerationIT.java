@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
 @DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
-public class Gemini31SpeechGenerationTest {
+public class Gemini31SpeechGenerationIT {
 
     @Test
     public void testSpeechGenerationWithTagsAndContext() throws Exception {

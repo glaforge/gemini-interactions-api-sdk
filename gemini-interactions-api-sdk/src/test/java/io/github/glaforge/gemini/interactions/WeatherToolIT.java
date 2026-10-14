@@ -31,7 +31,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class WeatherToolTest {
+public class WeatherToolIT {
 
     // Local function implementation matching the schema
     private String getWeather(String location) {
@@ -77,7 +77,7 @@ public class WeatherToolTest {
 
         // 2. Initial Request
         InteractionParams.ModelInteractionParams createParams = InteractionParams.ModelInteractionParams.builder()
-            .model("gemini-2.5-flash")
+            .model("gemini-3.8-flash")
             .input("What is the weather in Mountain View, CA?")
             .tools(tools)
             .build();
@@ -115,7 +115,7 @@ public class WeatherToolTest {
              );
 
              InteractionParams.ModelInteractionParams continuationParams = InteractionParams.ModelInteractionParams.builder()
-                 .model("gemini-2.5-flash")
+                 .model("gemini-3.8-flash")
                  .previousInteractionId(interaction.id())
                  // We pass the function result as the input for the next turn
                  .input(resultPart)

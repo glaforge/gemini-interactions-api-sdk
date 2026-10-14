@@ -4,7 +4,7 @@
 
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-parent</artifactId>
-    <version>2.0.5-SNAPSHOT</version>
+    <version>2.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     
     <name>Gemini Interactions API Parent</name>
@@ -35,6 +35,7 @@
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jackson.version>3.0.0</jackson.version>
         <jreleaser.skip>false</jreleaser.skip>
@@ -104,6 +105,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.2.5</version>
+                <configuration>
+                    <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

@@ -30,7 +30,7 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class UrlContextTest {
+public class UrlContextIT {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")

@@ -66,6 +66,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -95,6 +97,7 @@ public class GeminiInteractionsClient {
 
     private static final String DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
     private static final String DEFAULT_VERSION = "v1beta";
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(20);
 
     private final String baseUrl;
     private final String version;
@@ -103,6 +106,7 @@ public class GeminiInteractionsClient {
     private final String location;
     private final GoogleCredentials credentials;
     private final HttpClient httpClient;
+    private final Duration timeout;
     private final ObjectMapper objectMapper;
 
     private GeminiInteractionsClient(Builder builder) {
@@ -112,8 +116,9 @@ public class GeminiInteractionsClient {
         this.project = builder.project;
         this.location = builder.location;
         this.credentials = builder.credentials;
+        this.timeout = builder.timeout != null ? builder.timeout : DEFAULT_TIMEOUT;
         this.httpClient = builder.httpClient != null ? builder.httpClient : HttpClient.newBuilder()
-            .connectTimeout(java.time.Duration.ofSeconds(30))
+            .connectTimeout(Duration.ofSeconds(30))
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
         this.objectMapper = JsonMapper.builder()
@@ -131,10 +136,29 @@ public class GeminiInteractionsClient {
         }
     }
 
+    private String buildUploadUrl(String resourcePath) {
+        if (project != null) {
+            String host = baseUrl != null && !baseUrl.equals(DEFAULT_BASE_URL) ? baseUrl : (location.equals("global") ? "https://aiplatform.googleapis.com" : String.format("https://%s-aiplatform.googleapis.com", location));
+            String base = host.endsWith("/") ? host.substring(0, host.length() - 1) : host;
+            return String.format("%s/upload/%s/projects/%s/locations/%s/%s", base, version, project, location, resourcePath);
+        } else {
+            String host = baseUrl != null ? baseUrl : DEFAULT_BASE_URL;
+            String base = host.endsWith("/") ? host.substring(0, host.length() - 1) : host;
+            return String.format("%s/upload/%s/%s", base, version, resourcePath);
+        }
+    }
+
+    private static GeminiInteractionsException wrapException(Exception e) {
+        if (e instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
+        }
+        return new GeminiInteractionsException(e);
+    }
+
     private HttpRequest.Builder newRequestBuilder(String url) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(URI.create(url))
-            .timeout(java.time.Duration.ofMinutes(5))
+            .timeout(timeout)
             .header("Api-Revision", "2026-05-20");
 
         if (project != null) {
@@ -183,7 +207,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Interaction.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -200,32 +224,99 @@ public class GeminiInteractionsClient {
             String url = buildUrl("interactions?alt=sse");
 
             HttpRequest httpRequest = newRequestBuilder(url)
-                .timeout(java.time.Duration.ofMinutes(30))
+                .timeout(Duration.ofMinutes(30))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
-            HttpResponse<Stream<String>> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
+            return sendSseStream(httpRequest);
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
 
-            if (response.statusCode() >= 400) {
-                String errorBody = response.body().collect(Collectors.joining("\n"));
+    /**
+     * Streams events for an existing (or background) interaction by ID.
+     *
+     * @param id The interaction ID.
+     * @return A Stream of Events.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     * @see <a href="https://ai.google.dev/api/interactions-api#getInteractionById">Get Interaction API Reference</a>
+     */
+    public Stream<Events> stream(String id) {
+        return stream(id, null, false);
+    }
+
+    /**
+     * Resumes streaming events for an existing (or background) interaction by ID starting after {@code lastEventId}.
+     *
+     * @param id          The interaction ID.
+     * @param lastEventId Optional event ID from the last received event to resume the stream without duplicates.
+     * @return A Stream of Events.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     * @see <a href="https://ai.google.dev/api/interactions-api#getInteractionById">Get Interaction API Reference</a>
+     */
+    public Stream<Events> stream(String id, String lastEventId) {
+        return stream(id, lastEventId, false);
+    }
+
+    /**
+     * Streams events for an existing (or background) interaction by ID, optionally resuming after {@code lastEventId}
+     * and optionally including the original input.
+     *
+     * @param id           The interaction ID.
+     * @param lastEventId  Optional event ID from the last received event to resume the stream without duplicates.
+     * @param includeInput Whether to include the original input in the interaction events.
+     * @return A Stream of Events.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     * @see <a href="https://ai.google.dev/api/interactions-api#getInteractionById">Get Interaction API Reference</a>
+     */
+    public Stream<Events> stream(String id, String lastEventId, boolean includeInput) {
+        try {
+            StringBuilder pathBuilder = new StringBuilder("interactions/")
+                .append(id)
+                .append("?alt=sse&stream=true");
+            if (lastEventId != null && !lastEventId.isEmpty()) {
+                pathBuilder.append("&last_event_id=")
+                    .append(URLEncoder.encode(lastEventId, StandardCharsets.UTF_8));
+            }
+            if (includeInput) {
+                pathBuilder.append("&include_input=true");
+            }
+            String url = buildUrl(pathBuilder.toString());
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .timeout(Duration.ofMinutes(30))
+                .GET()
+                .build();
+
+            return sendSseStream(httpRequest);
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    private Stream<Events> sendSseStream(HttpRequest httpRequest) throws IOException, InterruptedException {
+        HttpResponse<Stream<String>> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
+
+        if (response.statusCode() >= 400) {
+            try (Stream<String> errorStream = response.body()) {
+                String errorBody = errorStream.collect(Collectors.joining("\n"));
                 throw new GeminiInteractionsException("API Request failed", response.statusCode(), errorBody);
             }
-
-            return response.body()
-                .filter(line -> line.startsWith("data: "))
-                .map(line -> line.substring(6))
-                .takeWhile(json -> !json.equals("[DONE]"))
-                .map(json -> {
-                    try {
-                        return objectMapper.readValue(json, Events.class);
-                    } catch (JacksonException e) {
-                        throw new GeminiInteractionsException("Failed to parse event", e);
-                    }
-                });
-        } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
         }
+
+        return response.body()
+            .filter(line -> line.startsWith("data: "))
+            .map(line -> line.substring(6))
+            .takeWhile(json -> !json.equals("[DONE]"))
+            .map(json -> {
+                try {
+                    return objectMapper.readValue(json, Events.class);
+                } catch (JacksonException e) {
+                    throw new GeminiInteractionsException("Failed to parse event", e);
+                }
+            });
     }
 
     /**
@@ -251,7 +342,7 @@ public class GeminiInteractionsClient {
      */
     public Interaction get(String id, boolean includeInput) {
         try {
-            String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
+            String url = buildUrl("interactions/" + id);
             if (includeInput) {
                 url += "?include_input=true";
             }
@@ -266,7 +357,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Interaction.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -279,7 +370,7 @@ public class GeminiInteractionsClient {
      */
     public void delete(String id) {
         try {
-            String url = String.format("%s/%s/interactions/%s", baseUrl, version, id);
+            String url = buildUrl("interactions/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
@@ -289,7 +380,7 @@ public class GeminiInteractionsClient {
 
             checkError(response);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -303,7 +394,7 @@ public class GeminiInteractionsClient {
      */
     public Interaction cancel(String id) {
         try {
-            String url = String.format("%s/%s/interactions/%s/cancel", baseUrl, version, id);
+            String url = buildUrl("interactions/" + id + "/cancel");
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .POST(HttpRequest.BodyPublishers.noBody())
@@ -315,7 +406,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Interaction.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -357,7 +448,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Webhook.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -370,7 +461,7 @@ public class GeminiInteractionsClient {
      */
     public Webhook getWebhook(String id) {
         try {
-            String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
+            String url = buildUrl("webhooks/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
@@ -382,7 +473,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Webhook.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -403,7 +494,7 @@ public class GeminiInteractionsClient {
                 hasParam = true;
             }
             if (pageToken != null && !pageToken.isEmpty()) {
-                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
             }
 
             HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
@@ -416,7 +507,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), ListWebhooksResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -431,7 +522,7 @@ public class GeminiInteractionsClient {
     public Webhook updateWebhook(String id, WebhookUpdate update) {
         try {
             String requestBody = objectMapper.writeValueAsString(update);
-            String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
+            String url = buildUrl("webhooks/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
@@ -444,7 +535,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Webhook.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -456,7 +547,7 @@ public class GeminiInteractionsClient {
      */
     public void deleteWebhook(String id) {
         try {
-            String url = String.format("%s/%s/webhooks/%s", baseUrl, version, id);
+            String url = buildUrl("webhooks/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
@@ -466,7 +557,7 @@ public class GeminiInteractionsClient {
 
             checkError(response);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -480,7 +571,7 @@ public class GeminiInteractionsClient {
     public PingWebhookResponse pingWebhook(String id) {
         try {
             String requestBody = "{}";
-            String url = String.format("%s/%s/webhooks/%s:ping", baseUrl, version, id);
+            String url = buildUrl("webhooks/" + id + ":ping");
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
@@ -493,7 +584,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), PingWebhookResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -508,7 +599,7 @@ public class GeminiInteractionsClient {
     public RotateSigningSecretResponse rotateSigningSecret(String id, RotateSigningSecretRequest request) {
         try {
             String requestBody = objectMapper.writeValueAsString(request);
-            String url = String.format("%s/%s/webhooks/%s:rotateSigningSecret", baseUrl, version, id);
+            String url = buildUrl("webhooks/" + id + ":rotateSigningSecret");
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
@@ -521,7 +612,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), RotateSigningSecretResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -550,7 +641,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Credential.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -563,7 +654,7 @@ public class GeminiInteractionsClient {
      */
     public Credential getCredential(String id) {
         try {
-            String url = String.format("%s/%s/credentials/%s", baseUrl, version, id);
+            String url = buildUrl("credentials/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
@@ -575,7 +666,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Credential.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -606,7 +697,7 @@ public class GeminiInteractionsClient {
                 hasParam = true;
             }
             if (pageToken != null && !pageToken.isEmpty()) {
-                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
             }
 
             HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
@@ -619,7 +710,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), ListCredentialsResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -634,7 +725,7 @@ public class GeminiInteractionsClient {
     public Credential updateCredential(String id, CredentialUpdate update) {
         try {
             String requestBody = objectMapper.writeValueAsString(update);
-            String url = String.format("%s/%s/credentials/%s", baseUrl, version, id);
+            String url = buildUrl("credentials/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
@@ -647,7 +738,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Credential.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -659,7 +750,7 @@ public class GeminiInteractionsClient {
      */
     public void deleteCredential(String id) {
         try {
-            String url = String.format("%s/%s/credentials/%s", baseUrl, version, id);
+            String url = buildUrl("credentials/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
@@ -669,7 +760,7 @@ public class GeminiInteractionsClient {
 
             checkError(response);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -698,7 +789,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Voice.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -735,7 +826,7 @@ public class GeminiInteractionsClient {
     public Voice getVoice(String id) {
         try {
             String voiceId = id != null && id.startsWith("voices/") ? id.substring("voices/".length()) : id;
-            String url = String.format("%s/%s/voices/%s", baseUrl, version, voiceId);
+            String url = buildUrl("voices/" + voiceId);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
@@ -747,7 +838,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Voice.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -785,7 +876,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), ListVoicesResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -799,7 +890,7 @@ public class GeminiInteractionsClient {
     public DeleteVoiceResponse deleteVoice(String id) {
         try {
             String voiceId = id != null && id.startsWith("voices/") ? id.substring("voices/".length()) : id;
-            String url = String.format("%s/%s/voices/%s", baseUrl, version, voiceId);
+            String url = buildUrl("voices/" + voiceId);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
@@ -811,7 +902,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), DeleteVoiceResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -840,7 +931,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Agent.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -853,7 +944,7 @@ public class GeminiInteractionsClient {
      */
     public Agent getAgent(String id) {
         try {
-            String url = String.format("%s/%s/agents/%s", baseUrl, version, id);
+            String url = buildUrl("agents/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
@@ -865,7 +956,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Agent.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -886,7 +977,7 @@ public class GeminiInteractionsClient {
                 hasParam = true;
             }
             if (pageToken != null && !pageToken.isEmpty()) {
-                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
             }
 
             HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
@@ -899,7 +990,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), ListAgentsResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -911,7 +1002,7 @@ public class GeminiInteractionsClient {
      */
     public void deleteAgent(String id) {
         try {
-            String url = String.format("%s/%s/agents/%s", baseUrl, version, id);
+            String url = buildUrl("agents/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
@@ -921,7 +1012,7 @@ public class GeminiInteractionsClient {
 
             checkError(response);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -950,7 +1041,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Environment.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -962,7 +1053,7 @@ public class GeminiInteractionsClient {
      * @return The created Environment.
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
-    public Environment createEnvironment(Object network, java.util.List<Source> sources) {
+    public Environment createEnvironment(Object network, List<Source> sources) {
         return createEnvironment(new CreateEnvironmentRequest(NetworkConfiguration.of(network), sources));
     }
 
@@ -974,7 +1065,7 @@ public class GeminiInteractionsClient {
      * @return The created Environment.
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
-    public Environment createEnvironment(NetworkConfiguration network, java.util.List<Source> sources) {
+    public Environment createEnvironment(NetworkConfiguration network, List<Source> sources) {
         return createEnvironment(new CreateEnvironmentRequest(network, sources));
     }
 
@@ -1022,7 +1113,7 @@ public class GeminiInteractionsClient {
      */
     public Environment getEnvironment(String id) {
         try {
-            String url = String.format("%s/%s/environments/%s", baseUrl, version, id);
+            String url = buildUrl("environments/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
@@ -1034,7 +1125,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Environment.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1065,7 +1156,7 @@ public class GeminiInteractionsClient {
                 hasParam = true;
             }
             if (pageToken != null && !pageToken.isEmpty()) {
-                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
             }
 
             HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
@@ -1078,7 +1169,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), ListEnvironmentsResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1090,7 +1181,7 @@ public class GeminiInteractionsClient {
      */
     public void deleteEnvironment(String id) {
         try {
-            String url = String.format("%s/%s/environments/%s", baseUrl, version, id);
+            String url = buildUrl("environments/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
@@ -1100,7 +1191,7 @@ public class GeminiInteractionsClient {
 
             checkError(response);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1126,11 +1217,6 @@ public class GeminiInteractionsClient {
             sb.append(URLEncoder.encode(segments[i], StandardCharsets.UTF_8).replace("+", "%20"));
         }
         return sb.toString();
-    }
-
-    private String buildUploadBaseUrl() {
-        String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-        return base + "/upload";
     }
 
     /**
@@ -1159,8 +1245,8 @@ public class GeminiInteractionsClient {
     public GetEnvironmentFilesResponse getEnvironmentFiles(String environmentId, String path, Integer pageSize, String pageToken, Boolean recursive) {
         try {
             String encodedPath = encodeEnvironmentFilePath(path);
-            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/environments/%s/files%s",
-                baseUrl, version, environmentId, encodedPath.isEmpty() ? "" : "/" + encodedPath));
+            String resourcePath = "environments/" + environmentId + "/files" + (encodedPath.isEmpty() ? "" : "/" + encodedPath);
+            StringBuilder urlBuilder = new StringBuilder(buildUrl(resourcePath));
             boolean hasParam = false;
             if (pageSize != null) {
                 urlBuilder.append(hasParam ? "&" : "?").append("page_size=").append(pageSize);
@@ -1184,7 +1270,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), GetEnvironmentFilesResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1228,8 +1314,8 @@ public class GeminiInteractionsClient {
     public InputStream downloadEnvironmentFile(String environmentId, String path, Boolean recursive) {
         try {
             String encodedPath = encodeEnvironmentFilePath(path);
-            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/environments/%s/files%s?alt=media",
-                baseUrl, version, environmentId, encodedPath.isEmpty() ? "" : "/" + encodedPath));
+            String resourcePath = "environments/" + environmentId + "/files" + (encodedPath.isEmpty() ? "" : "/" + encodedPath) + "?alt=media";
+            StringBuilder urlBuilder = new StringBuilder(buildUrl(resourcePath));
             if (recursive != null) {
                 urlBuilder.append("&recursive=").append(recursive);
             }
@@ -1249,7 +1335,7 @@ public class GeminiInteractionsClient {
 
             return response.body();
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1345,8 +1431,8 @@ public class GeminiInteractionsClient {
     public GetEnvironmentFilesResponse uploadEnvironmentFile(String environmentId, String path, byte[] content, String mimeType, Boolean overwrite, Boolean extract) {
         try {
             String encodedPath = encodeEnvironmentFilePath(path);
-            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/environments/%s/files%s",
-                buildUploadBaseUrl(), version, environmentId, encodedPath.isEmpty() ? "" : "/" + encodedPath));
+            String resourcePath = "environments/" + environmentId + "/files" + (encodedPath.isEmpty() ? "" : "/" + encodedPath);
+            StringBuilder urlBuilder = new StringBuilder(buildUploadUrl(resourcePath));
             boolean hasParam = false;
             if (overwrite != null) {
                 urlBuilder.append(hasParam ? "&" : "?").append("overwrite=").append(overwrite);
@@ -1369,7 +1455,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), GetEnvironmentFilesResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1473,7 +1559,7 @@ public class GeminiInteractionsClient {
         if (environmentOrInteractionId != null && (environmentOrInteractionId.startsWith("env_") || environmentOrInteractionId.startsWith("env-"))) {
             try {
                 // Prefer modern environment files download endpoint: GET /{version}/environments/{id}/files?alt=media
-                String modernUrl = String.format("%s/%s/environments/%s/files?alt=media", baseUrl, version, environmentOrInteractionId);
+                String modernUrl = buildUrl("environments/" + environmentOrInteractionId + "/files?alt=media");
                 HttpRequest modernRequest = newRequestBuilder(modernUrl)
                     .GET()
                     .build();
@@ -1488,14 +1574,16 @@ public class GeminiInteractionsClient {
                 try (InputStream errorStream = response.body()) {
                     errorStream.readAllBytes();
                 }
-            } catch (IOException | InterruptedException e) {
+            } catch (InterruptedException e) {
+                throw wrapException(e);
+            } catch (IOException e) {
                 // Fall through to legacy endpoint
             }
         }
 
         try {
             // Fallback / legacy endpoint: GET /{version}/files/environment-{id}:download?alt=media
-            String legacyUrl = String.format("%s/%s/files/environment-%s:download?alt=media", baseUrl, version, environmentOrInteractionId);
+            String legacyUrl = buildUrl("files/environment-" + environmentOrInteractionId + ":download?alt=media");
             HttpRequest legacyRequest = newRequestBuilder(legacyUrl)
                 .GET()
                 .build();
@@ -1510,7 +1598,7 @@ public class GeminiInteractionsClient {
 
             return legacyResponse.body();
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1596,7 +1684,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Trigger.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1609,7 +1697,7 @@ public class GeminiInteractionsClient {
      */
     public Trigger getTrigger(String id) {
         try {
-            String url = String.format("%s/%s/triggers/%s", baseUrl, version, id);
+            String url = buildUrl("triggers/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .GET()
@@ -1621,7 +1709,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Trigger.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1647,7 +1735,7 @@ public class GeminiInteractionsClient {
                 hasParam = true;
             }
             if (pageToken != null && !pageToken.isEmpty()) {
-                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
             }
 
             HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
@@ -1660,7 +1748,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), ListTriggersResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1708,7 +1796,7 @@ public class GeminiInteractionsClient {
     public Trigger updateTrigger(String id, TriggerUpdate update) {
         try {
             String requestBody = objectMapper.writeValueAsString(update);
-            String url = String.format("%s/%s/triggers/%s", baseUrl, version, id);
+            String url = buildUrl("triggers/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
@@ -1721,7 +1809,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), Trigger.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1755,7 +1843,7 @@ public class GeminiInteractionsClient {
      */
     public void deleteTrigger(String id) {
         try {
-            String url = String.format("%s/%s/triggers/%s", baseUrl, version, id);
+            String url = buildUrl("triggers/" + id);
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .DELETE()
@@ -1765,7 +1853,7 @@ public class GeminiInteractionsClient {
 
             checkError(response);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1778,7 +1866,7 @@ public class GeminiInteractionsClient {
      */
     public TriggerExecution runTrigger(String id) {
         try {
-            String url = String.format("%s/%s/triggers/%s/executions", baseUrl, version, id);
+            String url = buildUrl("triggers/" + id + "/executions");
 
             HttpRequest httpRequest = newRequestBuilder(url)
                 .header("Content-Type", "application/json")
@@ -1791,7 +1879,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), TriggerExecution.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1806,14 +1894,14 @@ public class GeminiInteractionsClient {
      */
     public ListTriggerExecutionsResponse listTriggerExecutions(String triggerId, Integer pageSize, String pageToken) {
         try {
-            StringBuilder urlBuilder = new StringBuilder(String.format("%s/%s/triggers/%s/executions", baseUrl, version, triggerId));
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("triggers/" + triggerId + "/executions"));
             boolean hasParam = false;
             if (pageSize != null) {
                 urlBuilder.append("?page_size=").append(pageSize);
                 hasParam = true;
             }
             if (pageToken != null && !pageToken.isEmpty()) {
-                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(pageToken);
+                urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
             }
 
             HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
@@ -1826,7 +1914,7 @@ public class GeminiInteractionsClient {
 
             return objectMapper.readValue(response.body(), ListTriggerExecutionsResponse.class);
         } catch (IOException | InterruptedException e) {
-            throw new GeminiInteractionsException(e);
+            throw wrapException(e);
         }
     }
 
@@ -1861,6 +1949,7 @@ public class GeminiInteractionsClient {
         private String location = "global";
         private GoogleCredentials credentials;
         private HttpClient httpClient;
+        private Duration timeout;
 
         /**
          * Sets the base URL.
@@ -1936,6 +2025,17 @@ public class GeminiInteractionsClient {
          */
         public Builder httpClient(HttpClient httpClient) {
             this.httpClient = httpClient;
+            return this;
+        }
+
+        /**
+         * Sets the default HTTP request timeout (defaults to 20 minutes for deep-reasoning tasks).
+         *
+         * @param timeout The request timeout.
+         * @return This builder.
+         */
+        public Builder timeout(Duration timeout) {
+            this.timeout = timeout;
             return this;
         }
 
