@@ -107,6 +107,7 @@
                 <version>3.2.5</version>
                 <configuration>
                     <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                    <rerunFailingTestsCount>2</rerunFailingTestsCount>
                 </configuration>
                 <executions>
                     <execution>

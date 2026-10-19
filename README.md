@@ -1145,7 +1145,7 @@ import java.util.List;
 
 ModelInteractionParams params = ModelInteractionParams.builder()
     .model("gemini-2.5-flash")
-    .input("List 5 popular cookie recipes")
+    .input("Invent 5 original cookie recipes")
     .responseMimeType("application/json")
     .responseFormat(Map.of(
         "type", "array",
@@ -1169,7 +1169,7 @@ import static io.github.glaforge.gemini.schema.GSchema.*;
 
 ModelInteractionParams params = ModelInteractionParams.builder()
     .model("gemini-2.5-flash")
-    .input("List 5 popular cookie recipes")
+    .input("Invent 5 original cookie recipes")
     .responseMimeType("application/json")
     .responseFormat(
         arr().items(
@@ -1189,7 +1189,7 @@ public record Recipe(String name, List<String> ingredients) {}
 
 ModelInteractionParams params = ModelInteractionParams.builder()
     .model("gemini-2.5-flash")
-    .input("List 5 popular cookie recipes")
+    .input("Invent 5 original cookie recipes")
     .responseMimeType("application/json")
     .responseFormat(GSchema.fromClass(Recipe.class))
     .build();
@@ -1208,7 +1208,7 @@ String jsonSchema = """
 
 ModelInteractionParams params = ModelInteractionParams.builder()
     .model("gemini-2.5-flash")
-    .input("List 5 popular cookie recipes")
+    .input("Invent 5 original cookie recipes")
     .responseMimeType("application/json")
     .responseFormat(GSchema.fromJson(jsonSchema))
     .build();

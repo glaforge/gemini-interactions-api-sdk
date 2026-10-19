@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -78,51 +79,65 @@ public class ResearchAgentIT {
 
         StringBuilder researchTextBuilder = new StringBuilder();
         String[] capturedResearchId = new String[1];
+        String[] lastEventId = new String[1];
 
         boolean[] completed = new boolean[1];
 
-        try (var eventStream = client.stream(researchParams)) {
-            eventStream.forEach(event -> {
-                if (event instanceof Events.StepDelta deltaEvent) {
-                    handleDelta(deltaEvent.delta(), researchTextBuilder);
-                } else if (event instanceof Events.ContentDelta contentDeltaEvent) {
-                    handleDelta(contentDeltaEvent.delta(), researchTextBuilder);
-                } else if (event instanceof Events.InteractionCreated interactionCreated) {
-                    System.out.println("\n[Interaction Start: " + interactionCreated.interaction().id() + "]");
-                } else if (event instanceof Events.InteractionCompleted interactionCompleted) {
-                    capturedResearchId[0] = interactionCompleted.interaction().id();
-                    completed[0] = true;
-                    System.out.println("\n[Interaction Complete: " + capturedResearchId[0] + "]");
-                    if (interactionCompleted.interaction().steps() != null) {
-                        interactionCompleted.interaction().steps().stream()
-                                .filter(s -> s instanceof Step.ModelOutputStep)
-                                .flatMap(s -> ((Step.ModelOutputStep) s).content().stream())
-                                .filter(c -> c instanceof Content.TextContent)
-                                .forEach(c -> {
-                                    Content.TextContent textContent = (Content.TextContent) c;
-                                    System.out.println(textContent.text());
-                                    researchTextBuilder.append(textContent.text());
-                                });
-                    }
-                } else if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
-                    System.out.println("\n[Interaction Status Update: " + statusUpdate.interactionId() + " -> "
-                            + statusUpdate.status() + "]");
-                } else if (event instanceof Events.StepStart stepStart) {
-                    System.out.println("\n[Step Start: index " + stepStart.index() + "]");
-                } else if (event instanceof Events.StepStop stepStop) {
-                    System.out.println("\n[Step Stop: index " + stepStop.index() + "]");
-                } else if (event instanceof Events.ContentStart contentStart) {
-                    System.out.println("\n[Content Start: index " + contentStart.index() + "]");
-                } else if (event instanceof Events.ContentStop contentStop) {
-                    System.out.println("\n[Content Stop: index " + contentStop.index() + "]");
-                } else if (event instanceof Events.ErrorEvent errorEvent) {
-                    System.err.println("\n[Error Event: " + errorEvent.error().code() + " - "
-                            + errorEvent.error().message() + "]");
-                    TransientApiErrorExtension.abortIfRateLimitOrTransient(errorEvent);
-                } else {
-                    System.out.println("\n[Other Event: " + event.getClass().getSimpleName() + "]");
+        Consumer<Events> eventHandler = event -> {
+            if (event.eventId() != null) {
+                lastEventId[0] = event.eventId();
+            }
+            if (event instanceof Events.StepDelta deltaEvent) {
+                handleDelta(deltaEvent.delta(), researchTextBuilder);
+            } else if (event instanceof Events.ContentDelta contentDeltaEvent) {
+                handleDelta(contentDeltaEvent.delta(), researchTextBuilder);
+            } else if (event instanceof Events.InteractionCreated interactionCreated) {
+                if (interactionCreated.interaction() != null && interactionCreated.interaction().id() != null) {
+                    capturedResearchId[0] = interactionCreated.interaction().id();
                 }
-            });
+                System.out.println("\n[Interaction Start: " + capturedResearchId[0] + "]");
+            } else if (event instanceof Events.InteractionCompleted interactionCompleted) {
+                if (interactionCompleted.interaction() != null && interactionCompleted.interaction().id() != null) {
+                    capturedResearchId[0] = interactionCompleted.interaction().id();
+                }
+                completed[0] = true;
+                System.out.println("\n[Interaction Complete: " + capturedResearchId[0] + "]");
+                if (interactionCompleted.interaction() != null && interactionCompleted.interaction().steps() != null) {
+                    interactionCompleted.interaction().steps().stream()
+                            .filter(s -> s instanceof Step.ModelOutputStep)
+                            .flatMap(s -> ((Step.ModelOutputStep) s).content().stream())
+                            .filter(c -> c instanceof Content.TextContent)
+                            .forEach(c -> {
+                                Content.TextContent textContent = (Content.TextContent) c;
+                                System.out.println(textContent.text());
+                                researchTextBuilder.append(textContent.text());
+                            });
+                }
+            } else if (event instanceof Events.InteractionStatusUpdate statusUpdate) {
+                if (statusUpdate.interactionId() != null) {
+                    capturedResearchId[0] = statusUpdate.interactionId();
+                }
+                System.out.println("\n[Interaction Status Update: " + statusUpdate.interactionId() + " -> "
+                        + statusUpdate.status() + "]");
+            } else if (event instanceof Events.StepStart stepStart) {
+                System.out.println("\n[Step Start: index " + stepStart.index() + "]");
+            } else if (event instanceof Events.StepStop stepStop) {
+                System.out.println("\n[Step Stop: index " + stepStop.index() + "]");
+            } else if (event instanceof Events.ContentStart contentStart) {
+                System.out.println("\n[Content Start: index " + contentStart.index() + "]");
+            } else if (event instanceof Events.ContentStop contentStop) {
+                System.out.println("\n[Content Stop: index " + contentStop.index() + "]");
+            } else if (event instanceof Events.ErrorEvent errorEvent) {
+                System.err.println("\n[Error Event: " + errorEvent.error().code() + " - "
+                        + errorEvent.error().message() + "]");
+                TransientApiErrorExtension.abortIfRateLimitOrTransient(errorEvent);
+            } else {
+                System.out.println("\n[Other Event: " + event.getClass().getSimpleName() + "]");
+            }
+        };
+
+        try (var eventStream = client.stream(researchParams)) {
+            eventStream.forEach(eventHandler);
         } catch (GeminiInteractionsException e) {
             if (TransientApiErrorExtension.isRateLimitOrTransient(e) || capturedResearchId[0] == null) {
                 throw e;
@@ -134,8 +149,20 @@ public class ResearchAgentIT {
             e.printStackTrace();
         }
 
-        if (researchTextBuilder.isEmpty() && capturedResearchId[0] != null) {
-            System.out.println("\n[Stream completed but no report received. Polling interaction for final result...]");
+        // If the stream dropped before completion (e.g. TCP connection reset during long thinking),
+        // try resuming the stream first, and then fall back to polling the interaction until finished.
+        if (!completed[0] && capturedResearchId[0] != null) {
+            System.out.println("\n[Stream disconnected before completion. Attempting to resume stream for "
+                    + capturedResearchId[0] + " from lastEventId=" + lastEventId[0] + "...]");
+            try (var resumedStream = client.stream(capturedResearchId[0], lastEventId[0])) {
+                resumedStream.forEach(eventHandler);
+            } catch (Exception e) {
+                System.err.println("\nResumed stream error: " + e.toString());
+            }
+        }
+
+        if ((!completed[0] || researchTextBuilder.isEmpty()) && capturedResearchId[0] != null) {
+            System.out.println("\n[Polling interaction " + capturedResearchId[0] + " for final result...]");
             Interaction finalInteraction = client.get(capturedResearchId[0]);
             while (!finalInteraction.status().isFinished()) {
                 try {
@@ -145,7 +172,10 @@ public class ResearchAgentIT {
                 }
                 finalInteraction = client.get(capturedResearchId[0]);
             }
-            if (finalInteraction.steps() != null) {
+            if (finalInteraction.status() == Interaction.Status.COMPLETED) {
+                completed[0] = true;
+            }
+            if (researchTextBuilder.isEmpty() && finalInteraction.steps() != null) {
                 finalInteraction.steps().stream()
                         .filter(s -> s instanceof Step.ModelOutputStep)
                         .flatMap(s -> ((Step.ModelOutputStep) s).content().stream())

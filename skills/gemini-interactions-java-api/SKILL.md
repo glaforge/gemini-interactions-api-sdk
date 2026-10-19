@@ -326,7 +326,7 @@ GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(Syst
 
 ModelInteractionParams params = ModelInteractionParams.builder()
     .model("gemini-3.8-flash")
-    .input("List 2 popular cookie recipes")
+    .input("Invent 2 original futuristic cookie recipes with unusual cosmic ingredients")
     .responseFormat(
         arr().items(
             obj()

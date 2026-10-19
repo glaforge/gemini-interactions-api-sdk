@@ -28,7 +28,7 @@ import org.opentest4j.TestAbortedException;
  *   <li>HTTP 429 ({@code too_many_requests} / rate limit exceeded)</li>
  *   <li>HTTP 503 ({@code service_unavailable} / temporary high demand)</li>
  *   <li>HTTP 504 ({@code deadline_exceeded} / gateway timeout)</li>
- *   <li>HTTP 400 with {@code content_blocked} (transient false-positive policy filter on media generation)</li>
+ *   <li>HTTP 400 with {@code content_blocked} or {@code copyright/recitation} (transient false-positive policy or recitation filter)</li>
  * </ul>
  */
 public class TransientApiErrorExtension implements TestExecutionExceptionHandler {
@@ -70,9 +70,11 @@ public class TransientApiErrorExtension implements TestExecutionExceptionHandler
                 || code.contains("resource_exhausted")
                 || code.contains("service_unavailable")
                 || code.contains("deadline_exceeded")
+                || code.contains("copyrighted works")
                 || message.contains("rate limit")
                 || message.contains("too many requests")
-                || message.contains("high demand")) {
+                || message.contains("high demand")
+                || message.contains("copyright/recitation")) {
             String msg = "Skipping streaming test due to rate limit or transient SSE error: "
                     + errorEvent.error().code() + " - " + errorEvent.error().message();
             System.out.println(msg);
@@ -82,7 +84,7 @@ public class TransientApiErrorExtension implements TestExecutionExceptionHandler
 
     /**
      * Checks whether the given {@link GeminiInteractionsException} represents a rate-limit (429)
-     * or transient server/policy error (503, 504, or 400 {@code content_blocked}).
+     * or transient server/policy error (503, 504, or 400 {@code content_blocked} / {@code copyright/recitation}).
      *
      * @param e The exception to inspect.
      * @return {@code true} if the test should be skipped rather than failed.
@@ -95,7 +97,9 @@ public class TransientApiErrorExtension implements TestExecutionExceptionHandler
         if (status == 429 || status == 503 || status == 504) {
             return true;
         }
-        if (status == 400 && body.contains("content_blocked")) {
+        if (status == 400 && (body.contains("content_blocked")
+                || body.contains("copyright/recitation")
+                || body.contains("copyrighted works"))) {
             return true;
         }
         return body.contains("too_many_requests")
