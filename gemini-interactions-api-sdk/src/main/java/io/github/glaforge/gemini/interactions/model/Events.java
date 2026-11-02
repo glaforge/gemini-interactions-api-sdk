@@ -794,7 +794,9 @@ public sealed interface Events permits
      * @param arguments     The retrieval arguments.
      * @param retrievalType The retrieval type.
      * @param signature     The signature.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record RetrievalCallDelta(DeltaType type, RetrievalStepArguments arguments, @JsonProperty("retrieval_type") String retrievalType, String signature) implements Delta {}
 
@@ -804,7 +806,9 @@ public sealed interface Events permits
      * @param type      The type of delta ("retrieval_result").
      * @param isError   Whether the result is an error.
      * @param signature The signature.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record RetrievalResultDelta(DeltaType type, @JsonProperty("is_error") Boolean isError, String signature) implements Delta {}
 

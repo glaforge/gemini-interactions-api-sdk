@@ -23,7 +23,9 @@ import java.util.List;
  * The arguments to pass to Retrieval tools.
  *
  * @param queries Queries for Retrieval information.
+ * @deprecated Removed from the Gemini Interactions OpenAPI specification.
  */
+@Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record RetrievalStepArguments(
     List<String> queries

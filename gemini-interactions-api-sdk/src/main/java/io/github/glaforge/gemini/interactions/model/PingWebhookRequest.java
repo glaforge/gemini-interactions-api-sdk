@@ -17,9 +17,32 @@
 package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Request message for WebhookService.PingWebhook.
+ *
+ * @param id Required. The ID of the webhook to ping.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record PingWebhookRequest() {}
+public record PingWebhookRequest(
+    String id
+) {
+    /**
+     * Backward-compatible no-arg constructor.
+     */
+    public PingWebhookRequest() {
+        this(null);
+    }
+
+    /**
+     * Creates a new PingWebhookRequest with the specified webhook ID.
+     *
+     * @param id The ID of the webhook to ping.
+     * @return A PingWebhookRequest instance.
+     */
+    public static PingWebhookRequest of(String id) {
+        return new PingWebhookRequest(id);
+    }
+}

@@ -18,17 +18,29 @@ package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Parameters for prompted voice generation (Voice Design).
  *
- * @param input The natural-language prompt describing the desired voice.
+ * @param input     The natural-language prompt describing the desired voice.
+ * @param baseVoice Optional. The name or ID of an existing base voice to edit or remix (e.g., "Puck" or "voice_abc123").
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record PromptedVoice(
-    String input
+    String input,
+    @JsonProperty("base_voice") String baseVoice
 ) {
+    /**
+     * Backward-compatible constructor with only the prompt input.
+     *
+     * @param input The natural-language prompt describing the desired voice.
+     */
+    public PromptedVoice(String input) {
+        this(input, null);
+    }
+
     /**
      * Creates a new PromptedVoice with the specified description input.
      *
@@ -36,6 +48,17 @@ public record PromptedVoice(
      * @return A PromptedVoice instance.
      */
     public static PromptedVoice of(String input) {
-        return new PromptedVoice(input);
+        return new PromptedVoice(input, null);
+    }
+
+    /**
+     * Creates a new PromptedVoice remixing or editing an existing base voice.
+     *
+     * @param input     The natural-language prompt describing relative alterations to make to the base voice.
+     * @param baseVoice The name or ID of an existing base voice to edit or remix.
+     * @return A PromptedVoice instance.
+     */
+    public static PromptedVoice of(String input, String baseVoice) {
+        return new PromptedVoice(input, baseVoice);
     }
 }

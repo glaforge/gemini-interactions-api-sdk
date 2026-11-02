@@ -32,7 +32,8 @@ public final class ModelOption {
     public static final String DEEP_RESEARCH_MAX_PREVIEW_04_2026 = "deep-research-max-preview-04-2026";
     /** Model option constant. */
     public static final String DEEP_RESEARCH_PREVIEW_04_2026 = "deep-research-preview-04-2026";
-    /** Model option constant. */
+    /** Model option constant (deprecated). */
+    @Deprecated
     public static final String DEEP_RESEARCH_PRO_PREVIEW_12_2025 = "deep-research-pro-preview-12-2025";
     /** Model option constant. */
     public static final String GEMINI_2_0_FLASH = "gemini-2.0-flash";
@@ -106,7 +107,8 @@ public final class ModelOption {
     public static final String GEMINI_3_8_FLASH_LITE_TTS = "gemini-3.8-flash-lite-tts";
     /** Model option constant. */
     public static final String GEMINI_3_5_LIVE_TRANSLATE_PREVIEW = "gemini-3.5-live-translate-preview";
-    /** Model option constant for Gemini 4 Argon. */
+    /** Model option constant for Gemini 4 Argon (deprecated). */
+    @Deprecated
     public static final String GEMINI_4_ARGON = "gemini-4-argon";
     /** Model option constant. */
     public static final String GEMINI_EMBEDDING_001 = "gemini-embedding-001";

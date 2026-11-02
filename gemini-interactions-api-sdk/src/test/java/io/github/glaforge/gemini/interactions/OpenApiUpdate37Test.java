@@ -50,7 +50,7 @@ class OpenApiUpdate37Test {
             .build();
 
         String json = mapper.writeValueAsString(genConfig);
-        assertTrue(json.contains("\"speech_config\""));
+        assertTrue(json.contains("\"structured_speech_config\""));
         assertTrue(json.contains("\"speakers\""));
         assertTrue(json.contains("\"voice\":\"Algenib\""));
 

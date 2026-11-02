@@ -22,7 +22,8 @@ package io.github.glaforge.gemini.interactions.model;
 public final class AgentOption {
     private AgentOption() {}
 
-    /** Gemini Deep Research Agent (Preview 12-2025) */
+    /** Gemini Deep Research Agent (Preview 12-2025) - deprecated in favor of preview-04-2026 */
+    @Deprecated
     public static final String DEEP_RESEARCH_PRO_PREVIEW_12_2025 = "deep-research-pro-preview-12-2025";
     /** Gemini Deep Research Agent (Preview 04-2026) */
     public static final String DEEP_RESEARCH_PREVIEW_04_2026 = "deep-research-preview-04-2026";

@@ -400,7 +400,9 @@ public sealed interface Tool permits
      * 
      * @param engine     The Vertex AI Search engine list.
      * @param datastores The Vertex AI Search datastores.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record VertexAISearchConfig(
         String engine,
@@ -412,7 +414,9 @@ public sealed interface Tool permits
      *
      * @param apiKey       The API key for Exa AI Search.
      * @param customConfig Custom configs for Exa AI Search.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ExaAISearchConfig(
         @JsonProperty("api_key") String apiKey,
@@ -424,7 +428,9 @@ public sealed interface Tool permits
      *
      * @param apiKey       The API key for Parallel AI Search.
      * @param customConfig Custom configs for Parallel AI Search.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ParallelAISearchConfig(
         @JsonProperty("api_key") String apiKey,
@@ -436,7 +442,9 @@ public sealed interface Tool permits
      *
      * @param ragCorpus   RagCorpora resource name.
      * @param ragFileIds  rag_file_id list.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record RagResource(
         @JsonProperty("rag_corpus") String ragCorpus,
@@ -447,7 +455,9 @@ public sealed interface Tool permits
      * Config for Hybrid Search.
      *
      * @param alpha Alpha value controls the weight between dense and sparse vector search results.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record HybridSearch(
         Float alpha
@@ -459,7 +469,9 @@ public sealed interface Tool permits
      * @param vectorDistanceThreshold Only returns contexts with vector distance smaller than threshold.
      * @param vectorSimilarityThreshold Only returns contexts with vector similarity larger than threshold.
      * @param metadataFilter String for metadata filtering.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Filter(
         @JsonProperty("vector_distance_threshold") Double vectorDistanceThreshold,
@@ -472,7 +484,9 @@ public sealed interface Tool permits
      *
      * @param rankingConfig The ranking config type (e.g. "rank_service").
      * @param modelName The model name of the rank service.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Ranking(
         @JsonProperty("ranking_config") String rankingConfig,
@@ -486,7 +500,9 @@ public sealed interface Tool permits
      * @param hybridSearch Config for Hybrid Search.
      * @param filter Config for filters.
      * @param ranking Config for ranking and reranking.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record RagRetrievalConfig(
         @JsonProperty("top_k") Integer topK,
@@ -502,7 +518,9 @@ public sealed interface Tool permits
      * @param similarityTopK Number of top k results to return.
      * @param vectorDistanceThreshold Only return results with vector distance smaller than threshold.
      * @param ragRetrievalConfig The retrieval config for the Rag query.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record RagStoreConfig(
         @JsonProperty("rag_resources") List<RagResource> ragResources,
@@ -520,7 +538,9 @@ public sealed interface Tool permits
      * @param exaAiSearchConfig        Configuration for Exa AI Search.
      * @param parallelAiSearchConfig   Configuration for Parallel AI Search.
      * @param ragStoreConfig           Configuration for RAG Store.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Retrieval(
         String type,

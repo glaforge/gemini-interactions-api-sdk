@@ -18,8 +18,10 @@ package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the Interaction resource.
@@ -35,10 +37,13 @@ import java.time.Instant;
  * @param usage                 Token usage details.
  * @param previousInteractionId ID of the previous interaction in the conversation.
  * @param environmentId         ID of the environment.
- * @param cachedContent         URI of the cached content used.
+ * @param cachedContent         URI of the cached content used (deprecated).
  * @param safetySettings        The safety settings to apply.
  * @param errors                Diagnostic faults or platform errors recorded on the interaction.
- * @param continuationToken     Opaque token to resume a long decode when status is INCOMPLETE.
+ * @param continuationToken     Opaque token to resume a long decode when status is REQUIRES_CONTINUATION or INCOMPLETE.
+ * @param maxTotalTokens        Max total tokens for the agent run.
+ * @param webhookConfig         Optional webhook configuration for receiving notifications when the interaction completes.
+ * @param labels                User-defined metadata labels for the interaction.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Interaction(
@@ -53,11 +58,53 @@ public record Interaction(
     Usage usage,
     @JsonProperty("previous_interaction_id") String previousInteractionId,
     @JsonProperty("environment_id") String environmentId,
-    @JsonProperty("cached_content") String cachedContent,
+    @Deprecated @JsonProperty("cached_content") String cachedContent,
     @JsonProperty("safety_settings") List<SafetySetting> safetySettings,
     List<Events.Error> errors,
-    @JsonProperty("continuation_token") String continuationToken
+    @JsonProperty("continuation_token") String continuationToken,
+    @JsonProperty("max_total_tokens") String maxTotalTokens,
+    @JsonProperty("webhook_config") WebhookConfig webhookConfig,
+    Map<String, String> labels
 ) {
+    /**
+     * Backward-compatible constructor without maxTotalTokens, webhookConfig, or labels.
+     *
+     * @param id                    The unique identifier for the interaction.
+     * @param model                 The model used for the interaction.
+     * @param agent                 The agent used for the interaction.
+     * @param agentConfig           The agent configuration.
+     * @param created               Creation timestamp.
+     * @param updated               Last update timestamp.
+     * @param status                The status of the interaction.
+     * @param steps                 List of steps.
+     * @param usage                 Token usage details.
+     * @param previousInteractionId ID of the previous interaction in the conversation.
+     * @param environmentId         ID of the environment.
+     * @param cachedContent         URI of the cached content used.
+     * @param safetySettings        The safety settings to apply.
+     * @param errors                Diagnostic faults or platform errors recorded on the interaction.
+     * @param continuationToken     Opaque token to resume a long decode.
+     */
+    public Interaction(
+        String id,
+        String model,
+        String agent,
+        Config.AgentConfig agentConfig,
+        Instant created,
+        Instant updated,
+        Status status,
+        List<Step> steps,
+        Usage usage,
+        String previousInteractionId,
+        String environmentId,
+        String cachedContent,
+        List<SafetySetting> safetySettings,
+        List<Events.Error> errors,
+        String continuationToken
+    ) {
+        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors, continuationToken, null, null, null);
+    }
+
     /**
      * Backward-compatible constructor without continuationToken.
      *
@@ -92,7 +139,7 @@ public record Interaction(
         List<SafetySetting> safetySettings,
         List<Events.Error> errors
     ) {
-        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors, null);
+        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors, null, null, null, null);
     }
 
     /**
@@ -127,7 +174,7 @@ public record Interaction(
         String cachedContent,
         List<SafetySetting> safetySettings
     ) {
-        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, null, null);
+        this(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, null, null, null, null, null);
     }
 
     /**
@@ -372,6 +419,7 @@ public record Interaction(
      * Token usage details.
      *
      * @param totalInputTokens        Total input tokens.
+     * @param initialInputTokens      Number of input tokens used in the first turn of this interaction.
      * @param inputTokensByModality   Input tokens broken down by modality.
      * @param totalCachedTokens       Total cached tokens.
      * @param cachedTokensByModality  Cached tokens broken down by modality.
@@ -386,6 +434,7 @@ public record Interaction(
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Usage(
         @JsonProperty("total_input_tokens") Integer totalInputTokens,
+        @JsonProperty("initial_input_tokens") Integer initialInputTokens,
         @JsonProperty("input_tokens_by_modality") List<ModalityTokens> inputTokensByModality,
         @JsonProperty("total_cached_tokens") Integer totalCachedTokens,
         @JsonProperty("cached_tokens_by_modality") List<ModalityTokens> cachedTokensByModality,
@@ -396,7 +445,38 @@ public record Interaction(
         @JsonProperty("total_thought_tokens") Integer totalThoughtTokens,
         @JsonProperty("total_tokens") Integer totalTokens,
         @JsonProperty("grounding_tool_count") List<GroundingToolCount> groundingToolCount
-    ) {}
+    ) {
+        /**
+         * Backward-compatible constructor without initialInputTokens.
+         *
+         * @param totalInputTokens        Total input tokens.
+         * @param inputTokensByModality   Input tokens broken down by modality.
+         * @param totalCachedTokens       Total cached tokens.
+         * @param cachedTokensByModality  Cached tokens broken down by modality.
+         * @param totalOutputTokens       Total output tokens.
+         * @param outputTokensByModality  Output tokens broken down by modality.
+         * @param totalToolUseTokens      Total tool use tokens.
+         * @param toolUseTokensByModality Tool use tokens broken down by modality.
+         * @param totalThoughtTokens      Total thought (reasoning) tokens.
+         * @param totalTokens             Total tokens.
+         * @param groundingToolCount      Grounding tool counts.
+         */
+        public Usage(
+            Integer totalInputTokens,
+            List<ModalityTokens> inputTokensByModality,
+            Integer totalCachedTokens,
+            List<ModalityTokens> cachedTokensByModality,
+            Integer totalOutputTokens,
+            List<ModalityTokens> outputTokensByModality,
+            Integer totalToolUseTokens,
+            List<ModalityTokens> toolUseTokensByModality,
+            Integer totalThoughtTokens,
+            Integer totalTokens,
+            List<GroundingToolCount> groundingToolCount
+        ) {
+            this(totalInputTokens, null, inputTokensByModality, totalCachedTokens, cachedTokensByModality, totalOutputTokens, outputTokensByModality, totalToolUseTokens, toolUseTokensByModality, totalThoughtTokens, totalTokens, groundingToolCount);
+        }
+    }
 
     /**
      * Tokens broken down by modality.
@@ -414,7 +494,7 @@ public record Interaction(
      * Grounding tool count.
      *
      * @param count The number of grounding tool counts.
-     * @param type  The grounding tool type associated with the count.
+     * @param type  The grounding tool type associated with the count ("google_search", "google_maps").
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GroundingToolCount(
@@ -440,11 +520,12 @@ public record Interaction(
      * Interaction status.
      */
     public enum Status {
-        /** Interaction queued for execution. */
+        /** Interaction queued for execution (deprecated). */
+        @Deprecated
         @JsonProperty("queued") QUEUED,
         /** Interaction in progress. */
         @JsonProperty("in_progress") IN_PROGRESS,
-        /** Interaction requires usage action. */
+        /** Interaction requires user action. */
         @JsonProperty("requires_action") REQUIRES_ACTION,
         /** Interaction completed successfully. */
         @JsonProperty("completed") COMPLETED,
@@ -454,8 +535,11 @@ public record Interaction(
         @JsonProperty("cancelled") CANCELLED,
         /** Interaction incomplete. */
         @JsonProperty("incomplete") INCOMPLETE,
-        /** Interaction budget exceeded. */
-        @JsonProperty("budget_exceeded") BUDGET_EXCEEDED;
+        /** Interaction budget exceeded (deprecated in favor of INCOMPLETE). */
+        @Deprecated
+        @JsonProperty("budget_exceeded") BUDGET_EXCEEDED,
+        /** The interaction requires at least one more request using continuation_token to be completed. */
+        @JsonProperty("requires_continuation") REQUIRES_CONTINUATION;
         
         /**
          * Checks whether the status represents a finished (terminal) state.
@@ -473,6 +557,15 @@ public record Interaction(
          */
         public boolean isIncomplete() {
             return this == INCOMPLETE;
+        }
+
+        /**
+         * Checks whether the status requires a continuation request using {@link #continuationToken()}.
+         *
+         * @return true if REQUIRES_CONTINUATION.
+         */
+        public boolean requiresContinuation() {
+            return this == REQUIRES_CONTINUATION;
         }
 
         /**
@@ -533,6 +626,9 @@ public record Interaction(
         private List<SafetySetting> safetySettings;
         private List<Events.Error> errors;
         private String continuationToken;
+        private String maxTotalTokens;
+        private WebhookConfig webhookConfig;
+        private Map<String, String> labels;
 
         /** Creates a new Builder. */
         public Builder() {}
@@ -618,7 +714,9 @@ public record Interaction(
          * Sets the cached content.
          * @param cachedContent the cached content.
          * @return this builder.
+         * @deprecated Deprecated in the Gemini Interactions API.
          */
+        @Deprecated
         public Builder cachedContent(String cachedContent) { this.cachedContent = cachedContent; return this; }
 
         /**
@@ -643,11 +741,46 @@ public record Interaction(
         public Builder continuationToken(String continuationToken) { this.continuationToken = continuationToken; return this; }
 
         /**
+         * Sets the max total tokens.
+         * @param maxTotalTokens the max total tokens.
+         * @return this builder.
+         */
+        public Builder maxTotalTokens(String maxTotalTokens) { this.maxTotalTokens = maxTotalTokens; return this; }
+
+        /**
+         * Sets the webhook configuration.
+         * @param webhookConfig the webhook configuration.
+         * @return this builder.
+         */
+        public Builder webhookConfig(WebhookConfig webhookConfig) { this.webhookConfig = webhookConfig; return this; }
+
+        /**
+         * Sets the labels map.
+         * @param labels the labels map.
+         * @return this builder.
+         */
+        public Builder labels(Map<String, String> labels) { this.labels = labels; return this; }
+
+        /**
+         * Adds a single label key-value pair.
+         * @param key the label key.
+         * @param value the label value.
+         * @return this builder.
+         */
+        public Builder label(String key, String value) {
+            if (this.labels == null) {
+                this.labels = new HashMap<>();
+            }
+            this.labels.put(key, value);
+            return this;
+        }
+
+        /**
          * Builds the Interaction.
          * @return the new Interaction.
          */
         public Interaction build() {
-            return new Interaction(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors, continuationToken);
+            return new Interaction(id, model, agent, agentConfig, created, updated, status, steps, usage, previousInteractionId, environmentId, cachedContent, safetySettings, errors, continuationToken, maxTotalTokens, webhookConfig, labels);
         }
     }
 }

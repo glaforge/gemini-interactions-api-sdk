@@ -368,6 +368,18 @@ public record Voice(
         }
 
         /**
+         * Sets prompted voice configuration from prompt text and an existing base voice.
+         *
+         * @param input     The prompt text describing alterations to the base voice.
+         * @param baseVoice The name or ID of the base voice to remix or edit.
+         * @return This builder.
+         */
+        public Builder prompted(String input, String baseVoice) {
+            this.prompted = input != null ? PromptedVoice.of(input, baseVoice) : null;
+            return this;
+        }
+
+        /**
          * Sets replicated voice configuration.
          *
          * @param replicated The replicated voice config.

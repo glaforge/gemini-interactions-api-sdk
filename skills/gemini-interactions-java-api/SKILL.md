@@ -255,12 +255,19 @@ ModelInteractionParams dialogue = ModelInteractionParams.builder()
     .generationConfig(GenerationConfig.builder().speechConfig(multiSpeaker).build())
     .build();
 
-// 3. Voice Design: Create a custom persona from natural language
+// 3. Voice Design: Create a custom persona from natural language (or remix a base_voice)
 Voice designedVoice = client.createVoice(Voice.prompted(
     ModelOption.GEMINI_3_8_FLASH_TTS,
     "Warm British Astronomer",
     "A warm, thoughtful astronomer in his late 60s with a gentle British accent."
 ));
+
+// Remix an existing voice by providing baseVoice
+Voice remixedVoice = client.createVoice(Voice.builder()
+    .model(ModelOption.GEMINI_3_8_FLASH_TTS)
+    .displayName("Faster Astronomer")
+    .prompted("Speak at a brisk, energetic pace", designedVoice.id())
+    .build());
 
 // 4. Voice Replication: Clone a voice from reference and consent audio clips
 Voice clonedVoice = client.createVoice(Voice.replicated(
@@ -753,24 +760,25 @@ if (interaction.agentInteraction() != null) {
     System.out.println("Scheduled agent: " + agentParams.agent());
 }
 
-// List trigger executions
-ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id());
+// List trigger executions (optionally with pagination and filter)
+ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id(), 10, null, "status=completed");
 ```
 
-### Gemini 4 Argon, Thinking Levels, Long Decode & Stream Resumption
+### Thinking Levels, Long Decode, Checkpoints & Stream Resumption
 
-- **Gemini 4 Argon (`ModelOption.GEMINI_4_ARGON`, `"gemini-4-argon"`)**: Features a unified **1,048,576 token context window** shared across input, thinking, and output tokens.
-- **Thinking Levels (`Config.ThinkingLevel`)**: Supports `MINIMAL` (`"minimal"`, Flash/Flash-Lite), `LOW` (`"low"`), `MEDIUM` (`"medium"`, default for Gemini 4 Argon), and `HIGH` (`"high"`).
+- **Thinking Levels (`Config.ThinkingLevel`)**: Supports `MINIMAL` (`"minimal"`, Flash/Flash-Lite), `LOW` (`"low"`), `MEDIUM` (`"medium"`), and `HIGH` (`"high"`).
 - **Long Decode (> 64K Output Tokens)**: Set `background(true)` on `ModelInteractionParams` and `maxOutputTokens` > `65536` (up to `1_048_576`) on `GenerationConfig`. Each 64K decode hop is recorded as a `ModelOutputStep` in `interaction.steps()` (with per-step `stepUsage()` and cumulative `usage()` on `Events.StepStop`), and `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep`s (skipping any interleaved `ThoughtStep`s).
 - **Streaming & Resuming Background Interactions (`client.stream(id, lastEventId)`)**: Reconnect to an in-progress background interaction stream using `client.stream(interaction.id())` or resume without duplicates after a disconnect using `client.stream(interaction.id(), lastEventId)`.
-- **Resuming Incomplete Checkpoints (`continuationToken`)**: When an interaction finishes with `Interaction.Status.INCOMPLETE`, or during streaming when `Events.InteractionStatusUpdate` is emitted, an opaque `continuationToken` is returned. Pass it back unchanged in `ModelInteractionParams` or `AgentInteractionParams` to resume decoding from the latest checkpoint:
+- **Resuming Checkpoints (`REQUIRES_CONTINUATION` / `INCOMPLETE` & `continuationToken`)**: When an interaction reaches `Interaction.Status.REQUIRES_CONTINUATION` or `Interaction.Status.INCOMPLETE`, or during streaming when `Events.InteractionStatusUpdate` is emitted, an opaque `continuationToken` is returned. Pass it back unchanged in `ModelInteractionParams` or `AgentInteractionParams` to resume decoding from the latest checkpoint. Interactions also support custom `labels` and per-interaction `webhookConfig`:
 
 ```java
-// 1. Server-managed Long Decode with Gemini 4 Argon (> 64K output tokens)
+// 1. Server-managed Long Decode (> 64K output tokens) with labels and webhookConfig
 ModelInteractionParams longDecodeParams = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_4_ARGON)
+    .model(ModelOption.GEMINI_3_8_FLASH)
     .input("Write a comprehensive 150K-token system architecture specification...")
     .background(true)
+    .label("team", "platform")
+    .webhookConfig(WebhookConfig.fromWebhookIds("wh-123"))
     .generationConfig(GenerationConfig.builder()
         .maxOutputTokens(200_000)
         .thinkingLevel(ThinkingLevel.MEDIUM)
@@ -790,10 +798,10 @@ client.stream(interaction.id(), lastEventId).forEach(event -> {
     }
 });
 
-// 3. Resuming an incomplete interaction via continuationToken
-if (interaction.status() == Interaction.Status.INCOMPLETE && interaction.continuationToken() != null) {
+// 3. Resuming an interaction requiring continuation via continuationToken
+if ((interaction.status().requiresContinuation() || interaction.status().isIncomplete()) && interaction.continuationToken() != null) {
     ModelInteractionParams resumeRequest = ModelInteractionParams.builder()
-        .model(ModelOption.GEMINI_4_ARGON)
+        .model(ModelOption.GEMINI_3_8_FLASH)
         .continuationToken(interaction.continuationToken())
         .build();
 

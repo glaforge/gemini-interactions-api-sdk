@@ -25,6 +25,7 @@ import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
 import io.github.glaforge.gemini.interactions.model.ListWebhooksResponse;
+import io.github.glaforge.gemini.interactions.model.PingWebhookRequest;
 import io.github.glaforge.gemini.interactions.model.PingWebhookResponse;
 import io.github.glaforge.gemini.interactions.model.RotateSigningSecretRequest;
 import io.github.glaforge.gemini.interactions.model.Agent;
@@ -433,11 +434,26 @@ public class GeminiInteractionsClient {
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public Webhook createWebhook(Webhook webhook) {
+        return createWebhook(webhook, null);
+    }
+
+    /**
+     * Creates a new webhook with an optional user-specified webhook ID.
+     *
+     * @param webhook   The webhook to create.
+     * @param webhookId Optional ID to use for the webhook. If null or empty, the server generates a unique ID.
+     * @return The created Webhook.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Webhook createWebhook(Webhook webhook, String webhookId) {
         try {
             String requestBody = objectMapper.writeValueAsString(webhook);
-            String url = buildUrl("webhooks");
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("webhooks"));
+            if (webhookId != null && !webhookId.isEmpty()) {
+                urlBuilder.append("?webhook_id=").append(URLEncoder.encode(webhookId, StandardCharsets.UTF_8));
+            }
 
-            HttpRequest httpRequest = newRequestBuilder(url)
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
@@ -570,7 +586,7 @@ public class GeminiInteractionsClient {
      */
     public PingWebhookResponse pingWebhook(String id) {
         try {
-            String requestBody = "{}";
+            String requestBody = objectMapper.writeValueAsString(PingWebhookRequest.of(id));
             String url = buildUrl("webhooks/" + id + ":ping");
 
             HttpRequest httpRequest = newRequestBuilder(url)
@@ -598,7 +614,10 @@ public class GeminiInteractionsClient {
      */
     public RotateSigningSecretResponse rotateSigningSecret(String id, RotateSigningSecretRequest request) {
         try {
-            String requestBody = objectMapper.writeValueAsString(request);
+            RotateSigningSecretRequest payload = (request != null && request.id() == null)
+                ? RotateSigningSecretRequest.of(id, request.revocationBehavior())
+                : request;
+            String requestBody = objectMapper.writeValueAsString(payload);
             String url = buildUrl("webhooks/" + id + ":rotateSigningSecret");
 
             HttpRequest httpRequest = newRequestBuilder(url)
@@ -916,11 +935,26 @@ public class GeminiInteractionsClient {
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public Agent createAgent(Agent agent) {
+        return createAgent(agent, null);
+    }
+
+    /**
+     * Creates a new custom Agent under an optional parent resource.
+     *
+     * @param agent  The agent definition to create.
+     * @param parent Optional parent resource where this agent will be created (e.g. "projects/{project}/locations/{location}").
+     * @return The created Agent.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Agent createAgent(Agent agent, String parent) {
         try {
             String requestBody = objectMapper.writeValueAsString(agent);
-            String url = buildUrl("agents");
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("agents"));
+            if (parent != null && !parent.isEmpty()) {
+                urlBuilder.append("?parent=").append(URLEncoder.encode(parent, StandardCharsets.UTF_8));
+            }
 
-            HttpRequest httpRequest = newRequestBuilder(url)
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
@@ -1893,11 +1927,29 @@ public class GeminiInteractionsClient {
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public ListTriggerExecutionsResponse listTriggerExecutions(String triggerId, Integer pageSize, String pageToken) {
+        return listTriggerExecutions(triggerId, pageSize, pageToken, null);
+    }
+
+    /**
+     * Lists Executions of a Trigger with an optional filter expression.
+     *
+     * @param triggerId The trigger ID.
+     * @param pageSize  The maximum number of executions to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @param filter    Optional filter expression.
+     * @return The ListTriggerExecutionsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListTriggerExecutionsResponse listTriggerExecutions(String triggerId, Integer pageSize, String pageToken, String filter) {
         try {
             StringBuilder urlBuilder = new StringBuilder(buildUrl("triggers/" + triggerId + "/executions"));
             boolean hasParam = false;
+            if (filter != null && !filter.isEmpty()) {
+                urlBuilder.append("?filter=").append(URLEncoder.encode(filter, StandardCharsets.UTF_8));
+                hasParam = true;
+            }
             if (pageSize != null) {
-                urlBuilder.append("?page_size=").append(pageSize);
+                urlBuilder.append(hasParam ? "&" : "?").append("page_size=").append(pageSize);
                 hasParam = true;
             }
             if (pageToken != null && !pageToken.isEmpty()) {

@@ -281,14 +281,16 @@ try {
 }
 ```
 
-2. **Resuming Incomplete Checkpoints (`continuationToken`)**:
-   When an interaction finishes with `Interaction.Status.INCOMPLETE` (or when a stream emits an `InteractionStatusUpdate` checkpoint), the API provides an opaque `continuationToken`. Pass it back unchanged in a subsequent request (`ModelInteractionParams` or `AgentInteractionParams`) to resume decoding from the latest checkpoint:
+2. **Resuming Checkpoints (`REQUIRES_CONTINUATION` / `INCOMPLETE` & `continuationToken`)**:
+   When an interaction pauses or finishes with `Interaction.Status.REQUIRES_CONTINUATION` or `Interaction.Status.INCOMPLETE` (or when a stream emits an `InteractionStatusUpdate` checkpoint), the API provides an opaque `continuationToken`. Pass it back unchanged in a subsequent request (`ModelInteractionParams` or `AgentInteractionParams`) to resume decoding from the latest checkpoint. You can also attach custom `labels` and per-interaction `webhookConfig`:
 
 ```java
-if (response.status() == Interaction.Status.INCOMPLETE && response.continuationToken() != null) {
+if ((response.status().requiresContinuation() || response.status().isIncomplete()) && response.continuationToken() != null) {
     ModelInteractionParams resumeRequest = ModelInteractionParams.builder()
-        .model(ModelOption.GEMINI_4_ARGON)
+        .model(ModelOption.GEMINI_3_8_FLASH)
         .continuationToken(response.continuationToken())
+        .label("env", "production")
+        .webhookConfig(WebhookConfig.fromWebhookIds("wh-123"))
         .build();
 
     Interaction resumedResponse = client.create(resumeRequest);
@@ -427,16 +429,23 @@ ModelInteractionParams dialogueRequest = ModelInteractionParams.builder()
         .build())
     .build();
 
-// 3. Voice Design: Create a brand new custom voice from natural language
+// 3. Voice Design: Create a brand new custom voice from natural language (or remix a base_voice)
 Voice astronomer = client.createVoice(Voice.prompted(
     ModelOption.GEMINI_3_8_FLASH_TTS,
     "Warm British Astronomer",
     "A warm, thoughtful astronomer in his late 60s with a gentle British accent."
 ));
 
+// Or remix an existing voice by specifying baseVoice:
+Voice remixedVoice = client.createVoice(Voice.builder()
+    .model(ModelOption.GEMINI_3_8_FLASH_TTS)
+    .displayName("Faster Astronomer")
+    .prompted("Speak at a brisk, energetic pace", astronomer.id())
+    .build());
+
 // Pass the persistent voice ID (voice_...) in synthesis requests:
 GenerationConfig customVoiceConfig = GenerationConfig.builder()
-    .speechConfig(List.of(new SpeechConfig(astronomer.id(), "en-GB")))
+    .structuredSpeechConfig(List.of(new SpeechConfig(astronomer.id(), "en-GB")))
     .build();
 
 // 4. Voice Replication: Clone a voice from source and consent audio clips
@@ -988,8 +997,8 @@ if (interaction.agentInteraction() != null) {
     Interaction res = interaction.resource();
 }
 
-// List trigger executions
-ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id());
+// List trigger executions (optionally filtered)
+ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.id(), 10, null, "status=completed");
 ```
 
 ### Function Calling

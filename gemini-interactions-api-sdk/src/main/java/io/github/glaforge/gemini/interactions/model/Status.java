@@ -26,7 +26,9 @@ import java.util.Map;
  * @param code    The status code.
  * @param message A developer-facing error message.
  * @param details A list of messages that carry the error details.
+ * @deprecated Removed from the Gemini Interactions OpenAPI specification in favor of {@link Events.Error}.
  */
+@Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Status(
     Integer code,

@@ -17,17 +17,41 @@
 package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Request message for WebhookService.RotateSigningSecret.
  *
+ * @param id                 Required. The ID of the webhook for which to generate a signing secret.
  * @param revocationBehavior Optional. The revocation behavior for previous signing secrets.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record RotateSigningSecretRequest(
+    String id,
     @JsonProperty("revocation_behavior") RevocationBehavior revocationBehavior
 ) {
+    /**
+     * Backward-compatible constructor with only revocationBehavior.
+     *
+     * @param revocationBehavior Optional. The revocation behavior for previous signing secrets.
+     */
+    public RotateSigningSecretRequest(RevocationBehavior revocationBehavior) {
+        this(null, revocationBehavior);
+    }
+
+    /**
+     * Creates a new RotateSigningSecretRequest with the specified ID and revocation behavior.
+     *
+     * @param id                 The ID of the webhook.
+     * @param revocationBehavior The revocation behavior for previous signing secrets.
+     * @return A RotateSigningSecretRequest instance.
+     */
+    public static RotateSigningSecretRequest of(String id, RevocationBehavior revocationBehavior) {
+        return new RotateSigningSecretRequest(id, revocationBehavior);
+    }
+
     /**
      * The revocation behavior for previous signing secrets.
      */

@@ -24,6 +24,7 @@ import tools.jackson.databind.annotation.JsonDeserialize;
 
 import static io.github.glaforge.gemini.schema.GSchema.fromJson;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,13 +46,15 @@ public class InteractionParams {
         @JsonProperty("standard") STANDARD,
         /** Priority service tier. */
         @JsonProperty("priority") PRIORITY,
-        /** Deferred service tier. */
+        /** Deferred service tier (deprecated). */
+        @Deprecated
         @JsonProperty("deferred") DEFERRED
     }
 
     /**
      * Common interface for all interaction requests.
      */
+    @JsonDeserialize(using = InteractionRequestDeserializer.class)
     public sealed interface Request permits ModelInteractionParams, AgentInteractionParams {
         /**
          * Returns whether the response should be streamed.
@@ -81,10 +84,14 @@ public class InteractionParams {
      * @param responseFormat        Requested response format (JSON Schema).
      * @param previousInteractionId ID of the previous interaction to continue.
      * @param serviceTier           The service tier for the interaction.
-     * @param cachedContent         The cached content to use.
+     * @param cachedContent         The cached content to use (deprecated).
      * @param safetySettings        The safety settings to apply.
      * @param continuationToken     Opaque token to resume a long decode from the latest checkpoint.
+     * @param environment           The environment configuration or ID for the interaction.
+     * @param webhookConfig         Webhook configuration for receiving completion notifications.
+     * @param labels                User-defined metadata labels for the interaction.
      */
+    @JsonDeserialize
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ModelInteractionParams(
         String model,
@@ -99,10 +106,55 @@ public class InteractionParams {
         @JsonProperty("response_format") Config.ResponseFormat responseFormat,
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier,
-        @JsonProperty("cached_content") String cachedContent,
+        @Deprecated @JsonProperty("cached_content") String cachedContent,
         @JsonProperty("safety_settings") List<SafetySetting> safetySettings,
-        @JsonProperty("continuation_token") String continuationToken
+        @JsonProperty("continuation_token") String continuationToken,
+        BaseEnvironment environment,
+        @JsonProperty("webhook_config") WebhookConfig webhookConfig,
+        Map<String, String> labels
     ) implements Request {
+
+        /**
+         * Backward-compatible constructor without environment, webhookConfig, or labels.
+         *
+         * @param model                 The model.
+         * @param input                 The input.
+         * @param generationConfig      The generation config.
+         * @param tools                 The tools.
+         * @param stream                Whether to stream.
+         * @param store                 Whether to store.
+         * @param background            Whether background.
+         * @param systemInstruction     The system instruction.
+         * @param responseModalities    The response modalities.
+         * @param responseFormat        The response format.
+         * @param previousInteractionId The previous interaction id.
+         * @param serviceTier           The service tier.
+         * @param cachedContent         The cached content.
+         * @param safetySettings        The safety settings.
+         * @param continuationToken     The continuation token.
+         */
+        public ModelInteractionParams(
+            String model,
+            InteractionInput input,
+            Config.GenerationConfig generationConfig,
+            List<Tool> tools,
+            Boolean stream,
+            Boolean store,
+            Boolean background,
+            String systemInstruction,
+            List<Interaction.Modality> responseModalities,
+            Config.ResponseFormat responseFormat,
+            String previousInteractionId,
+            ServiceTier serviceTier,
+            String cachedContent,
+            List<SafetySetting> safetySettings,
+            String continuationToken
+        ) {
+            this(model, input, generationConfig, tools, stream, store, background,
+                systemInstruction, responseModalities, responseFormat,
+                previousInteractionId, serviceTier, cachedContent, safetySettings, continuationToken,
+                null, null, null);
+        }
 
         /**
          * Backward-compatible constructor without continuationToken.
@@ -140,7 +192,8 @@ public class InteractionParams {
         ) {
             this(model, input, generationConfig, tools, stream, store, background,
                 systemInstruction, responseModalities, responseFormat,
-                previousInteractionId, serviceTier, cachedContent, safetySettings, null);
+                previousInteractionId, serviceTier, cachedContent, safetySettings, null,
+                null, null, null);
         }
 
         /**
@@ -179,7 +232,8 @@ public class InteractionParams {
         ) {
             this(model, input != null ? InteractionInput.of(input) : null, generationConfig, tools,
                 stream, store, background, systemInstruction, responseModalities, responseFormat,
-                previousInteractionId, serviceTier, cachedContent, safetySettings, null);
+                previousInteractionId, serviceTier, cachedContent, safetySettings, null,
+                null, null, null);
         }
 
         /**
@@ -207,6 +261,9 @@ public class InteractionParams {
             private String cachedContent;
             private List<SafetySetting> safetySettings;
             private String continuationToken;
+            private BaseEnvironment environment;
+            private WebhookConfig webhookConfig;
+            private Map<String, String> labels;
 
             /**
               * Sets the model.
@@ -432,10 +489,10 @@ public class InteractionParams {
              *
              * @param cachedContent The cached content formatted path.
              * @return This builder.
+             * @deprecated Deprecated in the Gemini Interactions API.
              */
+            @Deprecated
             public Builder cachedContent(String cachedContent) { this.cachedContent = cachedContent; return this; }
-
-
 
             /**
              * Sets safety settings.
@@ -454,12 +511,75 @@ public class InteractionParams {
             public Builder continuationToken(String continuationToken) { this.continuationToken = continuationToken; return this; }
 
             /**
+             * Sets the environment using a BaseEnvironment.
+             *
+             * @param environment The base environment configuration.
+             * @return This builder.
+             */
+            public Builder environment(BaseEnvironment environment) { this.environment = environment; return this; }
+
+            /**
+             * Sets the environment using a preset name or existing environment ID string (e.g. "remote" or "env_abc123").
+             *
+             * @param environment The environment name or ID.
+             * @return This builder.
+             */
+            public Builder environment(String environment) { this.environment = environment != null ? BaseEnvironment.of(environment) : null; return this; }
+
+            /**
+             * Sets the environment using an EnvironmentConfig.
+             *
+             * @param environment The custom environment configuration.
+             * @return This builder.
+             */
+            public Builder environment(EnvironmentConfig environment) { this.environment = environment != null ? BaseEnvironment.of(environment) : null; return this; }
+
+            /**
+             * Sets the environment using an arbitrary object.
+             *
+             * @param environment The environment object.
+             * @return This builder.
+             */
+            public Builder environment(Object environment) { this.environment = environment != null ? BaseEnvironment.of(environment) : null; return this; }
+
+            /**
+             * Sets the webhook configuration.
+             *
+             * @param webhookConfig The webhook configuration.
+             * @return This builder.
+             */
+            public Builder webhookConfig(WebhookConfig webhookConfig) { this.webhookConfig = webhookConfig; return this; }
+
+            /**
+             * Sets the user-defined metadata labels map.
+             *
+             * @param labels The labels map.
+             * @return This builder.
+             */
+            public Builder labels(Map<String, String> labels) { this.labels = labels; return this; }
+
+            /**
+             * Adds a single user-defined metadata label key-value pair.
+             *
+             * @param key   The label key.
+             * @param value The label value.
+             * @return This builder.
+             */
+            public Builder label(String key, String value) {
+                if (this.labels == null) {
+                    this.labels = new HashMap<>();
+                }
+                this.labels.put(key, value);
+                return this;
+            }
+
+            /**
              * Builds the CreateModelInteractionParams.
              *
              * @return The CreateModelInteractionParams parameters.
              */
             public ModelInteractionParams build() {
-                return new ModelInteractionParams(model, input, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, cachedContent, safetySettings, continuationToken);
+                return new ModelInteractionParams(model, input, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, cachedContent, safetySettings, continuationToken, environment, webhookConfig, labels);
             }
         }
     }
@@ -483,7 +603,10 @@ public class InteractionParams {
      * @param serviceTier           The service tier for the interaction.
      * @param safetySettings        The safety settings to apply.
      * @param continuationToken     Opaque token to resume a long decode from the latest checkpoint.
+     * @param webhookConfig         Webhook configuration for receiving completion notifications.
+     * @param labels                User-defined metadata labels for the interaction.
      */
+    @JsonDeserialize
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AgentInteractionParams(
         String agent,
@@ -501,8 +624,53 @@ public class InteractionParams {
         @JsonProperty("previous_interaction_id") String previousInteractionId,
         @JsonProperty("service_tier") ServiceTier serviceTier,
         @JsonProperty("safety_settings") List<SafetySetting> safetySettings,
-        @JsonProperty("continuation_token") String continuationToken
+        @JsonProperty("continuation_token") String continuationToken,
+        @JsonProperty("webhook_config") WebhookConfig webhookConfig,
+        Map<String, String> labels
     ) implements Request {
+
+        /**
+         * Backward-compatible constructor without webhookConfig or labels.
+         *
+         * @param agent                 The agent name.
+         * @param input                 The input.
+         * @param environment           The environment.
+         * @param agentConfig           The agent config.
+         * @param generationConfig      The generation config.
+         * @param tools                 The tools.
+         * @param stream                Whether to stream.
+         * @param store                 Whether to store.
+         * @param background            Whether background.
+         * @param systemInstruction     The system instruction.
+         * @param responseModalities    The response modalities.
+         * @param responseFormat        The response format.
+         * @param previousInteractionId The previous interaction id.
+         * @param serviceTier           The service tier.
+         * @param safetySettings        The safety settings.
+         * @param continuationToken     The continuation token.
+         */
+        public AgentInteractionParams(
+            String agent,
+            InteractionInput input,
+            BaseEnvironment environment,
+            Config.AgentConfig agentConfig,
+            Config.GenerationConfig generationConfig,
+            List<Tool> tools,
+            Boolean stream,
+            Boolean store,
+            Boolean background,
+            String systemInstruction,
+            List<Interaction.Modality> responseModalities,
+            Config.ResponseFormat responseFormat,
+            String previousInteractionId,
+            ServiceTier serviceTier,
+            List<SafetySetting> safetySettings,
+            String continuationToken
+        ) {
+            this(agent, input, environment, agentConfig, generationConfig, tools, stream, store,
+                background, systemInstruction, responseModalities, responseFormat,
+                previousInteractionId, serviceTier, safetySettings, continuationToken, null, null);
+        }
 
         /**
          * Backward-compatible constructor without continuationToken.
@@ -542,7 +710,7 @@ public class InteractionParams {
         ) {
             this(agent, input, environment, agentConfig, generationConfig, tools, stream, store,
                 background, systemInstruction, responseModalities, responseFormat,
-                previousInteractionId, serviceTier, safetySettings, null);
+                previousInteractionId, serviceTier, safetySettings, null, null, null);
         }
 
         /**
@@ -585,7 +753,7 @@ public class InteractionParams {
                 environment != null ? BaseEnvironment.of(environment) : null,
                 agentConfig, generationConfig, tools, stream, store, background,
                 systemInstruction, responseModalities, responseFormat,
-                previousInteractionId, serviceTier, safetySettings, null);
+                previousInteractionId, serviceTier, safetySettings, null, null, null);
         }
 
         /**
@@ -615,6 +783,8 @@ public class InteractionParams {
 
             private List<SafetySetting> safetySettings;
             private String continuationToken;
+            private WebhookConfig webhookConfig;
+            private Map<String, String> labels;
 
             /**
              * Sets the agent.
@@ -889,12 +1059,43 @@ public class InteractionParams {
             public Builder continuationToken(String continuationToken) { this.continuationToken = continuationToken; return this; }
 
             /**
+             * Sets the webhook configuration.
+             *
+             * @param webhookConfig The webhook configuration.
+             * @return This builder.
+             */
+            public Builder webhookConfig(WebhookConfig webhookConfig) { this.webhookConfig = webhookConfig; return this; }
+
+            /**
+             * Sets the user-defined metadata labels map.
+             *
+             * @param labels The labels map.
+             * @return This builder.
+             */
+            public Builder labels(Map<String, String> labels) { this.labels = labels; return this; }
+
+            /**
+             * Adds a single user-defined metadata label key-value pair.
+             *
+             * @param key   The label key.
+             * @param value The label value.
+             * @return This builder.
+             */
+            public Builder label(String key, String value) {
+                if (this.labels == null) {
+                    this.labels = new HashMap<>();
+                }
+                this.labels.put(key, value);
+                return this;
+            }
+
+            /**
              * Builds the CreateAgentInteractionParams.
              *
              * @return The CreateAgentInteractionParams parameters.
              */
             public AgentInteractionParams build() {
-                return new AgentInteractionParams(agent, input, environment, agentConfig, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, safetySettings, continuationToken);
+                return new AgentInteractionParams(agent, input, environment, agentConfig, generationConfig, tools, stream, store, background, systemInstruction, responseModalities, responseFormat, previousInteractionId, serviceTier, safetySettings, continuationToken, webhookConfig, labels);
             }
         }
     }

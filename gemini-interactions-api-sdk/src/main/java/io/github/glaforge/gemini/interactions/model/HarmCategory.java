@@ -30,15 +30,20 @@ public enum HarmCategory {
     @JsonProperty("harassment") HARASSMENT,
     /** Sexually explicit. */
     @JsonProperty("sexually_explicit") SEXUALLY_EXPLICIT,
-    /** Civic integrity. */
+    /** Civic integrity (deprecated). */
+    @Deprecated
     @JsonProperty("civic_integrity") CIVIC_INTEGRITY,
-    /** Image hate. */
+    /** Image hate (deprecated). */
+    @Deprecated
     @JsonProperty("image_hate") IMAGE_HATE,
-    /** Image dangerous content. */
+    /** Image dangerous content (deprecated). */
+    @Deprecated
     @JsonProperty("image_dangerous_content") IMAGE_DANGEROUS_CONTENT,
-    /** Image harassment. */
+    /** Image harassment (deprecated). */
+    @Deprecated
     @JsonProperty("image_harassment") IMAGE_HARASSMENT,
-    /** Image sexually explicit. */
+    /** Image sexually explicit (deprecated). */
+    @Deprecated
     @JsonProperty("image_sexually_explicit") IMAGE_SEXUALLY_EXPLICIT,
     /** Jailbreak. */
     @JsonProperty("jailbreak") JAILBREAK

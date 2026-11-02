@@ -16,6 +16,8 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -43,7 +45,7 @@ public class Config {
      * @param thinkingLevel    Level of thinking to use for the model.
      * @param thinkingSummaries Configuration for thinking summaries.
      * @param maxOutputTokens  The maximum number of tokens to include in a candidate.
-     * @param speechConfig     Type-safe speech generation configuration.
+     * @param speechConfig     Type-safe structured speech generation configuration.
      * @param presencePenalty  The presence penalty.
      * @param frequencyPenalty The frequency penalty.
      * @param videoConfig      The video configuration.
@@ -59,12 +61,21 @@ public class Config {
         @JsonProperty("thinking_level") ThinkingLevel thinkingLevel,
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("max_output_tokens") Integer maxOutputTokens,
-        @JsonProperty("speech_config") SpeechConfiguration speechConfig,
+        @JsonProperty("structured_speech_config") @JsonAlias("speech_config") SpeechConfiguration speechConfig,
         @JsonProperty("presence_penalty") Double presencePenalty,
         @JsonProperty("frequency_penalty") Double frequencyPenalty,
         @JsonProperty("video_config") VideoConfig videoConfig,
         @JsonProperty("transcription_config") TranscriptionConfig transcriptionConfig
     ) {
+        /**
+         * Returns the structured speech configuration.
+         *
+         * @return The structured speech configuration.
+         */
+        @JsonIgnore
+        public SpeechConfiguration structuredSpeechConfig() {
+            return speechConfig;
+        }
         /**
          * Backward-compatible constructor accepting {@link Tool.ToolChoiceConfig}.
          *
@@ -244,6 +255,30 @@ public class Config {
              * @return This builder.
              */
             public Builder speechConfig(SpeakerConfig speakerConfig) { this.speechConfig = speakerConfig != null ? SpeechConfiguration.of(speakerConfig) : null; return this; }
+
+            /**
+             * Sets the structured speech configuration.
+             *
+             * @param structuredSpeechConfig The structured speech configuration.
+             * @return This builder.
+             */
+            public Builder structuredSpeechConfig(SpeechConfiguration structuredSpeechConfig) { this.speechConfig = structuredSpeechConfig; return this; }
+
+            /**
+             * Sets single-speaker structured speech configs.
+             *
+             * @param structuredSpeechConfig List of speech configs.
+             * @return This builder.
+             */
+            public Builder structuredSpeechConfig(List<SpeechConfig> structuredSpeechConfig) { this.speechConfig = structuredSpeechConfig != null ? SpeechConfiguration.of(structuredSpeechConfig) : null; return this; }
+
+            /**
+             * Sets multi-speaker structured speech config.
+             *
+             * @param speakerConfig Speaker config.
+             * @return This builder.
+             */
+            public Builder structuredSpeechConfig(SpeakerConfig speakerConfig) { this.speechConfig = speakerConfig != null ? SpeechConfiguration.of(speakerConfig) : null; return this; }
 
             /**
              * Sets presence penalty.
@@ -468,7 +503,7 @@ public class Config {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record VideoResponseFormat(
         String type,
-        @JsonProperty("gcs_uri") String gcsUri,
+        @Deprecated @JsonProperty("gcs_uri") String gcsUri,
         String resolution,
         @JsonProperty("aspect_ratio") String aspectRatio,
         String delivery,
@@ -706,7 +741,7 @@ public class Config {
         @JsonProperty("thinking_summaries") ThinkingSummaries thinkingSummaries,
         @JsonProperty("visualization") Visualization visualization,
         @JsonProperty("collaborative_planning") Boolean collaborativePlanning,
-        @JsonProperty("enable_bigquery_tool") Boolean enableBigqueryTool
+        @Deprecated @JsonProperty("enable_bigquery_tool") Boolean enableBigqueryTool
     ) implements AgentConfig {
         /** Creates a new DeepResearchAgentConfig with default type and no summaries. */
         public DeepResearchAgentConfig() {
@@ -778,7 +813,9 @@ public class Config {
              *
              * @param enableBigqueryTool Whether the BigQuery tool is enabled.
              * @return This builder.
+             * @deprecated Deprecated in the Gemini Interactions API.
              */
+            @Deprecated
             public Builder enableBigqueryTool(Boolean enableBigqueryTool) { this.enableBigqueryTool = enableBigqueryTool; return this; }
 
             /**
@@ -797,7 +834,9 @@ public class Config {
      *
      * @param path    The relative path of the file from the project root.
      * @param content The UTF-8 encoded text content of the file.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record FileContent(
         String path,
@@ -819,7 +858,9 @@ public class Config {
      * Session configuration for CodeMender.
      *
      * @param maxRounds The maximum number of interaction rounds before reaching timeout.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record SessionConfig(
         @JsonProperty("max_rounds") Integer maxRounds
@@ -842,7 +883,9 @@ public class Config {
      * @param findingId   The identifier of a specific finding to verify.
      * @param description Additional context or custom instructions.
      * @param sourceFiles A list of source files to provide as context.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record FindRequest(
         String mode,
@@ -943,7 +986,9 @@ public class Config {
      * @param findingId   The identifier of the specific security finding to be remediated.
      * @param description Additional context or custom instructions.
      * @param sourceFiles A list of source files providing context for remediation.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record FixRequest(
         @JsonProperty("finding_id") String findingId,
@@ -1035,7 +1080,9 @@ public class Config {
      * @param sessionConfig  Session-specific configuration (e.g. max_rounds).
      * @param sessionId      Parameter for grouping multiple interactions that belong to the same session.
      * @param maxTotalTokens Max total tokens (deprecated).
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record CodeMenderAgentConfig(
         String type,

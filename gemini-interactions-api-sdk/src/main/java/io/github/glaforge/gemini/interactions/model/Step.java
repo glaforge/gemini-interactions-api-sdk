@@ -115,7 +115,17 @@ public sealed interface Step permits
         String type,
         List<Content> content,
         @Deprecated Status error
-    ) implements Step {}
+    ) implements Step {
+        /**
+         * Creates a ModelOutputStep without the deprecated error field.
+         *
+         * @param type    The step type ("model_output").
+         * @param content The output content list.
+         */
+        public ModelOutputStep(String type, List<Content> content) {
+            this(type, content, null);
+        }
+    }
 
     // --- Thinking ---
 
@@ -192,12 +202,12 @@ public sealed interface Step permits
     /**
      * CodeExecutionCallArguments.
      *
-     * @param language language parameter.
+     * @param language language parameter ("python" or "bash").
      * @param code code parameter.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record CodeExecutionCallArguments(
-        String language, // e.g. "python"
+        String language, // e.g. "python", "bash"
         String code
     ) {}
 
@@ -541,7 +551,9 @@ public sealed interface Step permits
      * @param arguments arguments parameter.
      * @param retrievalType retrievalType parameter.
      * @param signature signature parameter.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record RetrievalCallStep(
         String type,
@@ -558,7 +570,9 @@ public sealed interface Step permits
      * @param callId callId parameter.
      * @param isError isError parameter.
      * @param signature signature parameter.
+     * @deprecated Removed from the Gemini Interactions OpenAPI specification.
      */
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     record RetrievalResultStep(
         String type,
