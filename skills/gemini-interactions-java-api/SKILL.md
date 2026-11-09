@@ -173,35 +173,61 @@ for (Step step : response.steps()) {
 }
 ```
 
-### Speech Recognition & Transcription (ASR)
+### Document Understanding (PDF, CSV, Office & OpenDocument)
 
-Enable speech-to-text recognition with custom vocabulary, diarization, or word-level timestamps.
+Pass documents in PDF, CSV, Microsoft Office (`DOCX`, `DOC`, `DOTX`, `XLSX`, `XLS`, `PPTX`, `PPT`), or OpenDocument (`ODT`, `ODS`, `ODP`) formats using `Content.DocumentContent` and its built-in MIME type constants:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Content.DocumentContent;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+
+ModelInteractionParams docRequest = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_8_FLASH)
+    .input(
+        new TextContent("Extract the action items and key figures from these files"),
+        new DocumentContent(docxBytes, DocumentContent.APPLICATION_DOCX),
+        new DocumentContent("https://example.com/budget.xlsx", DocumentContent.APPLICATION_XLSX)
+    )
+    .build();
+```
+
+### Speech Recognition, Transcription & Voice-Driven Editing (ASR)
+
+Enable speech-to-text recognition with custom vocabulary, diarization, word-level timestamps, or voice-driven editing of source text (`SmartTranscriptionMode.withSourceText(...)`):
 
 ```java
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
 import io.github.glaforge.gemini.interactions.model.*;
 import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.Config.SmartTranscriptionMode;
 import io.github.glaforge.gemini.interactions.model.Config.TranscriptionConfig;
+import io.github.glaforge.gemini.interactions.model.Config.VerbatimTranscriptionMode;
 import io.github.glaforge.gemini.interactions.model.Content.*;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import java.util.List;
 
 GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
 
-TranscriptionConfig transcriptionConfig = TranscriptionConfig.builder()
-    .languageHints(List.of("en-US", "auto"))
-    .diarizationMode("speaker")
-    .timestampGranularities(List.of("word"))
+// Verbatim transcription with speaker diarization
+TranscriptionConfig verbatimConfig = TranscriptionConfig.builder()
+    .languageCodes(List.of("en-US", "auto"))
+    .mode(new VerbatimTranscriptionMode("speaker", List.of("word")))
+    .build();
+
+// Or Smart transcription with voice-driven text editing (rewrites source_text via spoken instructions)
+TranscriptionConfig voiceEditConfig = TranscriptionConfig.builder()
+    .languageCodes(List.of("en-US"))
+    .mode(SmartTranscriptionMode.withSourceText("The meeting is scheduled for Tuesday at 3 PM."))
     .build();
 
 GenerationConfig generationConfig = GenerationConfig.builder()
-    .transcriptionConfig(transcriptionConfig)
+    .transcriptionConfig(voiceEditConfig)
     .build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_7_FLASH)
+    .model(ModelOption.GEMINI_3_8_FLASH)
     .input(
-        new TextContent("Transcribe audio with speaker labels"),
         new AudioContent(audioBytes, "audio/wav")
     )
     .generationConfig(generationConfig)
@@ -819,9 +845,10 @@ The SDK uses specialized union records instead of untyped `Object` fields to han
 - **`NetworkConfiguration`**: Wraps either a preset network string (e.g. `"disabled"`, `"allow_all"`) or custom `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`). `EnvironmentNetworkEgressAllowlist` also supports `EnvironmentNetworkEgressAllowlist.disabled()` (`{"allowlist": "disabled"}`) as well as `EnvironmentNetworkEgressAllowlist.of(AllowlistEntry...)`.
 - **`BaseEnvironment`**: Wraps either a preset base environment string (e.g. `"default"`, `"remote"`) or custom `EnvironmentConfig` (`isPreset()`, `isCustom()`).
 - **`MediaProcessingConfiguration`**: Wraps either a preset media mode string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
-- **`TranscriptionModeConfiguration`**: Wraps either a preset transcription mode string (e.g. `"verbatim"`, `"smart"`) or custom `SmartTranscriptionMode` / `VerbatimTranscriptionMode` (`isPreset()`, `isCustom()`).
+- **`TranscriptionModeConfiguration`**: Wraps either a preset transcription mode string (e.g. `"verbatim"`, `"smart"`) or custom `SmartTranscriptionMode` (including `SmartTranscriptionMode.withSourceText(...)`) / `VerbatimTranscriptionMode` (`isPreset()`, `isCustom()`).
 - **`TurnContent`**: Wraps either a plain text string or multimodal `List<Content>` parts for conversation turns (`isText()`, `isParts()`, `text()`, `parts()`).
 - **`InteractionInput`**: Wraps polymorphic input to an interaction: plain text string, `List<Content>` contents, `List<Turn>` turns, or `List<Step>` steps (`isText()`, `isContents()`, `isTurns()`, `isSteps()`).
+- **`CodeExecutionResult`**: Wraps the output of `Step.CodeExecutionResultStep` as either plain text console output (`String text`) or a multimodal list of content parts (`List<Content> contents`, such as generated plots, images, or files). Inspect via `result.isText()` / `result.isContents()` or directly via `step.resultText()` and `step.resultContents()`.
 
 
 

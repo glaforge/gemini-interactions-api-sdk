@@ -216,7 +216,7 @@ public sealed interface Step permits
      *
      * @param type type parameter.
      * @param callId callId parameter.
-     * @param result result parameter.
+     * @param result result parameter (either plain text or a list of multimodal Content parts).
      * @param isError isError parameter.
      * @param signature signature parameter.
      */
@@ -224,10 +224,66 @@ public sealed interface Step permits
     record CodeExecutionResultStep(
         String type,
         @JsonProperty("call_id") String callId,
-        String result,
+        CodeExecutionResult result,
         @JsonProperty("is_error") Boolean isError,
         String signature
-    ) implements Step {}
+    ) implements Step {
+        /**
+         * Creates a CodeExecutionResultStep with a plain text result.
+         *
+         * @param type      The step type ("code_execution_result").
+         * @param callId    The call ID matching the code execution call.
+         * @param result    The plain text output of the code execution.
+         * @param isError   Whether the execution resulted in an error.
+         * @param signature A signature hash for backend validation.
+         */
+        public CodeExecutionResultStep(
+            String type,
+            String callId,
+            String result,
+            Boolean isError,
+            String signature
+        ) {
+            this(type, callId, CodeExecutionResult.of(result), isError, signature);
+        }
+
+        /**
+         * Creates a CodeExecutionResultStep with a list of multimodal content parts.
+         *
+         * @param type      The step type ("code_execution_result").
+         * @param callId    The call ID matching the code execution call.
+         * @param result    The list of multimodal content parts produced by the code execution.
+         * @param isError   Whether the execution resulted in an error.
+         * @param signature A signature hash for backend validation.
+         */
+        public CodeExecutionResultStep(
+            String type,
+            String callId,
+            List<Content> result,
+            Boolean isError,
+            String signature
+        ) {
+            this(type, callId, CodeExecutionResult.of(result), isError, signature);
+        }
+
+        /**
+         * Returns the result as a plain text string if it is text-based, or null otherwise.
+         *
+         * @return The plain text output, or null.
+         */
+        public String resultText() {
+            return result != null ? result.text() : null;
+        }
+
+        /**
+         * Returns the result as a list of multimodal content parts if it is content-based, or null otherwise.
+         *
+         * @return The list of multimodal content parts, or null.
+         */
+        public List<Content> resultContents() {
+            return result != null ? result.contents() : null;
+        }
+    }
 
     // --- URL Context ---
 

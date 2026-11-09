@@ -365,12 +365,13 @@ public sealed interface Content permits
     }
 
     /**
-     * Content containing a document.
+     * Content containing a document (PDF, CSV, Microsoft Office, or OpenDocument formats).
      *
      * @param type     The type of content (must be "document").
      * @param data     Base64 encoded document data.
      * @param uri      URI of the document.
-     * @param mimeType MIME type of the document.
+     * @param mimeType MIME type of the document (e.g. {@link #APPLICATION_PDF}, {@link #TEXT_CSV},
+     *                 {@link #APPLICATION_DOCX}, {@link #APPLICATION_XLSX}, {@link #APPLICATION_PPTX}).
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record DocumentContent(
@@ -379,6 +380,51 @@ public sealed interface Content permits
         String uri,
         @JsonProperty("mime_type") String mimeType
     ) implements Content {
+        /** PDF document format. */
+        public static final String APPLICATION_PDF = "application/pdf";
+        /** CSV document format. */
+        public static final String TEXT_CSV = "text/csv";
+        /** PPTX presentation format. */
+        public static final String APPLICATION_PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+        /** PPT presentation format. */
+        public static final String APPLICATION_PPT = "application/vnd.ms-powerpoint";
+        /** ODP presentation format. */
+        public static final String APPLICATION_ODP = "application/vnd.oasis.opendocument.presentation";
+        /** DOCX document format. */
+        public static final String APPLICATION_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        /** DOC document format. */
+        public static final String APPLICATION_DOC = "application/msword";
+        /** DOTX document template format. */
+        public static final String APPLICATION_DOTX = "application/vnd.openxmlformats-officedocument.wordprocessingml.template";
+        /** ODT document format. */
+        public static final String APPLICATION_ODT = "application/vnd.oasis.opendocument.text";
+        /** XLSX spreadsheet format. */
+        public static final String APPLICATION_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        /** XLS spreadsheet format. */
+        public static final String APPLICATION_XLS = "application/vnd.ms-excel";
+        /** ODS spreadsheet format. */
+        public static final String APPLICATION_ODS = "application/vnd.oasis.opendocument.spreadsheet";
+
+        /**
+         * Creates a new DocumentContent from raw bytes with default type "document".
+         *
+         * @param data     The document data bytes.
+         * @param mimeType The MIME type of the document.
+         */
+        public DocumentContent(byte[] data, String mimeType) {
+            this("document", data, null, mimeType);
+        }
+
+        /**
+         * Creates a new DocumentContent from a URI with default type "document".
+         *
+         * @param uri      The URI of the document.
+         * @param mimeType The MIME type of the document.
+         */
+        public DocumentContent(String uri, String mimeType) {
+            this("document", null, uri, mimeType);
+        }
+
         @Override
         public String toString() {
             return "DocumentContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + "]";

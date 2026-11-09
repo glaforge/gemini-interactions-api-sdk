@@ -330,28 +330,54 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 Interaction response = client.create(request);
 ```
 
-### Speech Recognition & Transcription (ASR)
+### Multimodal (Documents: PDF, CSV, Office & OpenDocument)
+`DocumentContent` supports PDF, CSV, Microsoft Office (`DOCX`, `DOC`, `DOTX`, `XLSX`, `XLS`, `PPTX`, `PPT`), and OpenDocument (`ODT`, `ODS`, `ODP`) formats via built-in MIME type constants:
+```java
+import io.github.glaforge.gemini.interactions.model.Content.DocumentContent;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_3_8_FLASH)
+    .input(
+        new TextContent("Summarize the key findings and financial tables in these documents"),
+        new DocumentContent(docxBytes, DocumentContent.APPLICATION_DOCX),
+        new DocumentContent("https://example.com/quarterly-metrics.xlsx", DocumentContent.APPLICATION_XLSX)
+    )
+    .build();
+
+Interaction response = client.create(request);
+```
+
+### Speech Recognition, Transcription & Voice-Driven Editing (ASR)
 ```java
 import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
+import io.github.glaforge.gemini.interactions.model.Config.SmartTranscriptionMode;
 import io.github.glaforge.gemini.interactions.model.Config.TranscriptionConfig;
+import io.github.glaforge.gemini.interactions.model.Config.VerbatimTranscriptionMode;
 import io.github.glaforge.gemini.interactions.model.ModelOption;
 import io.github.glaforge.gemini.interactions.model.Content.*;
 import java.util.List;
 
-TranscriptionConfig transcriptionConfig = TranscriptionConfig.builder()
-    .languageHints(List.of("en-US", "auto"))
-    .mode(new Config.VerbatimTranscriptionMode("speaker", List.of("word")))
+// 1. Verbatim transcription with speaker diarization and word timestamps
+TranscriptionConfig verbatimConfig = TranscriptionConfig.builder()
+    .languageCodes(List.of("en-US", "auto"))
+    .mode(new VerbatimTranscriptionMode("speaker", List.of("word")))
+    .build();
+
+// 2. Smart transcription with voice-driven editing (rewriting source text via spoken instructions)
+TranscriptionConfig voiceEditConfig = TranscriptionConfig.builder()
+    .languageCodes(List.of("en-US"))
+    .mode(SmartTranscriptionMode.withSourceText("The meeting is scheduled for Tuesday at 3 PM."))
     .build();
 
 GenerationConfig generationConfig = GenerationConfig.builder()
-    .transcriptionConfig(transcriptionConfig)
+    .transcriptionConfig(voiceEditConfig)
     .build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_6_FLASH)
+    .model(ModelOption.GEMINI_3_8_FLASH)
     .input(
-        new TextContent("Transcribe and annotate speaker labels"),
-        new AudioContent(audioBytes, "audio/wav")
+        new AudioContent(voiceInstructionBytes, "audio/wav")
     )
     .generationConfig(generationConfig)
     .build();
@@ -1236,6 +1262,7 @@ To avoid untyped `Object` fields and provide compile-time safety when working wi
 - **`NetworkConfiguration`**: Configures environment networking as a preset string (e.g. `"disabled"`, `"allow_all"`) or custom allowlist `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`).
 - **`MediaProcessingConfiguration`**: Configures media mode as a preset string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
 - **`TranscriptionModeConfiguration`**: Configures audio transcription mode as a preset string or custom config (`isPreset()`, `isCustom()`).
+- **`CodeExecutionResult`**: Encapsulates the output of a `Step.CodeExecutionResultStep` as either plain text output (`String text`) or a list of multimodal content parts (`List<Content> contents`, e.g. generated plots, images, or files). Inspect with `result.isText()` / `result.isContents()` or directly via `step.resultText()` and `step.resultContents()`.
 
 ## License
 Apache 2.0

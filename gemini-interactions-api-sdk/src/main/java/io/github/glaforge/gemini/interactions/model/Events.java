@@ -547,12 +547,12 @@ public sealed interface Events permits
     record AudioDelta(DeltaType type, String data, String uri, @JsonProperty("mime_type") String mimeType) implements Delta {}
 
     /**
-     * Delta for document content.
+     * Delta for document content (PDF, CSV, Microsoft Office, or OpenDocument formats).
      *
      * @param type     The type of delta ("document").
      * @param data     The base64 encoded document data.
      * @param uri      The URI of the document.
-     * @param mimeType The MIME type of the document.
+     * @param mimeType The MIME type of the document (see {@link Content.DocumentContent} for supported constants).
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record DocumentDelta(DeltaType type, String data, String uri, @JsonProperty("mime_type") String mimeType) implements Delta {}

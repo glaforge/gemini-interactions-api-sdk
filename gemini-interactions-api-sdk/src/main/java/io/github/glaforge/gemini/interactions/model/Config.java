@@ -1264,15 +1264,39 @@ public class Config {
     /**
      * Smart transcription mode configuration.
      *
-     * @param type Mode type (always "smart").
+     * @param type       Mode type (always "smart").
+     * @param sourceText Optional source text to be edited or rewritten via voice instructions.
+     *                   When provided, the model performs voice-driven editing and outputs the
+     *                   finalized replacement text.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SmartTranscriptionMode(
-        String type
+        String type,
+        @JsonProperty("source_text") String sourceText
     ) implements TranscriptionMode {
-        /** Creates a SmartTranscriptionMode. */
+        /** Creates a SmartTranscriptionMode with default type "smart" and no source text. */
         public SmartTranscriptionMode() {
-            this("smart");
+            this("smart", null);
+        }
+
+        /**
+         * Creates a SmartTranscriptionMode with the given source text to be edited via voice instructions.
+         *
+         * @param sourceText The source text to be edited or rewritten via voice instructions.
+         */
+        public SmartTranscriptionMode(String sourceText) {
+            this("smart", sourceText);
+        }
+
+        /**
+         * Creates a SmartTranscriptionMode configured with source text for voice-driven editing.
+         *
+         * @param sourceText The source text to be edited or rewritten via voice instructions.
+         * @return A SmartTranscriptionMode instance.
+         */
+        public static SmartTranscriptionMode withSourceText(String sourceText) {
+            return new SmartTranscriptionMode("smart", sourceText);
         }
     }
 
