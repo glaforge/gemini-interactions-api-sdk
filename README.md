@@ -26,7 +26,7 @@ To use the core client SDK, add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ If you are implementing the server-side webhook handler (`InteractionsHandler`),
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-server</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -1252,6 +1252,64 @@ ModelInteractionParams params = ModelInteractionParams.builder()
     .build();
 ```
 
+### Decisions API (`gemini-decision-1`)
+
+When your application needs calibrated probabilities and confidence scores to branch, route, triage, or enforce guardrails — rather than generating prose — use `client.createDecision(DecisionParams)` (`POST /v1beta/decisions`). It evaluates multiple independent questions (`noul` yes/no, `choice` categorical, and `score` ordered rubric) in parallel against a shared text or multimodal input in a single forward pass with **zero output tokens**:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Answer;
+import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
+import io.github.glaforge.gemini.interactions.model.Content.Resolution;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+import io.github.glaforge.gemini.interactions.model.Decision;
+import io.github.glaforge.gemini.interactions.model.DecisionParams;
+import java.util.Map;
+
+DecisionParams params = DecisionParams.builder() // Defaults to ModelOption.GEMINI_DECISION_1
+    .input(
+        new TextContent("Order #8821 (Gold tier): Audio cuts out on left earcup. Fix today or I cancel!"),
+        new ImageContent(photoBytes, "image/jpeg", Resolution.LOW)
+    )
+    .noul(
+        "is_defect",
+        "Is the customer reporting a hardware defect?",
+        "The device itself is physically broken or malfunctioning.",
+        "Preference, sizing, shipping, or billing complaint."
+    )
+    .choice("next_action", "What is the right resolution?", Map.of(
+        "instant_refund", "Refund without return for clear fault.",
+        "replacement_shipment", "Ship a replacement and return original.",
+        "troubleshooting_flow", "Issue may be fixable by the customer.",
+        "human_escalation", ""
+    ))
+    .score(
+        "churn_risk",
+        "How likely is the customer to churn if unresolved now?",
+        "No churn signal",
+        "Mild frustration",
+        "Mentions alternatives",
+        "Threatens to cancel"
+    )
+    .build();
+
+Decision decision = client.createDecision(params);
+
+Answer.NoulAnswer isDefect = decision.noulAnswer("is_defect");
+Answer.ChoiceAnswer nextAction = decision.choiceAnswer("next_action");
+Answer.ScoreAnswer churnRisk = decision.scoreAnswer("churn_risk");
+
+String action = (isDefect.noul() > 0.9 && nextAction.confidence() > 0.6)
+    ? nextAction.choice()
+    : "human_escalation";
+
+System.out.printf(
+    "Action: %s | Churn score: %.2f (%s)%n",
+    action,
+    churnRisk.score(),
+    churnRisk.topLevelDescription()
+);
+```
+
 ## Type-Safe Union Records
 
 To avoid untyped `Object` fields and provide compile-time safety when working with polymorphic payloads, the SDK provides dedicated union records with helper predicates:
@@ -1266,6 +1324,7 @@ To avoid untyped `Object` fields and provide compile-time safety when working wi
 - **`MediaProcessingConfiguration`**: Configures media mode as a preset string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
 - **`TranscriptionModeConfiguration`**: Configures audio transcription mode as a preset string or custom config (`isPreset()`, `isCustom()`).
 - **`CodeExecutionResult`**: Encapsulates the output of a `Step.CodeExecutionResultStep` as either plain text output (`String text`) or a list of multimodal content parts (`List<Content> contents`, e.g. generated plots, images, or files). Inspect with `result.isText()` / `result.isContents()` or directly via `step.resultText()` and `step.resultContents()`.
+- **`DecisionInstructions`**: Encapsulates `Question` instructions for the Decisions API as either a plain string (`String text`) or `List<Content.TextContent>` blocks (`isText()`, `isBlocks()`, `asText()`).
 
 ## License
 Apache 2.0

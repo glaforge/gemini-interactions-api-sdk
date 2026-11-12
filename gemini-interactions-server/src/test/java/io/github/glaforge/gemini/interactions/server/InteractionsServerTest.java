@@ -19,6 +19,9 @@ package io.github.glaforge.gemini.interactions.server;
 import com.sun.net.httpserver.HttpServer;
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
 import io.github.glaforge.gemini.interactions.model.Agent;
+import io.github.glaforge.gemini.interactions.model.Answer;
+import io.github.glaforge.gemini.interactions.model.Decision;
+import io.github.glaforge.gemini.interactions.model.DecisionParams;
 import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
@@ -225,6 +228,13 @@ class InteractionsServerTest {
             public TriggerExecution runTrigger(String triggerId) {
                 return new TriggerExecution("exec-1", triggerId, null, "int-999", TriggerExecution.Status.IN_PROGRESS, null, Instant.parse("2026-10-14T00:00:00Z"), null, null);
             }
+
+            @Override
+            public Decision createDecision(DecisionParams params) {
+                return Decision.builder()
+                    .answer("is_damaged", new Answer.NoulAnswer(0.95, 0.95))
+                    .build();
+            }
         });
         server.start();
 
@@ -388,5 +398,16 @@ class InteractionsServerTest {
         assertEquals("exec-1", exec.id());
         assertEquals("trg-1", exec.triggerId());
         assertEquals(TriggerExecution.Status.IN_PROGRESS, exec.status());
+    }
+
+    @Test
+    void testCreateDecision() {
+        DecisionParams params = DecisionParams.builder()
+            .input("Cracked screen")
+            .noul("is_damaged", "Did the item arrive damaged?")
+            .build();
+        Decision decision = client.createDecision(params);
+        assertNotNull(decision.noulAnswer("is_damaged"));
+        assertEquals(0.95, decision.noulAnswer("is_damaged").noul(), 1e-6);
     }
 }

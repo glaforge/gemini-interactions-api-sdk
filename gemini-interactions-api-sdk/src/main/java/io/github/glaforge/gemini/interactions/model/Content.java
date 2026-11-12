@@ -316,11 +316,43 @@ public sealed interface Content permits
         /**
          * Creates a new ImageContent with default type "image".
          *
-         * @param data     The base64 encoded image data.
+         * @param data     The image bytes.
          * @param mimeType The MIME type of the image.
          */
         public ImageContent(byte[] data, String mimeType) {
             this("image", data, null, mimeType, null);
+        }
+
+        /**
+         * Creates a new ImageContent from bytes, MIME type, and resolution.
+         *
+         * @param data       The image bytes.
+         * @param mimeType   The MIME type of the image.
+         * @param resolution The media resolution.
+         */
+        public ImageContent(byte[] data, String mimeType, Resolution resolution) {
+            this("image", data, null, mimeType, resolution);
+        }
+
+        /**
+         * Creates a new ImageContent from a URI and MIME type.
+         *
+         * @param uri      The image URI.
+         * @param mimeType The MIME type of the image.
+         */
+        public ImageContent(String uri, String mimeType) {
+            this("image", null, uri, mimeType, null);
+        }
+
+        /**
+         * Creates a new ImageContent from a URI, MIME type, and resolution.
+         *
+         * @param uri        The image URI.
+         * @param mimeType   The MIME type of the image.
+         * @param resolution The media resolution.
+         */
+        public ImageContent(String uri, String mimeType, Resolution resolution) {
+            this("image", null, uri, mimeType, resolution);
         }
 
         @Override

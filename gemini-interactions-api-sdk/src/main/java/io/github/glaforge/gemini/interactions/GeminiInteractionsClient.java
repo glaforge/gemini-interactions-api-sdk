@@ -50,8 +50,11 @@ import io.github.glaforge.gemini.interactions.model.Credential;
 import io.github.glaforge.gemini.interactions.model.CredentialUpdate;
 import io.github.glaforge.gemini.interactions.model.ListCredentialsResponse;
 import io.github.glaforge.gemini.interactions.model.CreateVoiceRequest;
+import io.github.glaforge.gemini.interactions.model.Decision;
+import io.github.glaforge.gemini.interactions.model.DecisionParams;
 import io.github.glaforge.gemini.interactions.model.DeleteVoiceResponse;
 import io.github.glaforge.gemini.interactions.model.ListVoicesResponse;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
 import io.github.glaforge.gemini.interactions.model.Voice;
 import io.github.glaforge.gemini.interactions.model.VoiceListFilter;
 
@@ -1979,6 +1982,42 @@ public class GeminiInteractionsClient {
      */
     public ListTriggerExecutionsResponse listTriggerExecutions(String triggerId) {
         return listTriggerExecutions(triggerId, null, null);
+    }
+
+    /**
+     * Evaluates one or more structured decision questions ({@code noul}, {@code choice}, or {@code score})
+     * against a shared multimodal {@code input} using the Gemini Decisions API ({@code POST /v1beta/decisions}).
+     * <p>
+     * Note: The Decisions API is currently available on the Gemini Developer API ({@code v1beta}) with
+     * {@link ModelOption#GEMINI_DECISION_1}.
+     *
+     * @param request The {@link DecisionParams} request specifying model, shared input, and questions.
+     * @return The evaluated {@link Decision} containing calibrated probabilities, confidence scores, and token usage.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     * @see <a href="https://ai.google.dev/gemini-api/docs/decisions-api">Gemini Decisions API Guide</a>
+     */
+    public Decision createDecision(DecisionParams request) {
+        if (request == null) {
+            throw new IllegalArgumentException("DecisionParams request must not be null");
+        }
+        try {
+            String requestBody = objectMapper.writeValueAsString(request);
+            String url = buildUrl("decisions");
+
+            HttpRequest httpRequest = newRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), Decision.class);
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
     }
 
 

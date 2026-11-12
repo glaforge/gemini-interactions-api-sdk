@@ -1,6 +1,6 @@
 ---
 name: gemini-interactions-java-api
-description: Guides the usage of Gemini Interactions API Java SDK. Use when the user wants to use the stateful, server-managed Interactions API for multi-turn conversations, background execution, streaming, structured output, function calling, multimodal generation, and agent interactions using Java.
+description: Guides the usage of Gemini Interactions API Java SDK. Use when the user wants to use the stateful, server-managed Interactions API or Decisions API for multi-turn conversations, background execution, streaming, structured output, calibrated decision routing/scoring (gemini-decision-1), function calling, multimodal generation, and agent interactions using Java.
 ---
 
 # Gemini Interactions API Java SDK Skill
@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.0.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml`:
 Add the dependency to your `build.gradle` or `build.gradle.kts`:
 
 ```gradle
-implementation("io.github.glaforge:gemini-interactions-api-sdk:2.0.0")
+implementation("io.github.glaforge:gemini-interactions-api-sdk:2.2.0")
 ```
 
 > [!NOTE]
@@ -835,6 +835,53 @@ if ((interaction.status().requiresContinuation() || interaction.status().isIncom
 }
 ```
 
+### Decisions API (`gemini-decision-1`)
+
+Use `client.createDecision(DecisionParams)` (`POST /v1beta/decisions`) to evaluate one or more independent typed questions (`noul` yes/no, `choice` categorical, and `score` ordered rubric) in parallel against a shared text or multimodal input with calibrated probabilities, confidence scores, and zero output tokens:
+
+```java
+import io.github.glaforge.gemini.interactions.model.Answer;
+import io.github.glaforge.gemini.interactions.model.Content.ImageContent;
+import io.github.glaforge.gemini.interactions.model.Content.Resolution;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+import io.github.glaforge.gemini.interactions.model.Decision;
+import io.github.glaforge.gemini.interactions.model.DecisionParams;
+import java.util.Map;
+
+DecisionParams params = DecisionParams.builder() // Defaults to ModelOption.GEMINI_DECISION_1
+    .input(
+        new TextContent("Order #8821: Left earcup audio cuts out. Fix today or I cancel!"),
+        new ImageContent(photoBytes, "image/jpeg", Resolution.LOW)
+    )
+    .noul(
+        "is_defect",
+        "Is the customer reporting a hardware defect?",
+        "The device itself is physically broken or malfunctioning.",
+        "Preference, sizing, shipping, or billing complaint."
+    )
+    .choice("department", "Which department should handle this?", Map.of(
+        "billing", "Payments, invoices, and refunds.",
+        "technical", "Problems using the product.",
+        "shipping", "Delivery and tracking.",
+        "other", "Anything outside these categories."
+    ))
+    .score(
+        "churn_risk",
+        "How likely is the customer to churn if unresolved?",
+        "No churn signal",
+        "Mild frustration",
+        "Mentions alternatives",
+        "Threatens to cancel"
+    )
+    .build();
+
+Decision decision = client.createDecision(params);
+
+Answer.NoulAnswer isDefect = decision.noulAnswer("is_defect"); // .noul(), .yesProbability(), .noProbability(), .confidence()
+Answer.ChoiceAnswer dept = decision.choiceAnswer("department"); // .choice(), .probabilities(), .confidence()
+Answer.ScoreAnswer churn = decision.scoreAnswer("churn_risk");  // .score(), .topLevelKey(), .topLevelDescription(), .normalizedScore(), .confidence()
+```
+
 ### Type-Safe Union Configuration Records
 
 The SDK uses specialized union records instead of untyped `Object` fields to handle polymorphic API configuration payloads:
@@ -849,6 +896,7 @@ The SDK uses specialized union records instead of untyped `Object` fields to han
 - **`TurnContent`**: Wraps either a plain text string or multimodal `List<Content>` parts for conversation turns (`isText()`, `isParts()`, `text()`, `parts()`).
 - **`InteractionInput`**: Wraps polymorphic input to an interaction: plain text string, `List<Content>` contents, `List<Turn>` turns, or `List<Step>` steps (`isText()`, `isContents()`, `isTurns()`, `isSteps()`).
 - **`CodeExecutionResult`**: Wraps the output of `Step.CodeExecutionResultStep` as either plain text console output (`String text`) or a multimodal list of content parts (`List<Content> contents`, such as generated plots, images, or files). Inspect via `result.isText()` / `result.isContents()` or directly via `step.resultText()` and `step.resultContents()`.
+- **`DecisionInstructions`**: Wraps `Question` instructions for the Decisions API as either a plain string (`String text`) or `List<Content.TextContent>` blocks (`isText()`, `isBlocks()`, `asText()`).
 
 
 

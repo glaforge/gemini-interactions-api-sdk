@@ -22,6 +22,8 @@ import tools.jackson.databind.json.JsonMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import io.github.glaforge.gemini.interactions.model.Agent;
+import io.github.glaforge.gemini.interactions.model.Decision;
+import io.github.glaforge.gemini.interactions.model.DecisionParams;
 import io.github.glaforge.gemini.interactions.model.Events;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
@@ -247,6 +249,16 @@ public abstract class InteractionsHandler implements HttpHandler {
                         handleUpdateTrigger(exchange, id);
                     } else if (method.equalsIgnoreCase("DELETE")) {
                         handleDeleteTrigger(exchange, id);
+                    } else {
+                        sendResponse(exchange, 405, "Method Not Allowed");
+                    }
+                    return;
+                }
+
+                // Decisions routing
+                if (path.endsWith("/decisions")) {
+                    if (method.equalsIgnoreCase("POST")) {
+                        handleCreateDecision(exchange);
                     } else {
                         sendResponse(exchange, 405, "Method Not Allowed");
                     }
@@ -536,6 +548,16 @@ public abstract class InteractionsHandler implements HttpHandler {
             sendResponse(exchange, 200, execution);
         } catch (Exception e) {
             sendResponse(exchange, 500, "Error: " + e.getMessage());
+        }
+    }
+
+    private void handleCreateDecision(HttpExchange exchange) throws IOException {
+        try {
+            DecisionParams params = objectMapper.readValue(exchange.getRequestBody(), DecisionParams.class);
+            Decision decision = createDecision(params);
+            sendResponse(exchange, 200, decision);
+        } catch (Exception e) {
+            sendResponse(exchange, 400, "Invalid Request: " + e.getMessage());
         }
     }
 
@@ -830,6 +852,17 @@ public abstract class InteractionsHandler implements HttpHandler {
      * @return The ListTriggerExecutionsResponse.
      */
     public ListTriggerExecutionsResponse listTriggerExecutions(String triggerId, Integer pageSize, String pageToken) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    // --- Decision methods ---
+
+    /**
+     * Evaluates structured decision questions against a shared input.
+     * @param params The decision request parameters.
+     * @return The evaluated Decision response.
+     */
+    public Decision createDecision(DecisionParams params) {
         throw new UnsupportedOperationException("Not implemented");
     }
 }
