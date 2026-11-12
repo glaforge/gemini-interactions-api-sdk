@@ -50,6 +50,7 @@ class OpenApiUpdateOct12Test {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void testNewModelOptionConstants() {
         assertEquals("gemini-3.1-flash-lite-image", ModelOption.GEMINI_3_1_FLASH_LITE_IMAGE);
         assertEquals("gemini-nano-banana-2.1", ModelOption.GEMINI_NANO_BANANA_2_1);

@@ -92,7 +92,7 @@ import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
 GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-3-pro-image-preview")
+    .model(ModelOption.GEMINI_3_PRO_IMAGE)
     .input("Create an infographic about blood, organs, and the circulatory system")
     .responseModalities(Modality.IMAGE)
     .build();
@@ -118,7 +118,7 @@ import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
 GeminiInteractionsClient client = GeminiInteractionsClient.builder().apiKey(System.getenv("GEMINI_API_KEY")).build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-omni-flash-preview")
+    .model(ModelOption.GEMINI_OMNI_1_2_FLASH)
     .input("A highly detailed cinematic shot of a futuristic banana.")
     .responseModalities(Modality.VIDEO)
     .build();
@@ -153,7 +153,7 @@ Content.VideoContent videoInput = new Content.VideoContent(
 );
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_7_FLASH)
+    .model(ModelOption.GEMINI_3_8_FLASH)
     .input(
         new TextContent("At what exact timestamp does the singer start dancing?"),
         videoInput
@@ -194,7 +194,7 @@ ModelInteractionParams docRequest = ModelInteractionParams.builder()
 
 ### Speech Recognition, Transcription & Voice-Driven Editing (ASR)
 
-Enable speech-to-text recognition with custom vocabulary, diarization, word-level timestamps, or voice-driven editing of source text (`SmartTranscriptionMode.withSourceText(...)`):
+Enable speech-to-text recognition (`ModelOption.GEMINI_3_5_TRANSCRIBE` or `ModelOption.GEMINI_3_8_FLASH`) with custom vocabulary, diarization, word-level timestamps, or voice-driven editing of source text (`SmartTranscriptionMode.withSourceText(...)`):
 
 ```java
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
@@ -226,7 +226,7 @@ GenerationConfig generationConfig = GenerationConfig.builder()
     .build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_8_FLASH)
+    .model(ModelOption.GEMINI_3_5_TRANSCRIBE)
     .input(
         new AudioContent(audioBytes, "audio/wav")
     )
@@ -518,7 +518,7 @@ try {
 
 ### Antigravity Agent & Budget Controls
 
-The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent powered by Gemini 3.8 Flash that reasons, runs code, and manages files in a secure Linux sandbox.
+The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent powered by Gemini 3.8 Flash (configurable with `ModelOption.GEMINI_4_CARBON`, `ModelOption.GEMINI_4_ARGON`, `ModelOption.GEMINI_3_8_FLASH`, or `ModelOption.GEMINI_3_5_FLASH_LITE`) that reasons, runs code, and manages files in a secure Linux sandbox.
 
 Configure model, token budget caps, and handle continuation when `status: "incomplete"`:
 
@@ -793,14 +793,14 @@ ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.
 ### Thinking Levels, Long Decode, Checkpoints & Stream Resumption
 
 - **Thinking Levels (`Config.ThinkingLevel`)**: Supports `MINIMAL` (`"minimal"`, Flash/Flash-Lite), `LOW` (`"low"`), `MEDIUM` (`"medium"`), and `HIGH` (`"high"`).
-- **Long Decode (> 64K Output Tokens)**: Set `background(true)` on `ModelInteractionParams` and `maxOutputTokens` > `65536` (up to `1_048_576`) on `GenerationConfig`. Each 64K decode hop is recorded as a `ModelOutputStep` in `interaction.steps()` (with per-step `stepUsage()` and cumulative `usage()` on `Events.StepStop`), and `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep`s (skipping any interleaved `ThoughtStep`s).
+- **Long Decode (> 64K Output Tokens)**: Supported on Gemini 4 Carbon (`ModelOption.GEMINI_4_CARBON`), Gemini 4 Argon (`ModelOption.GEMINI_4_ARGON`), and Gemini 3.8 Flash (`ModelOption.GEMINI_3_8_FLASH`). Set `background(true)` on `ModelInteractionParams` and `maxOutputTokens` > `65536` (up to `1_048_576`) on `GenerationConfig`. Each 64K decode hop is recorded as a `ModelOutputStep` in `interaction.steps()` (with per-step `stepUsage()` and cumulative `usage()` on `Events.StepStop`), and `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep`s (skipping any interleaved `ThoughtStep`s).
 - **Streaming & Resuming Background Interactions (`client.stream(id, lastEventId)`)**: Reconnect to an in-progress background interaction stream using `client.stream(interaction.id())` or resume without duplicates after a disconnect using `client.stream(interaction.id(), lastEventId)`.
 - **Resuming Checkpoints (`REQUIRES_CONTINUATION` / `INCOMPLETE` & `continuationToken`)**: When an interaction reaches `Interaction.Status.REQUIRES_CONTINUATION` or `Interaction.Status.INCOMPLETE`, or during streaming when `Events.InteractionStatusUpdate` is emitted, an opaque `continuationToken` is returned. Pass it back unchanged in `ModelInteractionParams` or `AgentInteractionParams` to resume decoding from the latest checkpoint. Interactions also support custom `labels` and per-interaction `webhookConfig`:
 
 ```java
 // 1. Server-managed Long Decode (> 64K output tokens) with labels and webhookConfig
 ModelInteractionParams longDecodeParams = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_8_FLASH)
+    .model(ModelOption.GEMINI_4_CARBON)
     .input("Write a comprehensive 150K-token system architecture specification...")
     .background(true)
     .label("team", "platform")

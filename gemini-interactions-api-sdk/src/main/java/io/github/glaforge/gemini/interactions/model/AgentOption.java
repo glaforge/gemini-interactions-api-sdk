@@ -22,15 +22,24 @@ package io.github.glaforge.gemini.interactions.model;
 public final class AgentOption {
     private AgentOption() {}
 
-    /** Gemini Deep Research Agent (Preview 12-2025) - deprecated in favor of preview-04-2026 */
+    /**
+     * Gemini Deep Research Agent (Preview 12-2025).
+     *
+     * @deprecated Shut down; migrate to {@link #DEEP_RESEARCH_PREVIEW_04_2026}.
+     */
     @Deprecated
     public static final String DEEP_RESEARCH_PRO_PREVIEW_12_2025 = "deep-research-pro-preview-12-2025";
-    /** Gemini Deep Research Agent (Preview 04-2026) */
+    /** Gemini Deep Research Agent (Preview 04-2026). */
     public static final String DEEP_RESEARCH_PREVIEW_04_2026 = "deep-research-preview-04-2026";
-    /** Gemini Deep Research Max Agent (Preview 04-2026) */
+    /** Gemini Deep Research Max Agent (Preview 04-2026). */
     public static final String DEEP_RESEARCH_MAX_PREVIEW_04_2026 = "deep-research-max-preview-04-2026";
-    /** Antigravity Agent (Preview 09-2026) */
+    /** Antigravity Agent (Preview 09-2026). */
     public static final String ANTIGRAVITY_PREVIEW_09_2026 = "antigravity-preview-09-2026";
-    /** Antigravity Agent (Preview 05-2026) */
+    /**
+     * Antigravity Agent (Preview 05-2026).
+     *
+     * @deprecated Shut down; migrate to {@link #ANTIGRAVITY_PREVIEW_09_2026}.
+     */
+    @Deprecated
     public static final String ANTIGRAVITY_PREVIEW_05_2026 = "antigravity-preview-05-2026";
 }

@@ -37,6 +37,7 @@ class OpenApiUpdateAug31Test {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void testModelOptionConstants() {
         assertEquals("lyria-3-clip-preview", ModelOption.LYRIA_3_CLIP_PREVIEW);
         assertEquals("lyria-3-pro-preview", ModelOption.LYRIA_3_PRO_PREVIEW);

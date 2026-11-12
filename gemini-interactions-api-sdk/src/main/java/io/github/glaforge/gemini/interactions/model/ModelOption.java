@@ -22,66 +22,140 @@ package io.github.glaforge.gemini.interactions.model;
 public final class ModelOption {
     private ModelOption() {}
 
-    /** Model option constant. */
+    /**
+     * Model option constant for Antigravity Agent (Preview 05-2026).
+     *
+     * @deprecated Shut down; migrate to {@link #ANTIGRAVITY_PREVIEW_09_2026}.
+     */
+    @Deprecated
     public static final String ANTIGRAVITY_PREVIEW_05_2026 = "antigravity-preview-05-2026";
-    /** Model option constant. */
+    /** Model option constant for Antigravity Agent (Preview 09-2026). */
     public static final String ANTIGRAVITY_PREVIEW_09_2026 = "antigravity-preview-09-2026";
     /** Model option constant. */
     public static final String AQA = "aqa";
-    /** Model option constant. */
+    /** Model option constant for Gemini Deep Research Max (Preview 04-2026). */
     public static final String DEEP_RESEARCH_MAX_PREVIEW_04_2026 = "deep-research-max-preview-04-2026";
-    /** Model option constant. */
+    /** Model option constant for Gemini Deep Research (Preview 04-2026). */
     public static final String DEEP_RESEARCH_PREVIEW_04_2026 = "deep-research-preview-04-2026";
-    /** Model option constant (deprecated). */
+    /**
+     * Model option constant for Gemini Deep Research Pro (Preview 12-2025).
+     *
+     * @deprecated Shut down; migrate to {@link #DEEP_RESEARCH_PREVIEW_04_2026}.
+     */
     @Deprecated
     public static final String DEEP_RESEARCH_PRO_PREVIEW_12_2025 = "deep-research-pro-preview-12-2025";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.0 Flash.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_6_FLASH}.
+     */
+    @Deprecated
     public static final String GEMINI_2_0_FLASH = "gemini-2.0-flash";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.0 Flash 001.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_6_FLASH}.
+     */
+    @Deprecated
     public static final String GEMINI_2_0_FLASH_001 = "gemini-2.0-flash-001";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.0 Flash-Lite.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_1_FLASH_LITE}.
+     */
+    @Deprecated
     public static final String GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.0 Flash-Lite 001.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_1_FLASH_LITE}.
+     */
+    @Deprecated
     public static final String GEMINI_2_0_FLASH_LITE_001 = "gemini-2.0-flash-lite-001";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.5 Computer Use Preview (10-2025).
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_8_FLASH}.
+     */
+    @Deprecated
     public static final String GEMINI_2_5_COMPUTER_USE_PREVIEW_10_2025 = "gemini-2.5-computer-use-preview-10-2025";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.5 Flash.
+     *
+     * @deprecated Deprecated (routes to {@link #GEMINI_3_5_FLASH_LITE} starting December 1, 2026); migrate to {@link #GEMINI_3_5_FLASH_LITE}.
+     */
+    @Deprecated
     public static final String GEMINI_2_5_FLASH = "gemini-2.5-flash";
-    /** Model option constant. */
+    /** Model option constant for Gemini 2.5 Flash Image (Nano Banana). */
     public static final String GEMINI_2_5_FLASH_IMAGE = "gemini-2.5-flash-image";
-    /** Model option constant. */
+    /** Model option constant for Gemini 2.5 Flash-Lite. */
     public static final String GEMINI_2_5_FLASH_LITE = "gemini-2.5-flash-lite";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.5 Flash-Lite Preview (09-2025).
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_1_FLASH_LITE}.
+     */
+    @Deprecated
     public static final String GEMINI_2_5_FLASH_LITE_PREVIEW_09_2025 = "gemini-2.5-flash-lite-preview-09-2025";
     /** Model option constant. */
     public static final String GEMINI_2_5_FLASH_NATIVE_AUDIO_LATEST = "gemini-2.5-flash-native-audio-latest";
     /** Model option constant. */
     public static final String GEMINI_2_5_FLASH_NATIVE_AUDIO_PREVIEW_12_2025 = "gemini-2.5-flash-native-audio-preview-12-2025";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.5 Flash Preview (09-2025).
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_6_FLASH}.
+     */
+    @Deprecated
     public static final String GEMINI_2_5_FLASH_PREVIEW_09_2025 = "gemini-2.5-flash-preview-09-2025";
     /** Model option constant. */
     public static final String GEMINI_2_5_FLASH_PREVIEW_TTS = "gemini-2.5-flash-preview-tts";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 2.5 Pro.
+     *
+     * @deprecated Deprecated (routes to {@link #GEMINI_3_8_FLASH} starting December 1, 2026); migrate to {@link #GEMINI_3_8_FLASH}.
+     */
+    @Deprecated
     public static final String GEMINI_2_5_PRO = "gemini-2.5-pro";
     /** Model option constant. */
     public static final String GEMINI_2_5_PRO_PREVIEW_TTS = "gemini-2.5-pro-preview-tts";
     /** Model option constant. */
     public static final String GEMINI_3_FLASH_PREVIEW = "gemini-3-flash-preview";
-    /** Model option constant. */
+    /** Model option constant for Gemini 3 Pro Image (Nano Banana Pro). */
     public static final String GEMINI_3_PRO_IMAGE = "gemini-3-pro-image";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 3 Pro Image Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_PRO_IMAGE}.
+     */
+    @Deprecated
     public static final String GEMINI_3_PRO_IMAGE_PREVIEW = "gemini-3-pro-image-preview";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 3 Pro Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_1_PRO_PREVIEW}.
+     */
+    @Deprecated
     public static final String GEMINI_3_PRO_PREVIEW = "gemini-3-pro-preview";
-    /** Model option constant. */
+    /** Model option constant for Gemini 3.1 Flash Image (Nano Banana 2). */
     public static final String GEMINI_3_1_FLASH_IMAGE = "gemini-3.1-flash-image";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 3.1 Flash Image Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_NANO_BANANA_2_1}.
+     */
+    @Deprecated
     public static final String GEMINI_3_1_FLASH_IMAGE_PREVIEW = "gemini-3.1-flash-image-preview";
-    /** Model option constant. */
+    /** Model option constant for Gemini 3.1 Flash-Lite. */
     public static final String GEMINI_3_1_FLASH_LITE = "gemini-3.1-flash-lite";
-    /** Model option constant for Gemini 3.1 Flash Lite Image. */
+    /** Model option constant for Gemini 3.1 Flash Lite Image (Nano Banana 2 Lite). */
     public static final String GEMINI_3_1_FLASH_LITE_IMAGE = "gemini-3.1-flash-lite-image";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini 3.1 Flash-Lite Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_3_1_FLASH_LITE}.
+     */
+    @Deprecated
     public static final String GEMINI_3_1_FLASH_LITE_PREVIEW = "gemini-3.1-flash-lite-preview";
     /** Model option constant. */
     public static final String GEMINI_3_1_FLASH_LIVE_PREVIEW = "gemini-3.1-flash-live-preview";
@@ -91,30 +165,40 @@ public final class ModelOption {
     public static final String GEMINI_3_1_PRO_PREVIEW = "gemini-3.1-pro-preview";
     /** Model option constant. */
     public static final String GEMINI_3_1_PRO_PREVIEW_CUSTOMTOOLS = "gemini-3.1-pro-preview-customtools";
-    /** Model option constant. */
+    /** Model option constant for Gemini 3.5 Flash (automatically routes to {@link #GEMINI_3_6_FLASH}). */
     public static final String GEMINI_3_5_FLASH = "gemini-3.5-flash";
-    /** Model option constant. */
+    /** Model option constant for Gemini 3.5 Flash-Lite. */
     public static final String GEMINI_3_5_FLASH_LITE = "gemini-3.5-flash-lite";
-    /** Model option constant. */
+    /** Model option constant for Gemini 3.5 Live Translate Preview. */
+    public static final String GEMINI_3_5_LIVE_TRANSLATE_PREVIEW = "gemini-3.5-live-translate-preview";
+    /** Model option constant for Gemini 3.5 Transcribe. */
+    public static final String GEMINI_3_5_TRANSCRIBE = "gemini-3.5-transcribe";
+    /** Model option constant for Gemini 3.6 Flash. */
     public static final String GEMINI_3_6_FLASH = "gemini-3.6-flash";
-    /** Model option constant. */
+    /** Model option constant for Gemini 3.7 Flash (automatically routes to {@link #GEMINI_3_8_FLASH}). */
     public static final String GEMINI_3_7_FLASH = "gemini-3.7-flash";
-    /** Model option constant. */
+    /** Model option constant for Gemini 3.8 Flash. */
     public static final String GEMINI_3_8_FLASH = "gemini-3.8-flash";
     /** Model option constant for Gemini 3.8 Flash TTS. */
     public static final String GEMINI_3_8_FLASH_TTS = "gemini-3.8-flash-tts";
     /** Model option constant for Gemini 3.8 Flash-Lite TTS. */
     public static final String GEMINI_3_8_FLASH_LITE_TTS = "gemini-3.8-flash-lite-tts";
-    /** Model option constant. */
-    public static final String GEMINI_3_5_LIVE_TRANSLATE_PREVIEW = "gemini-3.5-live-translate-preview";
-    /** Model option constant for Gemini 4 Argon (deprecated). */
-    @Deprecated
+    /** Model option constant for Gemini 4 Argon. */
     public static final String GEMINI_4_ARGON = "gemini-4-argon";
-    /** Model option constant. */
+    /** Model option constant for Gemini 4 Carbon. */
+    public static final String GEMINI_4_CARBON = "gemini-4-carbon";
+    /** Model option constant for Gemini Decision 1 (used with the Gemini Decisions API). */
+    public static final String GEMINI_DECISION_1 = "gemini-decision-1";
+    /** Model option constant for Gemini Embedding 001. */
     public static final String GEMINI_EMBEDDING_001 = "gemini-embedding-001";
-    /** Model option constant. */
+    /** Model option constant for Gemini Embedding 2. */
     public static final String GEMINI_EMBEDDING_2 = "gemini-embedding-2";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini Embedding 2 Preview.
+     *
+     * @deprecated Deprecated (automatically routes to {@link #GEMINI_EMBEDDING_2}); migrate to {@link #GEMINI_EMBEDDING_2}.
+     */
+    @Deprecated
     public static final String GEMINI_EMBEDDING_2_PREVIEW = "gemini-embedding-2-preview";
     /** Model option constant. */
     public static final String GEMINI_FLASH_LATEST = "gemini-flash-latest";
@@ -122,46 +206,108 @@ public final class ModelOption {
     public static final String GEMINI_FLASH_LITE_LATEST = "gemini-flash-lite-latest";
     /** Model option constant for Gemini Nano Banana 2.1. */
     public static final String GEMINI_NANO_BANANA_2_1 = "gemini-nano-banana-2.1";
-    /** Model option constant for Gemini Omni 1.1 Flash. */
+    /** Model option constant for Gemini Omni 1.1 Flash (routes to {@link #GEMINI_OMNI_1_2_FLASH} starting December 3, 2026). */
     public static final String GEMINI_OMNI_1_1_FLASH = "gemini-omni-1.1-flash";
-    /** Model option constant for Gemini Omni Flash Preview. */
+    /** Model option constant for Gemini Omni 1.2 Flash. */
+    public static final String GEMINI_OMNI_1_2_FLASH = "gemini-omni-1.2-flash";
+    /**
+     * Model option constant for Gemini Omni Flash Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_OMNI_1_2_FLASH}.
+     */
+    @Deprecated
     public static final String GEMINI_OMNI_FLASH_PREVIEW = "gemini-omni-flash-preview";
     /** Model option constant. */
     public static final String GEMINI_PRO_LATEST = "gemini-pro-latest";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini Robotics Embodied Reasoning 1.5 Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_ROBOTICS_ER_2_PREVIEW}.
+     */
+    @Deprecated
     public static final String GEMINI_ROBOTICS_ER_1_5_PREVIEW = "gemini-robotics-er-1.5-preview";
-    /** Model option constant. */
+    /**
+     * Model option constant for Gemini Robotics Embodied Reasoning 1.6 Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_ROBOTICS_ER_2_PREVIEW}.
+     */
+    @Deprecated
     public static final String GEMINI_ROBOTICS_ER_1_6_PREVIEW = "gemini-robotics-er-1.6-preview";
     /** Model option constant for Gemini Robotics Embodied Reasoning 2 Preview. */
     public static final String GEMINI_ROBOTICS_ER_2_PREVIEW = "gemini-robotics-er-2-preview";
-    /** Model option constant. */
+    /** Model option constant for Gemma 4 26B A4B IT. */
     public static final String GEMMA_4_26B_A4B_IT = "gemma-4-26b-a4b-it";
-    /** Model option constant. */
+    /** Model option constant for Gemma 4 31B IT. */
     public static final String GEMMA_4_31B_IT = "gemma-4-31b-it";
-    /** Model option constant. */
+    /**
+     * Model option constant for Imagen 4.0 Fast Generate 001.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_NANO_BANANA_2_1}.
+     */
+    @Deprecated
     public static final String IMAGEN_4_0_FAST_GENERATE_001 = "imagen-4.0-fast-generate-001";
-    /** Model option constant. */
+    /**
+     * Model option constant for Imagen 4.0 Generate 001.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_NANO_BANANA_2_1}.
+     */
+    @Deprecated
     public static final String IMAGEN_4_0_GENERATE_001 = "imagen-4.0-generate-001";
-    /** Model option constant. */
+    /**
+     * Model option constant for Imagen 4.0 Ultra Generate 001.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_NANO_BANANA_2_1}.
+     */
+    @Deprecated
     public static final String IMAGEN_4_0_ULTRA_GENERATE_001 = "imagen-4.0-ultra-generate-001";
-    /** Model option constant. */
+    /** Model option constant for Lyria 3 Clip Preview. */
     public static final String LYRIA_3_CLIP_PREVIEW = "lyria-3-clip-preview";
-    /** Model option constant. */
+    /** Model option constant for Lyria 3 Pro Preview. */
     public static final String LYRIA_3_PRO_PREVIEW = "lyria-3-pro-preview";
     /** Model option constant for Lyria 3.5. */
     public static final String LYRIA_3_5 = "lyria-3.5";
     /** Model option constant. */
     public static final String NANO_BANANA_PRO_PREVIEW = "nano-banana-pro-preview";
-    /** Model option constant. */
+    /**
+     * Model option constant for Veo 2.0 Generate 001.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_OMNI_1_2_FLASH}.
+     */
+    @Deprecated
     public static final String VEO_2_0_GENERATE_001 = "veo-2.0-generate-001";
-    /** Model option constant. */
+    /**
+     * Model option constant for Veo 3.0 Fast Generate 001.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_OMNI_1_2_FLASH}.
+     */
+    @Deprecated
     public static final String VEO_3_0_FAST_GENERATE_001 = "veo-3.0-fast-generate-001";
-    /** Model option constant. */
+    /**
+     * Model option constant for Veo 3.0 Generate 001.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_OMNI_1_2_FLASH}.
+     */
+    @Deprecated
     public static final String VEO_3_0_GENERATE_001 = "veo-3.0-generate-001";
-    /** Model option constant. */
+    /**
+     * Model option constant for Veo 3.1 Fast Generate Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_OMNI_1_2_FLASH}.
+     */
+    @Deprecated
     public static final String VEO_3_1_FAST_GENERATE_PREVIEW = "veo-3.1-fast-generate-preview";
-    /** Model option constant. */
+    /**
+     * Model option constant for Veo 3.1 Generate Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_OMNI_1_2_FLASH}.
+     */
+    @Deprecated
     public static final String VEO_3_1_GENERATE_PREVIEW = "veo-3.1-generate-preview";
-    /** Model option constant. */
+    /**
+     * Model option constant for Veo 3.1 Lite Generate Preview.
+     *
+     * @deprecated Shut down; migrate to {@link #GEMINI_OMNI_1_2_FLASH}.
+     */
+    @Deprecated
     public static final String VEO_3_1_LITE_GENERATE_PREVIEW = "veo-3.1-lite-generate-preview";
 }

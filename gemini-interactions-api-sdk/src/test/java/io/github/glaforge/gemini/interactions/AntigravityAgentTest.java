@@ -36,6 +36,7 @@ class AntigravityAgentTest {
     private final ObjectMapper mapper = JsonMapper.builder().build();
 
     @Test
+    @SuppressWarnings("deprecation")
     void testAgentOptionConstants() {
         assertEquals("antigravity-preview-09-2026", AgentOption.ANTIGRAVITY_PREVIEW_09_2026);
         assertEquals("antigravity-preview-05-2026", AgentOption.ANTIGRAVITY_PREVIEW_05_2026);

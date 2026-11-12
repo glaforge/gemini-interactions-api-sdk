@@ -88,7 +88,7 @@ GeminiInteractionsClient client = GeminiInteractionsClient.builder()
 ### Simple Text Interaction
 ```java
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Why is the sky blue?")
     .build();
 
@@ -112,7 +112,7 @@ GenerationConfig config = GenerationConfig.builder()
     .build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Write a short story about a brave knight.")
     .generationConfig(config)
     .build();
@@ -132,7 +132,7 @@ import io.github.glaforge.gemini.interactions.model.Interaction;
 import java.util.List;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("How do I make gunpowder?")
     .safetySettings(List.of(
         new SafetySetting(HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, "BLOCK_LOW_AND_ABOVE", null)
@@ -148,7 +148,7 @@ import io.github.glaforge.gemini.interactions.model.Events.StepDelta;
 import io.github.glaforge.gemini.interactions.model.Events.TextDelta;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Why is the sky blue?")
     .stream(true)
     .build();
@@ -170,7 +170,7 @@ import io.github.glaforge.gemini.interactions.model.Content.*;
 import static io.github.glaforge.gemini.interactions.model.Interaction.Role.*;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input(
         new Turn(USER, "Hello!"),
         new Turn(MODEL, "Hi! How can I help?"),
@@ -188,7 +188,7 @@ You can also continue a conversation by referencing the ID of a previous interac
 ```java
 // 1. First turn (must set store=true)
 ModelInteractionParams turn1 = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Hello!")
     .store(true)
     .build();
@@ -200,7 +200,7 @@ System.out.println(step1.content().get(0));
 
 // 2. Second turn (referencing previous ID)
 ModelInteractionParams turn2 = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Tell me a joke")
     .previousInteractionId(id)
     .store(true) // Optional if you want to extend further
@@ -211,11 +211,11 @@ Step.ModelOutputStep step2 = (Step.ModelOutputStep) response2.steps().get(0);
 System.out.println(step2.content().get(0));
 ```
 
-### Gemini 4 Argon, Thinking Levels, & Long Decode (> 64K Output Tokens)
+### Gemini 4 Carbon & Argon, Thinking Levels, & Long Decode (> 64K Output Tokens)
 
-**Gemini 4 Argon** (`ModelOption.GEMINI_4_ARGON`, `"gemini-4-argon"`) introduces a unified **1 million token context window** shared dynamically across input, thinking, and output tokens.
+**Gemini 4 Carbon** (`ModelOption.GEMINI_4_CARBON`, `"gemini-4-carbon"`) and **Gemini 4 Argon** (`ModelOption.GEMINI_4_ARGON`, `"gemini-4-argon"`) feature a unified **1 million token context window** shared dynamically across input, thinking, and output tokens.
 
-- **Thinking Levels (`Config.ThinkingLevel`)**: Gemini 4 Argon defaults to `ThinkingLevel.MEDIUM` (and supports `LOW`, `MEDIUM`, and `HIGH`), while Flash / Flash-Lite models also support `ThinkingLevel.MINIMAL`.
+- **Thinking Levels (`Config.ThinkingLevel`)**: Gemini 4 Carbon and Argon default to `ThinkingLevel.MEDIUM` (and support `LOW`, `MEDIUM`, and `HIGH`), while Flash / Flash-Lite models also support `ThinkingLevel.MINIMAL`.
 - **Long Decode**: To generate more than 65,536 output tokens in a single interaction (up to the 1M unified context limit), set `background(true)` and configure `maxOutputTokens` > `65536` in `GenerationConfig`. The server automatically chains multiple 64K-token decode hops and appends each hop as a `ModelOutputStep` in `interaction.steps()`. Calling `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep` hops (skipping any interleaved `ThoughtStep`s):
 
 ```java
@@ -227,7 +227,7 @@ import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInter
 import io.github.glaforge.gemini.interactions.model.ModelOption;
 
 ModelInteractionParams longDecodeRequest = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_4_ARGON)
+    .model(ModelOption.GEMINI_4_CARBON)
     .input("Write a complete, detailed architectural specification and reference implementation...")
     .background(true) // Required when maxOutputTokens > 65,536
     .generationConfig(GenerationConfig.builder()
@@ -254,7 +254,7 @@ if (current.status().isCompleted()) {
 
 ### Background Execution & Resuming SSE Streams (`last_event_id` & `continuationToken`)
 
-Interactions running in the background (`background(true)` — supported by `gemini-4-argon`, `gemini-3.8-flash`, and agents like `antigravity-preview-09-2026` and `deep-research-pro-preview-12-2025`) can be streamed or resumed if a network connection drops:
+Interactions running in the background (`background(true)` — supported by `gemini-4-carbon`, `gemini-4-argon`, `gemini-3.8-flash`, and agents like `antigravity-preview-09-2026` and `deep-research-preview-04-2026`) can be streamed or resumed if a network connection drops:
 
 1. **Stream or Resume an Existing Interaction by ID (`client.stream(id, lastEventId)`)**:
    Every SSE event carries an `eventId()`. If a streaming connection is interrupted during a long-running generation, reconnect using `client.stream(interactionId, lastEventId)` to resume from the exact event where you left off without duplicating chunks:
@@ -303,7 +303,7 @@ if ((response.status().requiresContinuation() || response.status().isIncomplete(
 import io.github.glaforge.gemini.interactions.model.Content.*;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input(
         new TextContent("Describe this image"),
         // Create an image from Base64 bytes
@@ -320,7 +320,7 @@ import io.github.glaforge.gemini.interactions.model.Content.*;
 import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input(
         new TextContent("Transcribe this audio"),
         new AudioContent(audioBytes, "audio/mp3")
@@ -349,6 +349,7 @@ Interaction response = client.create(request);
 ```
 
 ### Speech Recognition, Transcription & Voice-Driven Editing (ASR)
+Dedicated transcription (`ModelOption.GEMINI_3_5_TRANSCRIBE`) and multimodal (`ModelOption.GEMINI_3_8_FLASH`) models support verbatim ASR with speaker diarization, word timestamps, and voice-driven text editing:
 ```java
 import io.github.glaforge.gemini.interactions.model.Config.GenerationConfig;
 import io.github.glaforge.gemini.interactions.model.Config.SmartTranscriptionMode;
@@ -375,7 +376,7 @@ GenerationConfig generationConfig = GenerationConfig.builder()
     .build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_8_FLASH)
+    .model(ModelOption.GEMINI_3_5_TRANSCRIBE)
     .input(
         new AudioContent(voiceInstructionBytes, "audio/wav")
     )
@@ -390,9 +391,10 @@ Interaction response = client.create(request);
 import io.github.glaforge.gemini.interactions.model.Content.*;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Interaction.Modality;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-3-pro-image-preview")
+    .model(ModelOption.GEMINI_3_PRO_IMAGE)
     .input("Create an infographic about blood, organs, and the circulatory system")
     .responseModalities(Modality.IMAGE)
     .build();
@@ -516,7 +518,7 @@ Content.VideoContent videoInput = new Content.VideoContent(
 );
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_7_FLASH)
+    .model(ModelOption.GEMINI_3_8_FLASH)
     .input(
         new TextContent("What happens at the key moment of this video?"),
         videoInput
@@ -573,12 +575,13 @@ interaction.steps().forEach(step -> {
 
 ### Deep Research
 ```java
+import io.github.glaforge.gemini.interactions.model.AgentOption;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.Interaction.Status;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.AgentInteractionParams;
 
 AgentInteractionParams request = AgentInteractionParams.builder()
-    .agent("deep-research-pro-preview-12-2025")
+    .agent(AgentOption.DEEP_RESEARCH_PREVIEW_04_2026)
     .input("Research the history of the Google TPUs")
     .build();
 
@@ -607,7 +610,7 @@ import java.util.List;
 Agent customAgent = Agent.builder()
     .id("my-concise-coder-agent")
     .description("A custom agent built for secure coding tasks.")
-    .baseAgent("antigravity-preview-05-2026")
+    .baseAgent(AgentOption.ANTIGRAVITY_PREVIEW_09_2026)
     .baseEnvironment("remote") // Run inside a secure, remote Linux sandbox
     .systemInstruction("You are a helpful coding assistant. Always respond concisely.")
     .tools(List.of(
@@ -910,7 +913,7 @@ public class MyInteractionsServer extends InteractionsHandler {
 
 The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent that can reason, run code (Bash, Python, Node.js), manage files, and search the web inside an isolated remote Linux sandbox.
 
-You can configure its underlying model (`ModelOption.GEMINI_4_ARGON`, `ModelOption.GEMINI_3_8_FLASH`, or `ModelOption.GEMINI_3_5_FLASH_LITE`), set token budget caps with `AntigravityAgentConfig.builder()`, and seamlessly continue executions when the token budget is reached (`status: "incomplete"`):
+You can configure its underlying model (`ModelOption.GEMINI_4_CARBON`, `ModelOption.GEMINI_4_ARGON`, `ModelOption.GEMINI_3_8_FLASH`, or `ModelOption.GEMINI_3_5_FLASH_LITE`), set token budget caps with `AntigravityAgentConfig.builder()`, and seamlessly continue executions when the token budget is reached (`status: "incomplete"`):
 
 ```java
 import io.github.glaforge.gemini.interactions.model.AgentOption;
@@ -1051,7 +1054,7 @@ Function weatherTool = Function.builder()
 
 // 2. Initial Request with Tools
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("What is the weather in London?")
     .tools(weatherTool)
     .build();
@@ -1067,7 +1070,7 @@ if ("get_weather".equals(callStep.name())) {
 
     // 4. Send Function Result
     ModelInteractionParams continuation = ModelInteractionParams.builder()
-        .model("gemini-2.5-flash")
+        .model("gemini-3.8-flash")
         .previousInteractionId(interaction.id())
         .input(new Step.FunctionResultStep(
             "step-result-id",
@@ -1132,7 +1135,7 @@ Tool googleMaps = new Tool.GoogleMaps();
 
 // 2. Initial Request with the Tool
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Can you recommend some good restaurants near the Eiffel tower in Paris?")
     .tools(googleMaps)
     .build();
@@ -1161,7 +1164,7 @@ Retrieval retrievalTool = Retrieval.builder()
     .build();
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-2.5-pro")
+    .model("gemini-3.8-flash")
     .input("What are the latest advancements in quantum computing?")
     .tools(retrievalTool)
     .build();
@@ -1179,7 +1182,7 @@ import java.util.Map;
 import java.util.List;
 
 ModelInteractionParams params = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Invent 5 original cookie recipes")
     .responseMimeType("application/json")
     .responseFormat(Map.of(
@@ -1203,7 +1206,7 @@ import io.github.glaforge.gemini.schema.GSchema;
 import static io.github.glaforge.gemini.schema.GSchema.*;
 
 ModelInteractionParams params = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Invent 5 original cookie recipes")
     .responseMimeType("application/json")
     .responseFormat(
@@ -1223,7 +1226,7 @@ You can generate the schema directly from a Java class (Records or POJOs).
 public record Recipe(String name, List<String> ingredients) {}
 
 ModelInteractionParams params = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Invent 5 original cookie recipes")
     .responseMimeType("application/json")
     .responseFormat(GSchema.fromClass(Recipe.class))
@@ -1242,7 +1245,7 @@ String jsonSchema = """
     """;
 
 ModelInteractionParams params = ModelInteractionParams.builder()
-    .model("gemini-2.5-flash")
+    .model("gemini-3.8-flash")
     .input("Invent 5 original cookie recipes")
     .responseMimeType("application/json")
     .responseFormat(GSchema.fromJson(jsonSchema))
