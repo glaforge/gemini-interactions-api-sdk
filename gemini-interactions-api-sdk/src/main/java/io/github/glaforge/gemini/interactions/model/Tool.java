@@ -16,9 +16,11 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -150,23 +152,58 @@ public sealed interface Tool permits
     /**
      * Tool definition for Computer Use.
      *
-     * @param type                        The type of tool (must be "computer_use").
-     * @param environment                 The environment (e.g., "browser").
-     * @param excludedPredefinedFunctions List of excluded predefined functions.
+     * @param type                           The type of tool (must be "computer_use").
+     * @param environment                    The environment being operated (e.g., "browser", "mobile", "desktop").
+     * @param excludedPredefinedFunctions    List of excluded predefined functions.
      * @param enablePromptInjectionDetection Whether to enable prompt injection detection.
+     * @param disabledSafetyPolicies         Optional list of disabled safety policies for computer use.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ComputerUse(
         String type,
-        String environment, // "browser"
-        @JsonProperty("excludedPredefinedFunctions") List<String> excludedPredefinedFunctions,
-        @JsonProperty("enable_prompt_injection_detection") Boolean enablePromptInjectionDetection
+        String environment, // "browser", "mobile", "desktop"
+        @JsonProperty("excluded_predefined_functions") @JsonAlias("excludedPredefinedFunctions") List<String> excludedPredefinedFunctions,
+        @JsonProperty("enable_prompt_injection_detection") Boolean enablePromptInjectionDetection,
+        @JsonProperty("disabled_safety_policies") List<String> disabledSafetyPolicies
     ) implements Tool {
+        /** Safety policy for financial transactions. */
+        public static final String POLICY_FINANCIAL_TRANSACTIONS = "financial_transactions";
+        /** Safety policy for sensitive data modification. */
+        public static final String POLICY_SENSITIVE_DATA_MODIFICATION = "sensitive_data_modification";
+        /** Safety policy for communication tools (e.g. Gmail, Chat, Meet). */
+        public static final String POLICY_COMMUNICATION_TOOL = "communication_tool";
+        /** Safety policy for account creation. */
+        public static final String POLICY_ACCOUNT_CREATION = "account_creation";
+        /** Safety policy for data modification. */
+        public static final String POLICY_DATA_MODIFICATION = "data_modification";
+        /** Safety policy for user consent management. */
+        public static final String POLICY_USER_CONSENT_MANAGEMENT = "user_consent_management";
+        /** Safety policy for legal terms and agreements. */
+        public static final String POLICY_LEGAL_TERMS_AND_AGREEMENTS = "legal_terms_and_agreements";
+
         /**
          * Creates a new ComputerUse tool (defaults to browser environment).
          */
         public ComputerUse() {
-            this("computer_use", "browser", null, null);
+            this("computer_use", "browser", null, null, null);
+        }
+
+        /**
+         * Backward-compatible constructor without disabledSafetyPolicies.
+         *
+         * @param type                           The type of tool (must be "computer_use").
+         * @param environment                    The environment (e.g., "browser").
+         * @param excludedPredefinedFunctions    List of excluded predefined functions.
+         * @param enablePromptInjectionDetection Whether to enable prompt injection detection.
+         */
+        public ComputerUse(
+            String type,
+            String environment,
+            List<String> excludedPredefinedFunctions,
+            Boolean enablePromptInjectionDetection
+        ) {
+            this(type, environment, excludedPredefinedFunctions, enablePromptInjectionDetection, null);
         }
 
         /**
@@ -183,6 +220,7 @@ public sealed interface Tool permits
             private String environment = "browser";
             private List<String> excludedPredefinedFunctions;
             private Boolean enablePromptInjectionDetection;
+            private List<String> disabledSafetyPolicies;
 
             /** Creates a new Builder. */
             public Builder() {}
@@ -212,6 +250,14 @@ public sealed interface Tool permits
             public Builder excludedPredefinedFunctions(List<String> excludedPredefinedFunctions) { this.excludedPredefinedFunctions = excludedPredefinedFunctions; return this; }
 
             /**
+             * Sets the excluded predefined functions.
+             *
+             * @param excludedPredefinedFunctions The excluded predefined functions.
+             * @return This builder.
+             */
+            public Builder excludedPredefinedFunctions(String... excludedPredefinedFunctions) { this.excludedPredefinedFunctions = List.of(excludedPredefinedFunctions); return this; }
+
+            /**
              * Sets whether to enable prompt injection detection.
              *
              * @param enablePromptInjectionDetection Whether to enable prompt injection detection.
@@ -220,12 +266,28 @@ public sealed interface Tool permits
             public Builder enablePromptInjectionDetection(Boolean enablePromptInjectionDetection) { this.enablePromptInjectionDetection = enablePromptInjectionDetection; return this; }
 
             /**
+             * Sets the disabled safety policies for computer use.
+             *
+             * @param disabledSafetyPolicies The disabled safety policies.
+             * @return This builder.
+             */
+            public Builder disabledSafetyPolicies(List<String> disabledSafetyPolicies) { this.disabledSafetyPolicies = disabledSafetyPolicies; return this; }
+
+            /**
+             * Sets the disabled safety policies for computer use.
+             *
+             * @param disabledSafetyPolicies The disabled safety policies.
+             * @return This builder.
+             */
+            public Builder disabledSafetyPolicies(String... disabledSafetyPolicies) { this.disabledSafetyPolicies = List.of(disabledSafetyPolicies); return this; }
+
+            /**
              * Builds the ComputerUse.
              *
              * @return A new ComputerUse instance.
              */
             public ComputerUse build() {
-                return new ComputerUse(type, environment, excludedPredefinedFunctions, enablePromptInjectionDetection);
+                return new ComputerUse(type, environment, excludedPredefinedFunctions, enablePromptInjectionDetection, disabledSafetyPolicies);
             }
         }
     }
@@ -381,17 +443,115 @@ public sealed interface Tool permits
     /**
      * Tool definition for Google Maps.
      *
-     * @param type The type of tool (must be "google_maps").
+     * @param type         The type of tool (must be "google_maps").
+     * @param enableWidget Whether to return a widget context token in the tool call result of the response.
+     * @param latitude     The latitude of the user's location.
+     * @param longitude    The longitude of the user's location.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleMaps(
-        String type
+        String type,
+        @JsonProperty("enable_widget") Boolean enableWidget,
+        Double latitude,
+        Double longitude
     ) implements Tool {
         /**
          * Creates a new GoogleMaps tool.
          */
         public GoogleMaps() {
-            this("google_maps");
+            this("google_maps", null, null, null);
+        }
+
+        /**
+         * Backward-compatible constructor with only type.
+         *
+         * @param type The type of tool (must be "google_maps").
+         */
+        public GoogleMaps(String type) {
+            this(type, null, null, null);
+        }
+
+        /**
+         * Creates a new GoogleMaps tool with user location coordinates.
+         *
+         * @param latitude  The latitude of the user's location.
+         * @param longitude The longitude of the user's location.
+         */
+        public GoogleMaps(Double latitude, Double longitude) {
+            this("google_maps", null, latitude, longitude);
+        }
+
+        /**
+         * Creates a new GoogleMaps tool with user location coordinates and widget option.
+         *
+         * @param latitude     The latitude of the user's location.
+         * @param longitude    The longitude of the user's location.
+         * @param enableWidget Whether to return a widget context token in the tool call result.
+         */
+        public GoogleMaps(Double latitude, Double longitude, Boolean enableWidget) {
+            this("google_maps", enableWidget, latitude, longitude);
+        }
+
+        /**
+         * Returns a new builder for GoogleMaps.
+         *
+         * @return a new builder for GoogleMaps.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link GoogleMaps}. */
+        public static class Builder {
+            private String type = "google_maps";
+            private Boolean enableWidget;
+            private Double latitude;
+            private Double longitude;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the type.
+             *
+             * @param type The type.
+             * @return This builder.
+             */
+            public Builder type(String type) { this.type = type; return this; }
+
+            /**
+             * Sets whether to return a widget context token in the tool call result.
+             *
+             * @param enableWidget Whether to enable the widget context token.
+             * @return This builder.
+             */
+            public Builder enableWidget(Boolean enableWidget) { this.enableWidget = enableWidget; return this; }
+
+            /**
+             * Sets the latitude of the user's location.
+             *
+             * @param latitude The latitude coordinate.
+             * @return This builder.
+             */
+            public Builder latitude(Double latitude) { this.latitude = latitude; return this; }
+
+            /**
+             * Sets the longitude of the user's location.
+             *
+             * @param longitude The longitude coordinate.
+             * @return This builder.
+             */
+            public Builder longitude(Double longitude) { this.longitude = longitude; return this; }
+
+            /**
+             * Builds the GoogleMaps tool instance.
+             *
+             * @return A new GoogleMaps instance.
+             */
+            public GoogleMaps build() {
+                return new GoogleMaps(type, enableWidget, latitude, longitude);
+            }
         }
     }
 

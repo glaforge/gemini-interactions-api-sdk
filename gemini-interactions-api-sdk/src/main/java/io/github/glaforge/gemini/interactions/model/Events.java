@@ -18,7 +18,9 @@ package io.github.glaforge.gemini.interactions.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -538,13 +540,47 @@ public sealed interface Events permits
     /**
      * Delta for audio content.
      *
-     * @param type     The type of delta ("audio").
-     * @param data     The base64 encoded audio data.
-     * @param uri      The URI of the audio.
-     * @param mimeType The MIME type of the audio.
+     * @param type       The type of delta ("audio").
+     * @param data       The base64 encoded audio data.
+     * @param uri        The URI of the audio.
+     * @param mimeType   The MIME type of the audio.
+     * @param sampleRate The sample rate of the audio in Hertz.
+     * @param channels   The number of audio channels.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record AudioDelta(DeltaType type, String data, String uri, @JsonProperty("mime_type") String mimeType) implements Delta {}
+    record AudioDelta(
+        DeltaType type,
+        String data,
+        String uri,
+        @JsonProperty("mime_type") String mimeType,
+        @JsonProperty("sample_rate") @JsonAlias("rate") Integer sampleRate,
+        Integer channels
+    ) implements Delta {
+        /**
+         * Backward-compatible constructor without sampleRate and channels.
+         *
+         * @param type     The type of delta ("audio").
+         * @param data     The base64 encoded audio data.
+         * @param uri      The URI of the audio.
+         * @param mimeType The MIME type of the audio.
+         */
+        public AudioDelta(DeltaType type, String data, String uri, String mimeType) {
+            this(type, data, uri, mimeType, null, null);
+        }
+
+        /**
+         * Returns the sample rate of the audio in Hertz.
+         *
+         * @return The sample rate.
+         * @deprecated Use {@link #sampleRate()} instead.
+         */
+        @Deprecated
+        @JsonIgnore
+        public Integer rate() {
+            return sampleRate;
+        }
+    }
 
     /**
      * Delta for document content (PDF, CSV, Microsoft Office, or OpenDocument formats).
@@ -666,12 +702,32 @@ public sealed interface Events permits
     /**
      * Delta for Google Search call.
      *
-     * @param type      The type of delta ("google_search_call").
-     * @param id        The call ID.
-     * @param arguments The Google Search arguments.
+     * @param type       The type of delta ("google_search_call").
+     * @param id         The call ID.
+     * @param arguments  The Google Search arguments.
+     * @param searchType The type of search grounding enabled ("web_search" or "image_search").
+     * @param signature  The signature hash for backend validation.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record GoogleSearchCallDelta(DeltaType type, String id, Step.GoogleSearchCallArguments arguments) implements Delta {}
+    record GoogleSearchCallDelta(
+        DeltaType type,
+        String id,
+        Step.GoogleSearchCallArguments arguments,
+        @JsonProperty("search_type") String searchType,
+        String signature
+    ) implements Delta {
+        /**
+         * Backward-compatible constructor without searchType and signature.
+         *
+         * @param type      The type of delta ("google_search_call").
+         * @param id        The call ID.
+         * @param arguments The Google Search arguments.
+         */
+        public GoogleSearchCallDelta(DeltaType type, String id, Step.GoogleSearchCallArguments arguments) {
+            this(type, id, arguments, null, null);
+        }
+    }
 
     /**
      * Delta for Google Search result.

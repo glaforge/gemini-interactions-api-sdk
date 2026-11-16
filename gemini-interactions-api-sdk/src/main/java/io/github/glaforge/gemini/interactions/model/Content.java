@@ -16,9 +16,12 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -170,13 +173,17 @@ public sealed interface Content permits
     /**
      * File citation annotation.
      *
-     * @param type        The type.
-     * @param startIndex  The start index.
-     * @param endIndex    The end index.
-     * @param documentUri The document URI.
-     * @param fileName    The file name.
-     * @param source      The source.
+     * @param type           The type ("file_citation").
+     * @param startIndex     The start index.
+     * @param endIndex       The end index.
+     * @param documentUri    The document URI.
+     * @param fileName       The file name.
+     * @param source         The source attributed for a portion of the text.
+     * @param customMetadata User provided metadata about the retrieved context.
+     * @param pageNumber     Page number of the cited document, if applicable.
+     * @param mediaId        Media ID in case of image citations, if applicable.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record FileCitation(
         String type,
@@ -184,8 +191,32 @@ public sealed interface Content permits
         @JsonProperty("end_index") Integer endIndex,
         @JsonProperty("document_uri") String documentUri,
         @JsonProperty("file_name") String fileName,
-        String source
-    ) implements Annotation {}
+        String source,
+        @JsonProperty("custom_metadata") Map<String, Object> customMetadata,
+        @JsonProperty("page_number") Integer pageNumber,
+        @JsonProperty("media_id") String mediaId
+    ) implements Annotation {
+        /**
+         * Backward-compatible constructor without customMetadata, pageNumber, and mediaId.
+         *
+         * @param type        The type.
+         * @param startIndex  The start index.
+         * @param endIndex    The end index.
+         * @param documentUri The document URI.
+         * @param fileName    The file name.
+         * @param source      The source.
+         */
+        public FileCitation(
+            String type,
+            Integer startIndex,
+            Integer endIndex,
+            String documentUri,
+            String fileName,
+            String source
+        ) {
+            this(type, startIndex, endIndex, documentUri, fileName, source, null, null, null);
+        }
+    }
 
     /**
      * Place citation annotation.
@@ -364,24 +395,25 @@ public sealed interface Content permits
     /**
      * Content containing audio.
      *
-     * @param type     The type of content (must be "audio").
-     * @param data     Base64 encoded audio data.
-     * @param uri      URI of the audio.
-     * @param mimeType MIME type of the audio (e.g. "audio/wav", "audio/mpeg", "audio/m4a", "audio/l16").
-     * @param rate     Sample rate of the audio in Hertz.
-     * @param channels Number of audio channels.
+     * @param type       The type of content (must be "audio").
+     * @param data       Base64 encoded audio data.
+     * @param uri        URI of the audio.
+     * @param mimeType   MIME type of the audio (e.g. "audio/wav", "audio/mpeg", "audio/m4a", "audio/l16").
+     * @param sampleRate Sample rate of the audio in Hertz.
+     * @param channels   Number of audio channels.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record AudioContent(
         String type,
         byte[] data,
         String uri,
         @JsonProperty("mime_type") String mimeType,
-        Integer rate,
+        @JsonProperty("sample_rate") @JsonAlias("rate") Integer sampleRate,
         Integer channels
     ) implements Content {
         /**
-         * Creates a new AudioContent with default type "audio" and no rate or channels set.
+         * Creates a new AudioContent with default type "audio" and no sample rate or channels set.
          *
          * @param data     The base64 encoded audio data.
          * @param mimeType The MIME type of the audio.
@@ -390,9 +422,43 @@ public sealed interface Content permits
             this("audio", data, null, mimeType, null, null);
         }
 
+        /**
+         * Creates a new AudioContent with default type "audio", sample rate, and channels.
+         *
+         * @param data       The base64 encoded audio data.
+         * @param mimeType   The MIME type of the audio.
+         * @param sampleRate The sample rate in Hertz.
+         * @param channels   The number of audio channels.
+         */
+        public AudioContent(byte[] data, String mimeType, Integer sampleRate, Integer channels) {
+            this("audio", data, null, mimeType, sampleRate, channels);
+        }
+
+        /**
+         * Creates a new AudioContent from a URI and MIME type.
+         *
+         * @param uri      The audio URI.
+         * @param mimeType The MIME type of the audio.
+         */
+        public AudioContent(String uri, String mimeType) {
+            this("audio", null, uri, mimeType, null, null);
+        }
+
+        /**
+         * Returns the sample rate of the audio in Hertz.
+         *
+         * @return The sample rate.
+         * @deprecated Use {@link #sampleRate()} instead.
+         */
+        @Deprecated
+        @JsonIgnore
+        public Integer rate() {
+            return sampleRate;
+        }
+
         @Override
         public String toString() {
-            return "AudioContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", rate=" + rate + ", channels=" + channels + "]";
+            return "AudioContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", sampleRate=" + sampleRate + ", channels=" + channels + "]";
         }
     }
 

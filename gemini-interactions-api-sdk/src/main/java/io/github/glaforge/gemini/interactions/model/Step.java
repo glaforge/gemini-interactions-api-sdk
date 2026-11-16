@@ -16,9 +16,11 @@
 
 package io.github.glaforge.gemini.interactions.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -348,16 +350,32 @@ public sealed interface Step permits
     /**
      * GoogleSearchCallStep.
      *
-     * @param type type parameter.
-     * @param id id parameter.
-     * @param arguments arguments parameter.
+     * @param type       The step type ("google_search_call").
+     * @param id         A unique ID for this specific tool call.
+     * @param arguments  The arguments to pass to Google Search.
+     * @param searchType The type of search grounding enabled ("web_search" or "image_search").
+     * @param signature  A signature hash for backend validation.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleSearchCallStep(
         String type,
         String id,
-        GoogleSearchCallArguments arguments
-    ) implements Step {}
+        GoogleSearchCallArguments arguments,
+        @JsonProperty("search_type") String searchType,
+        String signature
+    ) implements Step {
+        /**
+         * Backward-compatible constructor without searchType and signature.
+         *
+         * @param type      The step type.
+         * @param id        The call ID.
+         * @param arguments The search arguments.
+         */
+        public GoogleSearchCallStep(String type, String id, GoogleSearchCallArguments arguments) {
+            this(type, id, arguments, null, null);
+        }
+    }
 
     /**
      * GoogleSearchCallArguments.
@@ -390,16 +408,30 @@ public sealed interface Step permits
     /**
      * GoogleSearchResult.
      *
-     * @param url url parameter.
-     * @param title title parameter.
-     * @param renderedContent renderedContent parameter.
+     * @param url               The result URL.
+     * @param title             The result title.
+     * @param renderedContent   Rendered content or snippet.
+     * @param searchSuggestions Web content snippet that can be embedded in a web page or an app webview.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record GoogleSearchResult(
         String url,
         String title,
-        @JsonProperty("rendered_content") String renderedContent
-    ) {}
+        @JsonProperty("rendered_content") @JsonAlias("snippet") String renderedContent,
+        @JsonProperty("search_suggestions") String searchSuggestions
+    ) {
+        /**
+         * Backward-compatible constructor without searchSuggestions.
+         *
+         * @param url             The result URL.
+         * @param title           The result title.
+         * @param renderedContent The rendered content.
+         */
+        public GoogleSearchResult(String url, String title, String renderedContent) {
+            this(url, title, renderedContent, null);
+        }
+    }
 
     // --- MCP Server ---
 

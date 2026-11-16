@@ -26,7 +26,7 @@ To use the core client SDK, add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.2.0</version>
+    <version>2.2.1</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ If you are implementing the server-side webhook handler (`InteractionsHandler`),
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-server</artifactId>
-    <version>2.2.0</version>
+    <version>2.2.1</version>
 </dependency>
 ```
 
@@ -1130,8 +1130,12 @@ import io.github.glaforge.gemini.interactions.model.Content;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 import io.github.glaforge.gemini.interactions.model.Tool;
 
-// 1. Define the Google Maps tool
-Tool googleMaps = new Tool.GoogleMaps();
+// 1. Define the Google Maps tool (optionally specifying user coordinates and widget context token)
+Tool googleMaps = Tool.GoogleMaps.builder()
+    .latitude(48.8584)
+    .longitude(2.2945)
+    .enableWidget(true)
+    .build();
 
 // 2. Initial Request with the Tool
 ModelInteractionParams request = ModelInteractionParams.builder()
@@ -1145,6 +1149,26 @@ Interaction interaction = client.create(request);
 // 3. Handle Result
 Step.ModelOutputStep step = (Step.ModelOutputStep) interaction.steps().getLast();
 System.out.println(step.content().getLast());
+```
+
+### Built-in Tools (Computer Use)
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Tool.ComputerUse;
+
+ComputerUse computerUse = ComputerUse.builder()
+    .environment("browser")
+    .enablePromptInjectionDetection(true)
+    .disabledSafetyPolicies(ComputerUse.POLICY_COMMUNICATION_TOOL)
+    .build();
+
+ModelInteractionParams request = ModelInteractionParams.builder()
+    .model("gemini-3.8-flash")
+    .input("Find a flight to Tokyo")
+    .tools(computerUse)
+    .build();
+
+Interaction interaction = client.create(request);
 ```
 
 ### Built-in Tools (Retrieval)

@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.2.0</version>
+    <version>2.2.1</version>
 </dependency>
 ```
 
@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml`:
 Add the dependency to your `build.gradle` or `build.gradle.kts`:
 
 ```gradle
-implementation("io.github.glaforge:gemini-interactions-api-sdk:2.2.0")
+implementation("io.github.glaforge:gemini-interactions-api-sdk:2.2.1")
 ```
 
 > [!NOTE]
@@ -880,6 +880,28 @@ Decision decision = client.createDecision(params);
 Answer.NoulAnswer isDefect = decision.noulAnswer("is_defect"); // .noul(), .yesProbability(), .noProbability(), .confidence()
 Answer.ChoiceAnswer dept = decision.choiceAnswer("department"); // .choice(), .probabilities(), .confidence()
 Answer.ScoreAnswer churn = decision.scoreAnswer("churn_risk");  // .score(), .topLevelKey(), .topLevelDescription(), .normalizedScore(), .confidence()
+```
+
+### Built-in Tools (Google Maps & Computer Use)
+
+Configure `Tool.GoogleMaps` with optional user coordinates and widget context tokens, or `Tool.ComputerUse` with environment and disabled safety policies:
+
+```java
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.Tool.ComputerUse;
+import io.github.glaforge.gemini.interactions.model.Tool.GoogleMaps;
+
+GoogleMaps mapsTool = GoogleMaps.builder()
+    .latitude(37.7749)
+    .longitude(-122.4194)
+    .enableWidget(true)
+    .build();
+
+ComputerUse computerUseTool = ComputerUse.builder()
+    .environment("browser")
+    .enablePromptInjectionDetection(true)
+    .disabledSafetyPolicies(ComputerUse.POLICY_COMMUNICATION_TOOL)
+    .build();
 ```
 
 ### Type-Safe Union Configuration Records
