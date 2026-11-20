@@ -35,6 +35,8 @@ public final class AgentOption {
     public static final String DEEP_RESEARCH_MAX_PREVIEW_04_2026 = "deep-research-max-preview-04-2026";
     /** Antigravity Agent (Preview 09-2026). */
     public static final String ANTIGRAVITY_PREVIEW_09_2026 = "antigravity-preview-09-2026";
+    /** Antigravity Agent Preview Latest (rolling alias pointing to the latest Antigravity Agent preview). */
+    public static final String ANTIGRAVITY_PREVIEW_LATEST = "antigravity-preview-latest";
     /**
      * Antigravity Agent (Preview 05-2026).
      *

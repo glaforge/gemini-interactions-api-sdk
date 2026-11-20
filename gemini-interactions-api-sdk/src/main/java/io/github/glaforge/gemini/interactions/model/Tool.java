@@ -47,6 +47,7 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Tool.McpServer.class, name = "mcp_server"),
     @JsonSubTypes.Type(value = Tool.FileSearch.class, name = "file_search"),
     @JsonSubTypes.Type(value = Tool.GoogleMaps.class, name = "google_maps"),
+    @JsonSubTypes.Type(value = Tool.ToolSearch.class, name = "tool_search"),
     @JsonSubTypes.Type(value = Tool.Retrieval.class, name = "retrieval")
 })
 public sealed interface Tool permits
@@ -58,6 +59,7 @@ public sealed interface Tool permits
     Tool.McpServer,
     Tool.FileSearch,
     Tool.GoogleMaps,
+    Tool.ToolSearch,
     Tool.Retrieval,
     Tool.UnknownTool {
 
@@ -71,19 +73,43 @@ public sealed interface Tool permits
     /**
      * Tool definition for a function.
      *
-     * @param type        The type of tool (must be "function").
-     * @param name        The name of the function.
-     * @param description A description of the function.
-     * @param parameters  The parameters of the function (JSON Schema).
+     * @param type             The type of tool (must be "function").
+     * @param name             The name of the function.
+     * @param description      A description of the function.
+     * @param parameters       The parameters of the function (JSON Schema).
+     * @param deferLoading     If true, loading of this function's parameter schema is deferred until retrieved via {@link ToolSearch}.
+     * @param shortDescription Optional brief description shown as a compact summary during tool retrieval (only valid when {@code deferLoading} is {@code true}).
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Function(
         String type,
         String name,
         String description,
         // parameters is a JSON Schema object
-        Map<String, Object> parameters
+        Map<String, Object> parameters,
+        @JsonProperty("defer_loading") Boolean deferLoading,
+        @JsonProperty("short_description") String shortDescription
     ) implements Tool {
+        /** Compact constructor defaulting {@code type} to {@code "function"}. */
+        public Function {
+            if (type == null) {
+                type = "function";
+            }
+        }
+
+        /**
+         * Backward-compatible constructor without deferLoading and shortDescription.
+         *
+         * @param type        The type of tool (must be "function").
+         * @param name        The name of the function.
+         * @param description A description of the function.
+         * @param parameters  The parameters of the function (JSON Schema).
+         */
+        public Function(String type, String name, String description, Map<String, Object> parameters) {
+            this(type, name, description, parameters, null, null);
+        }
+
         /**
          * Creates a new Function tool.
          *
@@ -92,7 +118,87 @@ public sealed interface Tool permits
          * @param parameters  The parameters of the function.
          */
         public Function(String name, String description, Map<String, Object> parameters) {
-            this("function", name, description, parameters);
+            this("function", name, description, parameters, null, null);
+        }
+
+        /**
+         * Returns a new builder for {@link Function}.
+         *
+         * @return A new builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link Function}. */
+        public static class Builder {
+            private String type = "function";
+            private String name;
+            private String description;
+            private Map<String, Object> parameters;
+            private Boolean deferLoading;
+            private String shortDescription;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the tool type (defaults to {@code "function"}).
+             *
+             * @param type The type.
+             * @return This builder.
+             */
+            public Builder type(String type) { this.type = type; return this; }
+
+            /**
+             * Sets the name of the function.
+             *
+             * @param name The function name.
+             * @return This builder.
+             */
+            public Builder name(String name) { this.name = name; return this; }
+
+            /**
+             * Sets the description of the function.
+             *
+             * @param description The function description.
+             * @return This builder.
+             */
+            public Builder description(String description) { this.description = description; return this; }
+
+            /**
+             * Sets the JSON Schema parameters of the function.
+             *
+             * @param parameters The parameters map.
+             * @return This builder.
+             */
+            public Builder parameters(Map<String, Object> parameters) { this.parameters = parameters; return this; }
+
+            /**
+             * Sets whether loading of this function's parameter schema is deferred for tool retrieval.
+             *
+             * @param deferLoading {@code true} to defer loading.
+             * @return This builder.
+             */
+            public Builder deferLoading(Boolean deferLoading) { this.deferLoading = deferLoading; return this; }
+
+            /**
+             * Sets a brief summary description shown during server-side tool retrieval
+             * (only valid when {@code deferLoading} is {@code true}).
+             *
+             * @param shortDescription The brief description.
+             * @return This builder.
+             */
+            public Builder shortDescription(String shortDescription) { this.shortDescription = shortDescription; return this; }
+
+            /**
+             * Builds the {@link Function} tool.
+             *
+             * @return A new Function instance.
+             */
+            public Function build() {
+                return new Function(type, name, description, parameters, deferLoading, shortDescription);
+            }
         }
     }
 
@@ -301,7 +407,9 @@ public sealed interface Tool permits
      * @param headers      Headers for the MCP server connection.
      * @param allowedTools List of allowed tools on the server.
      * @param credential   Optional server-managed credential ID for authenticating with the MCP server.
+     * @param deferLoading If true, loading of tools exposed by this MCP server is deferred until retrieved via {@link ToolSearch}.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record McpServer(
         String type,
@@ -309,8 +417,30 @@ public sealed interface Tool permits
         String url,
         Map<String, String> headers,
         @JsonProperty("allowed_tools") List<AllowedTools> allowedTools,
-        String credential
+        String credential,
+        @JsonProperty("defer_loading") Boolean deferLoading
     ) implements Tool {
+        /** Compact constructor defaulting {@code type} to {@code "mcp_server"}. */
+        public McpServer {
+            if (type == null) {
+                type = "mcp_server";
+            }
+        }
+
+        /**
+         * Backward-compatible constructor without deferLoading.
+         *
+         * @param type         The type of tool (must be "mcp_server").
+         * @param name         The name of the MCP server.
+         * @param url          The URL of the MCP server.
+         * @param headers      Headers for the MCP server connection.
+         * @param allowedTools List of allowed tools on the server.
+         * @param credential   Optional server-managed credential ID.
+         */
+        public McpServer(String type, String name, String url, Map<String, String> headers, List<AllowedTools> allowedTools, String credential) {
+            this(type, name, url, headers, allowedTools, credential, null);
+        }
+
         /**
          * Creates a new McpServer tool.
          *
@@ -318,7 +448,7 @@ public sealed interface Tool permits
          * @param url  The URL of the MCP server.
          */
         public McpServer(String name, String url) {
-            this("mcp_server", name, url, null, null, null);
+            this("mcp_server", name, url, null, null, null, null);
         }
 
         /**
@@ -329,11 +459,11 @@ public sealed interface Tool permits
          * @param credential The credential ID.
          */
         public McpServer(String name, String url, String credential) {
-            this("mcp_server", name, url, null, null, credential);
+            this("mcp_server", name, url, null, null, credential, null);
         }
 
         /**
-         * Backward-compatible constructor without credential.
+         * Backward-compatible constructor without credential and deferLoading.
          *
          * @param type         The type of tool.
          * @param name         The name of the MCP server.
@@ -342,7 +472,7 @@ public sealed interface Tool permits
          * @param allowedTools List of allowed tools on the server.
          */
         public McpServer(String type, String name, String url, Map<String, String> headers, List<AllowedTools> allowedTools) {
-            this(type, name, url, headers, allowedTools, null);
+            this(type, name, url, headers, allowedTools, null, null);
         }
 
         /**
@@ -361,6 +491,7 @@ public sealed interface Tool permits
             private Map<String, String> headers;
             private List<AllowedTools> allowedTools;
             private String credential;
+            private Boolean deferLoading;
 
             /** Creates a new Builder. */
             public Builder() {}
@@ -414,12 +545,20 @@ public sealed interface Tool permits
             public Builder credential(String credential) { this.credential = credential; return this; }
 
             /**
+             * Sets whether loading of tools exposed by this MCP server is deferred for tool retrieval.
+             *
+             * @param deferLoading {@code true} to defer loading of this MCP server's tools.
+             * @return This builder.
+             */
+            public Builder deferLoading(Boolean deferLoading) { this.deferLoading = deferLoading; return this; }
+
+            /**
              * Builds the McpServer.
              *
              * @return A new McpServer instance.
              */
             public McpServer build() {
-                return new McpServer(type, name, url, headers, allowedTools, credential);
+                return new McpServer(type, name, url, headers, allowedTools, credential, deferLoading);
             }
         }
     }
@@ -551,6 +690,148 @@ public sealed interface Tool permits
              */
             public GoogleMaps build() {
                 return new GoogleMaps(type, enableWidget, latitude, longitude);
+            }
+        }
+    }
+
+    /**
+     * Tool definition for dynamic Tool Retrieval ({@code "tool_search"}).
+     * <p>
+     * Allows the model to dynamically search for and load tool schemas on demand, reducing input
+     * token usage and improving tool selection accuracy for large tool libraries.
+     * <ul>
+     *   <li><b>Server-side retrieval (default)</b>: Use {@link #server()} or {@code new ToolSearch()}
+     *       alongside {@link Function} or {@link McpServer} declarations marked with {@code deferLoading(true)}.</li>
+     *   <li><b>Client-side retrieval</b>: Use {@link #client(String, String, Map)} with {@link Execution#CLIENT}
+     *       to handle tool search in your application and return matching {@link Function} definitions
+     *       in a {@link Step.FunctionResultStep}.</li>
+     * </ul>
+     *
+     * @param type        The type of tool (must be {@code "tool_search"}).
+     * @param execution   The execution mode ({@link Execution#SERVER} default, or {@link Execution#CLIENT}).
+     * @param name        The function name the model calls (for {@link Execution#CLIENT} only).
+     * @param description Tells the model when to search (for {@link Execution#CLIENT} only).
+     * @param parameters  JSON Schema for the search arguments (for {@link Execution#CLIENT} only).
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ToolSearch(
+        String type,
+        Execution execution,
+        String name,
+        String description,
+        Map<String, Object> parameters
+    ) implements Tool {
+        /** Execution mode for {@link ToolSearch}. */
+        public enum Execution {
+            /** Server-side execution mode (default). */
+            @JsonProperty("server") SERVER,
+            /** Client-side execution mode. */
+            @JsonProperty("client") CLIENT
+        }
+
+        /** Compact constructor defaulting {@code type} to {@code "tool_search"}. */
+        public ToolSearch {
+            if (type == null) {
+                type = "tool_search";
+            }
+        }
+
+        /**
+         * Creates a server-side {@link ToolSearch} tool ({@code {"type": "tool_search"}}).
+         */
+        public ToolSearch() {
+            this("tool_search", null, null, null, null);
+        }
+
+        /**
+         * Creates a server-side {@link ToolSearch} tool ({@code {"type": "tool_search"}}).
+         *
+         * @return A server-side ToolSearch instance.
+         */
+        public static ToolSearch server() {
+            return new ToolSearch();
+        }
+
+        /**
+         * Creates a client-side {@link ToolSearch} tool with {@link Execution#CLIENT}.
+         *
+         * @param name        The function name the model calls to search your registry.
+         * @param description Tells the model when to invoke the tool search.
+         * @param parameters  JSON Schema for the search arguments.
+         * @return A client-side ToolSearch instance.
+         */
+        public static ToolSearch client(String name, String description, Map<String, Object> parameters) {
+            return new ToolSearch("tool_search", Execution.CLIENT, name, description, parameters);
+        }
+
+        /**
+         * Returns a new builder for {@link ToolSearch}.
+         *
+         * @return A new builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link ToolSearch}. */
+        public static class Builder {
+            private String type = "tool_search";
+            private Execution execution;
+            private String name;
+            private String description;
+            private Map<String, Object> parameters;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the tool type (defaults to {@code "tool_search"}).
+             *
+             * @param type The type.
+             * @return This builder.
+             */
+            public Builder type(String type) { this.type = type; return this; }
+
+            /**
+             * Sets the execution mode ({@link Execution#SERVER} or {@link Execution#CLIENT}).
+             *
+             * @param execution The execution mode.
+             * @return This builder.
+             */
+            public Builder execution(Execution execution) { this.execution = execution; return this; }
+
+            /**
+             * Sets the function name for client-side tool search.
+             *
+             * @param name The function name.
+             * @return This builder.
+             */
+            public Builder name(String name) { this.name = name; return this; }
+
+            /**
+             * Sets the description for client-side tool search.
+             *
+             * @param description The function description.
+             * @return This builder.
+             */
+            public Builder description(String description) { this.description = description; return this; }
+
+            /**
+             * Sets the JSON Schema parameters for client-side tool search.
+             *
+             * @param parameters The parameters map.
+             * @return This builder.
+             */
+            public Builder parameters(Map<String, Object> parameters) { this.parameters = parameters; return this; }
+
+            /**
+             * Builds the {@link ToolSearch} tool.
+             *
+             * @return A new ToolSearch instance.
+             */
+            public ToolSearch build() {
+                return new ToolSearch(type, execution, name, description, parameters);
             }
         }
     }

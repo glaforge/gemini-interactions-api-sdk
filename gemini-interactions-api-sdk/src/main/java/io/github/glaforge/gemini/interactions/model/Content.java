@@ -393,6 +393,59 @@ public sealed interface Content permits
     }
 
     /**
+     * Configuration for processing audio content.
+     */
+    @JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type",
+        visible = true
+    )
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = Content.AudioStaticMediaProcessing.class, name = "static")
+    })
+    sealed interface AudioMediaProcessing permits Content.AudioStaticMediaProcessing {
+        /**
+         * Returns the type of audio processing.
+         *
+         * @return The processing type.
+         */
+        String type();
+    }
+
+    /**
+     * Static media processing configuration for audio content.
+     *
+     * @param type        The type of audio processing (must be {@code "static"}).
+     * @param startOffset Optional segment start time relative to the start of the audio stream (e.g. {@code "10.5s"}).
+     * @param endOffset   Optional segment end time relative to the start of the audio stream (e.g. {@code "30s"}).
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record AudioStaticMediaProcessing(
+        String type,
+        @JsonProperty("start_offset") String startOffset,
+        @JsonProperty("end_offset") String endOffset
+    ) implements AudioMediaProcessing {
+        /** Compact constructor providing default type {@code "static"}. */
+        public AudioStaticMediaProcessing {
+            if (type == null) {
+                type = "static";
+            }
+        }
+
+        /**
+         * Creates a new AudioStaticMediaProcessing configuration with start and end offsets.
+         *
+         * @param startOffset Optional segment start time (e.g. {@code "10.5s"}).
+         * @param endOffset   Optional segment end time (e.g. {@code "30s"}).
+         */
+        public AudioStaticMediaProcessing(String startOffset, String endOffset) {
+            this("static", startOffset, endOffset);
+        }
+    }
+
+    /**
      * Content containing audio.
      *
      * @param type       The type of content (must be "audio").
@@ -401,6 +454,7 @@ public sealed interface Content permits
      * @param mimeType   MIME type of the audio (e.g. "audio/wav", "audio/mpeg", "audio/m4a", "audio/l16").
      * @param sampleRate Sample rate of the audio in Hertz.
      * @param channels   Number of audio channels.
+     * @param processing Optional audio processing configuration ({@link AudioMediaProcessing} or preset string like {@code "static"}).
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -410,8 +464,30 @@ public sealed interface Content permits
         String uri,
         @JsonProperty("mime_type") String mimeType,
         @JsonProperty("sample_rate") @JsonAlias("rate") Integer sampleRate,
-        Integer channels
+        Integer channels,
+        AudioProcessingConfiguration processing
     ) implements Content {
+        /** Compact constructor providing default type {@code "audio"}. */
+        public AudioContent {
+            if (type == null) {
+                type = "audio";
+            }
+        }
+
+        /**
+         * Backward-compatible constructor without processing configuration.
+         *
+         * @param type       The type of content (must be "audio").
+         * @param data       Base64 encoded audio data.
+         * @param uri        URI of the audio.
+         * @param mimeType   MIME type of the audio.
+         * @param sampleRate Sample rate of the audio in Hertz.
+         * @param channels   Number of audio channels.
+         */
+        public AudioContent(String type, byte[] data, String uri, String mimeType, Integer sampleRate, Integer channels) {
+            this(type, data, uri, mimeType, sampleRate, channels, null);
+        }
+
         /**
          * Creates a new AudioContent with default type "audio" and no sample rate or channels set.
          *
@@ -419,7 +495,7 @@ public sealed interface Content permits
          * @param mimeType The MIME type of the audio.
          */
         public AudioContent(byte[] data, String mimeType) {
-            this("audio", data, null, mimeType, null, null);
+            this("audio", data, null, mimeType, null, null, null);
         }
 
         /**
@@ -431,7 +507,40 @@ public sealed interface Content permits
          * @param channels   The number of audio channels.
          */
         public AudioContent(byte[] data, String mimeType, Integer sampleRate, Integer channels) {
-            this("audio", data, null, mimeType, sampleRate, channels);
+            this("audio", data, null, mimeType, sampleRate, channels, null);
+        }
+
+        /**
+         * Creates a new AudioContent from bytes with an {@link AudioProcessingConfiguration}.
+         *
+         * @param data       The audio bytes.
+         * @param mimeType   The MIME type of the audio.
+         * @param processing The audio processing configuration.
+         */
+        public AudioContent(byte[] data, String mimeType, AudioProcessingConfiguration processing) {
+            this("audio", data, null, mimeType, null, null, processing);
+        }
+
+        /**
+         * Creates a new AudioContent from bytes with an {@link AudioMediaProcessing} object.
+         *
+         * @param data       The audio bytes.
+         * @param mimeType   The MIME type of the audio.
+         * @param processing The audio media processing configuration.
+         */
+        public AudioContent(byte[] data, String mimeType, AudioMediaProcessing processing) {
+            this("audio", data, null, mimeType, null, null, processing != null ? AudioProcessingConfiguration.of(processing) : null);
+        }
+
+        /**
+         * Creates a new AudioContent from bytes with a preset processing mode string (e.g. {@code "static"}).
+         *
+         * @param data       The audio bytes.
+         * @param mimeType   The MIME type of the audio.
+         * @param processing The preset processing mode string.
+         */
+        public AudioContent(byte[] data, String mimeType, String processing) {
+            this("audio", data, null, mimeType, null, null, processing != null ? AudioProcessingConfiguration.of(processing) : null);
         }
 
         /**
@@ -441,7 +550,40 @@ public sealed interface Content permits
          * @param mimeType The MIME type of the audio.
          */
         public AudioContent(String uri, String mimeType) {
-            this("audio", null, uri, mimeType, null, null);
+            this("audio", null, uri, mimeType, null, null, null);
+        }
+
+        /**
+         * Creates a new AudioContent from a URI, MIME type, and {@link AudioProcessingConfiguration}.
+         *
+         * @param uri        The audio URI.
+         * @param mimeType   The MIME type of the audio.
+         * @param processing The audio processing configuration.
+         */
+        public AudioContent(String uri, String mimeType, AudioProcessingConfiguration processing) {
+            this("audio", null, uri, mimeType, null, null, processing);
+        }
+
+        /**
+         * Creates a new AudioContent from a URI, MIME type, and {@link AudioMediaProcessing} object.
+         *
+         * @param uri        The audio URI.
+         * @param mimeType   The MIME type of the audio.
+         * @param processing The audio media processing configuration.
+         */
+        public AudioContent(String uri, String mimeType, AudioMediaProcessing processing) {
+            this("audio", null, uri, mimeType, null, null, processing != null ? AudioProcessingConfiguration.of(processing) : null);
+        }
+
+        /**
+         * Creates a new AudioContent from a URI, MIME type, and preset processing mode string (e.g. {@code "static"}).
+         *
+         * @param uri        The audio URI.
+         * @param mimeType   The MIME type of the audio.
+         * @param processing The preset processing mode string.
+         */
+        public AudioContent(String uri, String mimeType, String processing) {
+            this("audio", null, uri, mimeType, null, null, processing != null ? AudioProcessingConfiguration.of(processing) : null);
         }
 
         /**
@@ -458,25 +600,287 @@ public sealed interface Content permits
 
         @Override
         public String toString() {
-            return "AudioContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", sampleRate=" + sampleRate + ", channels=" + channels + "]";
+            return "AudioContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", sampleRate=" + sampleRate + ", channels=" + channels + ", processing=" + processing + "]";
+        }
+    }
+
+    /**
+     * Content layer to extract from a paginated document (PDF, Office documents, presentations).
+     */
+    public enum PageContentLayer {
+        /** A rendered image of the page. */
+        @JsonProperty("page_image") PAGE_IMAGE,
+        /** The text of the page. */
+        @JsonProperty("page_text") PAGE_TEXT
+    }
+
+    /**
+     * Processing options for paginated documents, such as PDFs, Office documents, and presentations.
+     *
+     * @param startPage     Optional 1-indexed start page, inclusive.
+     * @param endPage       Optional 1-indexed end page, inclusive (must be &gt;= {@code startPage} if {@code startPage} is set).
+     * @param contentLayers Optional content layers to extract from a paginated document.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record PageProcessingOptions(
+        @JsonProperty("start_page") Integer startPage,
+        @JsonProperty("end_page") Integer endPage,
+        @JsonProperty("content_layers") List<PageContentLayer> contentLayers
+    ) {
+        /**
+         * Creates a new builder for {@link PageProcessingOptions}.
+         *
+         * @return A new builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link PageProcessingOptions}. */
+        public static class Builder {
+            private Integer startPage;
+            private Integer endPage;
+            private List<PageContentLayer> contentLayers;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the 1-indexed inclusive start page.
+             *
+             * @param startPage The start page.
+             * @return This builder.
+             */
+            public Builder startPage(Integer startPage) { this.startPage = startPage; return this; }
+
+            /**
+             * Sets the 1-indexed inclusive end page.
+             *
+             * @param endPage The end page.
+             * @return This builder.
+             */
+            public Builder endPage(Integer endPage) { this.endPage = endPage; return this; }
+
+            /**
+             * Sets the content layers to extract.
+             *
+             * @param contentLayers The list of page content layers.
+             * @return This builder.
+             */
+            public Builder contentLayers(List<PageContentLayer> contentLayers) {
+                this.contentLayers = contentLayers != null ? List.copyOf(contentLayers) : null;
+                return this;
+            }
+
+            /**
+             * Sets the content layers to extract.
+             *
+             * @param contentLayers The page content layers.
+             * @return This builder.
+             */
+            public Builder contentLayers(PageContentLayer... contentLayers) {
+                this.contentLayers = contentLayers != null ? List.of(contentLayers) : null;
+                return this;
+            }
+
+            /**
+             * Builds the {@link PageProcessingOptions}.
+             *
+             * @return A new {@link PageProcessingOptions}.
+             */
+            public PageProcessingOptions build() {
+                return new PageProcessingOptions(startPage, endPage, contentLayers);
+            }
+        }
+    }
+
+    /**
+     * Content layer to extract from a spreadsheet (.xlsx, .xls, .ods).
+     */
+    public enum SpreadsheetContentLayer {
+        /** A rendered image of the sheet. */
+        @JsonProperty("visual") VISUAL,
+        /** Cell values, merges, and formats. */
+        @JsonProperty("data") DATA,
+        /** Formula expressions and their computed results. */
+        @JsonProperty("formulas") FORMULAS
+    }
+
+    /**
+     * Processing options for spreadsheets (.xlsx, .xls, .ods).
+     *
+     * @param visibleCells  Optional range of cells to extract in A1 notation (e.g. {@code "A1:D10"}).
+     * @param sheetIndex    Optional 1-indexed index of the sheet to extract in workbook order.
+     * @param contentLayers Optional content layers to extract from a spreadsheet.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record SpreadsheetProcessingOptions(
+        @JsonProperty("visible_cells") String visibleCells,
+        @JsonProperty("sheet_index") Integer sheetIndex,
+        @JsonProperty("content_layers") List<SpreadsheetContentLayer> contentLayers
+    ) {
+        /**
+         * Creates a new builder for {@link SpreadsheetProcessingOptions}.
+         *
+         * @return A new builder.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link SpreadsheetProcessingOptions}. */
+        public static class Builder {
+            private String visibleCells;
+            private Integer sheetIndex;
+            private List<SpreadsheetContentLayer> contentLayers;
+
+            /** Creates a new Builder. */
+            public Builder() {}
+
+            /**
+             * Sets the visible cell range in A1 notation (e.g. {@code "A1:D10"}).
+             *
+             * @param visibleCells The A1 cell range.
+             * @return This builder.
+             */
+            public Builder visibleCells(String visibleCells) { this.visibleCells = visibleCells; return this; }
+
+            /**
+             * Sets the 1-indexed sheet index.
+             *
+             * @param sheetIndex The 1-indexed sheet index.
+             * @return This builder.
+             */
+            public Builder sheetIndex(Integer sheetIndex) { this.sheetIndex = sheetIndex; return this; }
+
+            /**
+             * Sets the content layers to extract.
+             *
+             * @param contentLayers The list of spreadsheet content layers.
+             * @return This builder.
+             */
+            public Builder contentLayers(List<SpreadsheetContentLayer> contentLayers) {
+                this.contentLayers = contentLayers != null ? List.copyOf(contentLayers) : null;
+                return this;
+            }
+
+            /**
+             * Sets the content layers to extract.
+             *
+             * @param contentLayers The spreadsheet content layers.
+             * @return This builder.
+             */
+            public Builder contentLayers(SpreadsheetContentLayer... contentLayers) {
+                this.contentLayers = contentLayers != null ? List.of(contentLayers) : null;
+                return this;
+            }
+
+            /**
+             * Builds the {@link SpreadsheetProcessingOptions}.
+             *
+             * @return A new {@link SpreadsheetProcessingOptions}.
+             */
+            public SpreadsheetProcessingOptions build() {
+                return new SpreadsheetProcessingOptions(visibleCells, sheetIndex, contentLayers);
+            }
+        }
+    }
+
+    /**
+     * Configuration for processing document content.
+     */
+    @JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type",
+        visible = true
+    )
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = Content.DocumentStaticMediaProcessing.class, name = "static")
+    })
+    sealed interface DocumentMediaProcessing permits Content.DocumentStaticMediaProcessing {
+        /**
+         * Returns the type of document processing.
+         *
+         * @return The processing type.
+         */
+        String type();
+    }
+
+    /**
+     * Static media processing configuration for document content.
+     *
+     * @param type               The type of document processing (must be {@code "static"}).
+     * @param pageOptions        Options for paginated documents (PDF, Office documents, presentations).
+     * @param spreadsheetOptions Options for spreadsheets (.xlsx, .xls, .ods).
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record DocumentStaticMediaProcessing(
+        String type,
+        @JsonProperty("page_options") PageProcessingOptions pageOptions,
+        @JsonProperty("spreadsheet_options") SpreadsheetProcessingOptions spreadsheetOptions
+    ) implements DocumentMediaProcessing {
+        /** Compact constructor providing default type {@code "static"}. */
+        public DocumentStaticMediaProcessing {
+            if (type == null) {
+                type = "static";
+            }
+        }
+
+        /**
+         * Creates a DocumentStaticMediaProcessing configuration with page and/or spreadsheet options.
+         *
+         * @param pageOptions        Options for paginated documents.
+         * @param spreadsheetOptions Options for spreadsheets.
+         */
+        public DocumentStaticMediaProcessing(PageProcessingOptions pageOptions, SpreadsheetProcessingOptions spreadsheetOptions) {
+            this("static", pageOptions, spreadsheetOptions);
+        }
+
+        /**
+         * Creates a DocumentStaticMediaProcessing configuration for paginated documents.
+         *
+         * @param pageOptions Options for paginated documents.
+         * @return A new DocumentStaticMediaProcessing.
+         */
+        public static DocumentStaticMediaProcessing forPages(PageProcessingOptions pageOptions) {
+            return new DocumentStaticMediaProcessing("static", pageOptions, null);
+        }
+
+        /**
+         * Creates a DocumentStaticMediaProcessing configuration for spreadsheets.
+         *
+         * @param spreadsheetOptions Options for spreadsheets.
+         * @return A new DocumentStaticMediaProcessing.
+         */
+        public static DocumentStaticMediaProcessing forSpreadsheet(SpreadsheetProcessingOptions spreadsheetOptions) {
+            return new DocumentStaticMediaProcessing("static", null, spreadsheetOptions);
         }
     }
 
     /**
      * Content containing a document (PDF, CSV, Microsoft Office, or OpenDocument formats).
      *
-     * @param type     The type of content (must be "document").
-     * @param data     Base64 encoded document data.
-     * @param uri      URI of the document.
-     * @param mimeType MIME type of the document (e.g. {@link #APPLICATION_PDF}, {@link #TEXT_CSV},
-     *                 {@link #APPLICATION_DOCX}, {@link #APPLICATION_XLSX}, {@link #APPLICATION_PPTX}).
+     * @param type       The type of content (must be "document").
+     * @param data       Base64 encoded document data.
+     * @param uri        URI of the document.
+     * @param mimeType   MIME type of the document (e.g. {@link #APPLICATION_PDF}, {@link #TEXT_CSV},
+     *                   {@link #APPLICATION_DOCX}, {@link #APPLICATION_XLSX}, {@link #APPLICATION_PPTX}).
+     * @param resolution Optional resolution of the media (applicable when {@link PageContentLayer#PAGE_IMAGE} is selected).
+     * @param processing Optional document processing configuration ({@link DocumentMediaProcessing} or preset string like {@code "static"}).
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record DocumentContent(
         String type,
         byte[] data,
         String uri,
-        @JsonProperty("mime_type") String mimeType
+        @JsonProperty("mime_type") String mimeType,
+        Resolution resolution,
+        DocumentProcessingConfiguration processing
     ) implements Content {
         /** PDF document format. */
         public static final String APPLICATION_PDF = "application/pdf";
@@ -503,6 +907,25 @@ public sealed interface Content permits
         /** ODS spreadsheet format. */
         public static final String APPLICATION_ODS = "application/vnd.oasis.opendocument.spreadsheet";
 
+        /** Compact constructor providing default type {@code "document"}. */
+        public DocumentContent {
+            if (type == null) {
+                type = "document";
+            }
+        }
+
+        /**
+         * Backward-compatible constructor without resolution and processing.
+         *
+         * @param type     The type of content (must be "document").
+         * @param data     Base64 encoded document data.
+         * @param uri      URI of the document.
+         * @param mimeType MIME type of the document.
+         */
+        public DocumentContent(String type, byte[] data, String uri, String mimeType) {
+            this(type, data, uri, mimeType, null, null);
+        }
+
         /**
          * Creates a new DocumentContent from raw bytes with default type "document".
          *
@@ -510,7 +933,43 @@ public sealed interface Content permits
          * @param mimeType The MIME type of the document.
          */
         public DocumentContent(byte[] data, String mimeType) {
-            this("document", data, null, mimeType);
+            this("document", data, null, mimeType, null, null);
+        }
+
+        /**
+         * Creates a new DocumentContent from raw bytes with resolution and {@link DocumentProcessingConfiguration}.
+         *
+         * @param data       The document data bytes.
+         * @param mimeType   The MIME type of the document.
+         * @param resolution Optional media resolution.
+         * @param processing Optional document processing configuration.
+         */
+        public DocumentContent(byte[] data, String mimeType, Resolution resolution, DocumentProcessingConfiguration processing) {
+            this("document", data, null, mimeType, resolution, processing);
+        }
+
+        /**
+         * Creates a new DocumentContent from raw bytes with resolution and {@link DocumentMediaProcessing}.
+         *
+         * @param data       The document data bytes.
+         * @param mimeType   The MIME type of the document.
+         * @param resolution Optional media resolution.
+         * @param processing Optional document media processing configuration.
+         */
+        public DocumentContent(byte[] data, String mimeType, Resolution resolution, DocumentMediaProcessing processing) {
+            this("document", data, null, mimeType, resolution, processing != null ? DocumentProcessingConfiguration.of(processing) : null);
+        }
+
+        /**
+         * Creates a new DocumentContent from raw bytes with resolution and a preset processing mode string (e.g. {@code "static"}).
+         *
+         * @param data       The document data bytes.
+         * @param mimeType   The MIME type of the document.
+         * @param resolution Optional media resolution.
+         * @param processing Optional preset processing mode string.
+         */
+        public DocumentContent(byte[] data, String mimeType, Resolution resolution, String processing) {
+            this("document", data, null, mimeType, resolution, processing != null ? DocumentProcessingConfiguration.of(processing) : null);
         }
 
         /**
@@ -520,13 +979,61 @@ public sealed interface Content permits
          * @param mimeType The MIME type of the document.
          */
         public DocumentContent(String uri, String mimeType) {
-            this("document", null, uri, mimeType);
+            this("document", null, uri, mimeType, null, null);
+        }
+
+        /**
+         * Creates a new DocumentContent from a URI with resolution and {@link DocumentProcessingConfiguration}.
+         *
+         * @param uri        The URI of the document.
+         * @param mimeType   The MIME type of the document.
+         * @param resolution Optional media resolution.
+         * @param processing Optional document processing configuration.
+         */
+        public DocumentContent(String uri, String mimeType, Resolution resolution, DocumentProcessingConfiguration processing) {
+            this("document", null, uri, mimeType, resolution, processing);
+        }
+
+        /**
+         * Creates a new DocumentContent from a URI with resolution and {@link DocumentMediaProcessing}.
+         *
+         * @param uri        The URI of the document.
+         * @param mimeType   The MIME type of the document.
+         * @param resolution Optional media resolution.
+         * @param processing Optional document media processing configuration.
+         */
+        public DocumentContent(String uri, String mimeType, Resolution resolution, DocumentMediaProcessing processing) {
+            this("document", null, uri, mimeType, resolution, processing != null ? DocumentProcessingConfiguration.of(processing) : null);
+        }
+
+        /**
+         * Creates a new DocumentContent from a URI with resolution and a preset processing mode string (e.g. {@code "static"}).
+         *
+         * @param uri        The URI of the document.
+         * @param mimeType   The MIME type of the document.
+         * @param resolution Optional media resolution.
+         * @param processing Optional preset processing mode string.
+         */
+        public DocumentContent(String uri, String mimeType, Resolution resolution, String processing) {
+            this("document", null, uri, mimeType, resolution, processing != null ? DocumentProcessingConfiguration.of(processing) : null);
         }
 
         @Override
         public String toString() {
-            return "DocumentContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + "]";
+            return "DocumentContent[type=" + type + ", data=" + (data == null ? "null" : "<" + data.length + " bytes>") + ", uri=" + uri + ", mimeType=" + mimeType + ", resolution=" + resolution + ", processing=" + processing + "]";
         }
+    }
+
+    /**
+     * Content layer to extract from a video.
+     */
+    public enum VideoContentLayer {
+        /** Frames of the video. */
+        @JsonProperty("frames") FRAMES,
+        /** Audio of the video. */
+        @JsonProperty("audio") AUDIO,
+        /** Transcript of the audio track. */
+        @JsonProperty("transcript") TRANSCRIPT
     }
 
     /**
@@ -552,18 +1059,40 @@ public sealed interface Content permits
     /**
      * Static media processing configuration.
      *
-     * @param type        The type of media processing (must be "static").
-     * @param startOffset Optional segment start time (e.g. "10.5s").
-     * @param endOffset   Optional segment end time (e.g. "30s").
-     * @param fps         Optional video frame-rate sampling density.
+     * @param type          The type of media processing (must be "static").
+     * @param startOffset   Optional segment start time (e.g. "10.5s").
+     * @param endOffset     Optional segment end time (e.g. "30s").
+     * @param fps           Optional video frame-rate sampling density.
+     * @param contentLayers Optional content layers to extract from the video ({@link VideoContentLayer}).
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     record StaticMediaProcessing(
         String type,
         @JsonProperty("start_offset") String startOffset,
         @JsonProperty("end_offset") String endOffset,
-        Double fps
+        Double fps,
+        @JsonProperty("content_layers") List<VideoContentLayer> contentLayers
     ) implements MediaProcessing {
+        /** Compact constructor providing default type {@code "static"}. */
+        public StaticMediaProcessing {
+            if (type == null) {
+                type = "static";
+            }
+        }
+
+        /**
+         * Backward-compatible constructor without contentLayers.
+         *
+         * @param type        The type of media processing (must be "static").
+         * @param startOffset Optional segment start time (e.g. "10.5s").
+         * @param endOffset   Optional segment end time (e.g. "30s").
+         * @param fps         Optional video frame-rate sampling density.
+         */
+        public StaticMediaProcessing(String type, String startOffset, String endOffset, Double fps) {
+            this(type, startOffset, endOffset, fps, null);
+        }
+
         /**
          * Creates a new StaticMediaProcessing configuration.
          *
@@ -572,7 +1101,19 @@ public sealed interface Content permits
          * @param fps         Optional video frame-rate sampling density.
          */
         public StaticMediaProcessing(String startOffset, String endOffset, Double fps) {
-            this("static", startOffset, endOffset, fps);
+            this("static", startOffset, endOffset, fps, null);
+        }
+
+        /**
+         * Creates a new StaticMediaProcessing configuration with video content layers.
+         *
+         * @param startOffset   Optional segment start time (e.g. "10.5s").
+         * @param endOffset     Optional segment end time (e.g. "30s").
+         * @param fps           Optional video frame-rate sampling density.
+         * @param contentLayers Optional content layers to extract from the video.
+         */
+        public StaticMediaProcessing(String startOffset, String endOffset, Double fps, List<VideoContentLayer> contentLayers) {
+            this("static", startOffset, endOffset, fps, contentLayers);
         }
     }
 

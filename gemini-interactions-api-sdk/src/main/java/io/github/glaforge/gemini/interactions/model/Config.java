@@ -338,7 +338,9 @@ public class Config {
         /** Medium thinking level (default for Gemini 4 Argon). */
         @JsonProperty("medium") MEDIUM,
         /** High thinking level. */
-        @JsonProperty("high") HIGH
+        @JsonProperty("high") HIGH,
+        /** Extra high thinking level, above {@link #HIGH}. */
+        @JsonProperty("xhigh") XHIGH
     }
 
     /**

@@ -40,6 +40,7 @@ import io.github.glaforge.gemini.interactions.model.ListTriggersResponse;
 import io.github.glaforge.gemini.interactions.model.ListTriggerExecutionsResponse;
 import io.github.glaforge.gemini.interactions.model.TriggerExecution;
 import io.github.glaforge.gemini.interactions.model.Environment;
+import io.github.glaforge.gemini.interactions.model.EnvironmentMode;
 import io.github.glaforge.gemini.interactions.model.CreateEnvironmentRequest;
 import io.github.glaforge.gemini.interactions.model.NetworkConfiguration;
 import io.github.glaforge.gemini.interactions.model.ListEnvironmentsResponse;
@@ -539,11 +540,27 @@ public class GeminiInteractionsClient {
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public Webhook updateWebhook(String id, WebhookUpdate update) {
+        return updateWebhook(id, update, null);
+    }
+
+    /**
+     * Updates a webhook with an optional field update mask.
+     *
+     * @param id         The webhook ID.
+     * @param update     The webhook update payload.
+     * @param updateMask Optional comma-separated list of fields to update (e.g. {@code "name,uri"}).
+     * @return The updated Webhook.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Webhook updateWebhook(String id, WebhookUpdate update, String updateMask) {
         try {
             String requestBody = objectMapper.writeValueAsString(update);
-            String url = buildUrl("webhooks/" + id);
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("webhooks/" + id));
+            if (updateMask != null && !updateMask.isEmpty()) {
+                urlBuilder.append("?update_mask=").append(URLEncoder.encode(updateMask, StandardCharsets.UTF_8));
+            }
 
-            HttpRequest httpRequest = newRequestBuilder(url)
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
                 .header("Content-Type", "application/json")
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
@@ -745,11 +762,27 @@ public class GeminiInteractionsClient {
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public Credential updateCredential(String id, CredentialUpdate update) {
+        return updateCredential(id, update, null);
+    }
+
+    /**
+     * Updates or rotates a Credential with an optional field update mask (PATCH /v1beta/credentials/{id}).
+     *
+     * @param id         The credential ID.
+     * @param update     The credential update payload containing the rotated secrets.
+     * @param updateMask Optional comma-separated list of fields to update.
+     * @return The updated Credential metadata.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Credential updateCredential(String id, CredentialUpdate update, String updateMask) {
         try {
             String requestBody = objectMapper.writeValueAsString(update);
-            String url = buildUrl("credentials/" + id);
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("credentials/" + id));
+            if (updateMask != null && !updateMask.isEmpty()) {
+                urlBuilder.append("?update_mask=").append(URLEncoder.encode(updateMask, StandardCharsets.UTF_8));
+            }
 
-            HttpRequest httpRequest = newRequestBuilder(url)
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
                 .header("Content-Type", "application/json")
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
@@ -1173,7 +1206,18 @@ public class GeminiInteractionsClient {
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public ListEnvironmentsResponse listEnvironments() {
-        return listEnvironments(null, null);
+        return listEnvironments(null, null, null);
+    }
+
+    /**
+     * Lists Environments filtered by compute lifecycle mode.
+     *
+     * @param mode Optional compute lifecycle mode filter ({@link EnvironmentMode#ON_DEMAND} or {@link EnvironmentMode#SELF_HOSTED}).
+     * @return The ListEnvironmentsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListEnvironmentsResponse listEnvironments(EnvironmentMode mode) {
+        return listEnvironments(null, null, mode);
     }
 
     /**
@@ -1185,6 +1229,19 @@ public class GeminiInteractionsClient {
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public ListEnvironmentsResponse listEnvironments(Integer pageSize, String pageToken) {
+        return listEnvironments(pageSize, pageToken, null);
+    }
+
+    /**
+     * Lists Environments with pagination and optional compute lifecycle mode filter.
+     *
+     * @param pageSize  The maximum number of environments to return.
+     * @param pageToken A page token, received from a previous list call.
+     * @param mode      Optional compute lifecycle mode filter ({@link EnvironmentMode#ON_DEMAND} or {@link EnvironmentMode#SELF_HOSTED}).
+     * @return The ListEnvironmentsResponse.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public ListEnvironmentsResponse listEnvironments(Integer pageSize, String pageToken, EnvironmentMode mode) {
         try {
             StringBuilder urlBuilder = new StringBuilder(buildUrl("environments"));
             boolean hasParam = false;
@@ -1194,6 +1251,10 @@ public class GeminiInteractionsClient {
             }
             if (pageToken != null && !pageToken.isEmpty()) {
                 urlBuilder.append(hasParam ? "&" : "?").append("page_token=").append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
+                hasParam = true;
+            }
+            if (mode != null) {
+                urlBuilder.append(hasParam ? "&" : "?").append("mode=").append(URLEncoder.encode(mode.value(), StandardCharsets.UTF_8));
             }
 
             HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
@@ -1831,11 +1892,27 @@ public class GeminiInteractionsClient {
      * @throws GeminiInteractionsException If the API request fails or an error occurs.
      */
     public Trigger updateTrigger(String id, TriggerUpdate update) {
+        return updateTrigger(id, update, null);
+    }
+
+    /**
+     * Updates a Trigger with an optional field update mask.
+     *
+     * @param id         The trigger ID.
+     * @param update     The trigger update payload.
+     * @param updateMask Optional comma-separated list of fields to update (e.g. {@code "display_name,status"}).
+     * @return The updated Trigger.
+     * @throws GeminiInteractionsException If the API request fails or an error occurs.
+     */
+    public Trigger updateTrigger(String id, TriggerUpdate update, String updateMask) {
         try {
             String requestBody = objectMapper.writeValueAsString(update);
-            String url = buildUrl("triggers/" + id);
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("triggers/" + id));
+            if (updateMask != null && !updateMask.isEmpty()) {
+                urlBuilder.append("?update_mask=").append(URLEncoder.encode(updateMask, StandardCharsets.UTF_8));
+            }
 
-            HttpRequest httpRequest = newRequestBuilder(url)
+            HttpRequest httpRequest = newRequestBuilder(urlBuilder.toString())
                 .header("Content-Type", "application/json")
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();

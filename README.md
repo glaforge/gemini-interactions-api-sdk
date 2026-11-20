@@ -26,7 +26,7 @@ To use the core client SDK, add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.2.1</version>
+    <version>2.2.2</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ If you are implementing the server-side webhook handler (`InteractionsHandler`),
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-server</artifactId>
-    <version>2.2.1</version>
+    <version>2.2.2</version>
 </dependency>
 ```
 
@@ -211,11 +211,11 @@ Step.ModelOutputStep step2 = (Step.ModelOutputStep) response2.steps().get(0);
 System.out.println(step2.content().get(0));
 ```
 
-### Gemini 4 Carbon & Argon, Thinking Levels, & Long Decode (> 64K Output Tokens)
+### Gemini 4 (Carbon, Argon, Neon & Hydrogen), Thinking Levels, & Long Decode (> 64K Output Tokens)
 
-**Gemini 4 Carbon** (`ModelOption.GEMINI_4_CARBON`, `"gemini-4-carbon"`) and **Gemini 4 Argon** (`ModelOption.GEMINI_4_ARGON`, `"gemini-4-argon"`) feature a unified **1 million token context window** shared dynamically across input, thinking, and output tokens.
+**Gemini 4 Carbon** (`ModelOption.GEMINI_4_CARBON`, `"gemini-4-carbon"`), **Gemini 4 Argon** (`ModelOption.GEMINI_4_ARGON`, `"gemini-4-argon"`), **Gemini 4 Neon** (`ModelOption.GEMINI_4_NEON`, `"gemini-4-neon"`), and **Gemini 4 Hydrogen** (`ModelOption.GEMINI_4_HYDROGEN`, `"gemini-4-hydrogen"`) feature a unified **1 million token context window** shared dynamically across input, thinking, and output tokens.
 
-- **Thinking Levels (`Config.ThinkingLevel`)**: Gemini 4 Carbon and Argon default to `ThinkingLevel.MEDIUM` (and support `LOW`, `MEDIUM`, and `HIGH`), while Flash / Flash-Lite models also support `ThinkingLevel.MINIMAL`.
+- **Thinking Levels (`Config.ThinkingLevel`)**: Supports `MINIMAL` (Flash / Flash-Lite models), `LOW`, `MEDIUM`, `HIGH`, and `XHIGH` (`"xhigh"`, extra-high thinking above `HIGH`).
 - **Long Decode**: To generate more than 65,536 output tokens in a single interaction (up to the 1M unified context limit), set `background(true)` and configure `maxOutputTokens` > `65536` in `GenerationConfig`. The server automatically chains multiple 64K-token decode hops and appends each hop as a `ModelOutputStep` in `interaction.steps()`. Calling `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep` hops (skipping any interleaved `ThoughtStep`s):
 
 ```java
@@ -315,15 +315,17 @@ Interaction response = client.create(request);
 ```
 
 ### Multimodal (Audio)
+`AudioContent` supports optional `AudioProcessingConfiguration` (either `"static"` or `AudioStaticMediaProcessing` with `startOffset` / `endOffset` segment bounds):
 ```java
-import io.github.glaforge.gemini.interactions.model.Content.*;
-import io.github.glaforge.gemini.interactions.model.Config.SpeechConfig;
+import io.github.glaforge.gemini.interactions.model.Content.AudioContent;
+import io.github.glaforge.gemini.interactions.model.Content.AudioStaticMediaProcessing;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 
 ModelInteractionParams request = ModelInteractionParams.builder()
-    .model("gemini-3.8-flash")
+    .model(ModelOption.GEMINI_3_8_FLASH)
     .input(
-        new TextContent("Transcribe this audio"),
-        new AudioContent(audioBytes, "audio/mp3")
+        new TextContent("Transcribe this audio segment"),
+        new AudioContent(audioBytes, "audio/mp3", new AudioStaticMediaProcessing("10.5s", "30s"))
     )
     .build();
 
@@ -331,17 +333,39 @@ Interaction response = client.create(request);
 ```
 
 ### Multimodal (Documents: PDF, CSV, Office & OpenDocument)
-`DocumentContent` supports PDF, CSV, Microsoft Office (`DOCX`, `DOC`, `DOTX`, `XLSX`, `XLS`, `PPTX`, `PPT`), and OpenDocument (`ODT`, `ODS`, `ODP`) formats via built-in MIME type constants:
+`DocumentContent` supports PDF, CSV, Microsoft Office (`DOCX`, `DOC`, `DOTX`, `XLSX`, `XLS`, `PPTX`, `PPT`), and OpenDocument (`ODT`, `ODS`, `ODP`) formats via built-in MIME type constants, along with optional `Resolution` and `DocumentProcessingConfiguration` (`PageProcessingOptions` for paginated docs and `SpreadsheetProcessingOptions` for spreadsheets):
 ```java
 import io.github.glaforge.gemini.interactions.model.Content.DocumentContent;
+import io.github.glaforge.gemini.interactions.model.Content.DocumentStaticMediaProcessing;
+import io.github.glaforge.gemini.interactions.model.Content.PageContentLayer;
+import io.github.glaforge.gemini.interactions.model.Content.PageProcessingOptions;
+import io.github.glaforge.gemini.interactions.model.Content.Resolution;
+import io.github.glaforge.gemini.interactions.model.Content.SpreadsheetContentLayer;
+import io.github.glaforge.gemini.interactions.model.Content.SpreadsheetProcessingOptions;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+
+DocumentStaticMediaProcessing pdfProcessing = DocumentStaticMediaProcessing.forPages(
+    PageProcessingOptions.builder()
+        .startPage(1)
+        .endPage(5)
+        .contentLayers(PageContentLayer.PAGE_IMAGE, PageContentLayer.PAGE_TEXT)
+        .build()
+);
+
+DocumentStaticMediaProcessing sheetProcessing = DocumentStaticMediaProcessing.forSpreadsheet(
+    SpreadsheetProcessingOptions.builder()
+        .sheetIndex(1)
+        .visibleCells("A1:D20")
+        .contentLayers(SpreadsheetContentLayer.DATA, SpreadsheetContentLayer.FORMULAS)
+        .build()
+);
 
 ModelInteractionParams request = ModelInteractionParams.builder()
     .model(ModelOption.GEMINI_3_8_FLASH)
     .input(
         new TextContent("Summarize the key findings and financial tables in these documents"),
-        new DocumentContent(docxBytes, DocumentContent.APPLICATION_DOCX),
-        new DocumentContent("https://example.com/quarterly-metrics.xlsx", DocumentContent.APPLICATION_XLSX)
+        new DocumentContent(docxBytes, DocumentContent.APPLICATION_DOCX, Resolution.HIGH, pdfProcessing),
+        new DocumentContent("https://example.com/quarterly-metrics.xlsx", DocumentContent.APPLICATION_XLSX, null, sheetProcessing)
     )
     .build();
 
@@ -499,8 +523,8 @@ ListVoicesResponse voices = client.listVoices(VoiceListFilter.builder()
 > [!NOTE]
 > Custom stored voices (`store = true`) expire after 1 year of inactivity. Using a stored voice in speech synthesis or as a `base_voice` in `createVoice` automatically extends its `expireTime`. Catalog prebuilt voices do not expire.
 
-### Agentic Video Understanding
-Enable model-driven dynamic video navigation (`"processing": "agentic"`) to let Gemini models actively search, zoom, and inspect video segments rather than relying purely on fixed-interval frame sampling:
+### Agentic & Static Video Understanding
+Enable model-driven dynamic video navigation (`"processing": "agentic"`) to let Gemini models actively search, zoom, and inspect video segments, or configure `StaticMediaProcessing` with segment offsets, FPS, and `VideoContentLayer` extraction (`FRAMES`, `AUDIO`, `TRANSCRIPT`):
 
 ```java
 import io.github.glaforge.gemini.interactions.model.*;
@@ -766,9 +790,20 @@ Environment env = client.createEnvironment(
 Environment retrieved = client.getEnvironment(env.id());
 System.out.println("Status: " + retrieved.status() + ", files: " + retrieved.fileCount());
 
-// List environments with pagination
+// List environments with pagination or filter by compute lifecycle mode (ON_DEMAND / SELF_HOSTED)
 ListEnvironmentsResponse response = client.listEnvironments(10, null);
 response.environments().forEach(e -> System.out.println(e.id() + ": " + e.status()));
+
+// Create a self-hosted environment (returns a one-time environmentKey for the sandbox daemon)
+Environment selfHosted = client.createEnvironment(CreateEnvironmentRequest.builder()
+    .mode(EnvironmentMode.SELF_HOSTED)
+    .customConfig("runner", "k8s-pool-1")
+    .systemInstruction("Use the internal tooling installed under /opt/tools.")
+    .build());
+System.out.println("Self-hosted daemon key: " + selfHosted.environmentKey());
+
+// List only self-hosted environments
+ListEnvironmentsResponse selfHostedEnvs = client.listEnvironments(EnvironmentMode.SELF_HOSTED);
 
 // Clone / fork an existing environment directly from a snapshot
 Environment cloned = client.createEnvironmentFrom(env.id());
@@ -1122,6 +1157,63 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 Interaction interaction = client.create(request);
 Step.ModelOutputStep step = (Step.ModelOutputStep) interaction.steps().getLast();
 System.out.println(step.content().getLast());
+```
+
+### Tool Retrieval (`tool_search` & `defer_loading`)
+
+When working with large libraries of custom functions or remote MCP servers, **Tool Retrieval** (preview, `v1beta`) lets Gemini load full parameter schemas on demand instead of sending every schema upfront:
+
+- **Server-side retrieval (default)**: Add `Tool.ToolSearch.server()` (`{"type": "tool_search"}`) and set `deferLoading(true)` (plus optional `shortDescription(...)`) on `Tool.Function` or `deferLoading(true)` on `Tool.McpServer`. Gemini emits `Step.ToolSearchCallStep` and `Step.ToolSearchResultStep` (and `Events.ToolSearchCallDelta` / `Events.ToolSearchResultDelta` when streaming) inside the same turn. In stateless conversations (`store(false)`), replay all returned steps unchanged—including their `signature` values—alongside the full `tools` list.
+- **Client-side retrieval**: Add `Tool.ToolSearch.client(name, description, parameters)` (`execution: "client"`). Gemini invokes it as a standard `Step.FunctionCallStep`, and you return matching `List<Tool.Function>` definitions in a `Step.FunctionResultStep`.
+
+```java
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
+import io.github.glaforge.gemini.interactions.model.Step;
+import io.github.glaforge.gemini.interactions.model.Tool;
+import io.github.glaforge.gemini.interactions.model.Tool.Function;
+import io.github.glaforge.gemini.interactions.model.Tool.McpServer;
+import io.github.glaforge.gemini.interactions.model.Tool.ToolSearch;
+import java.util.List;
+import java.util.Map;
+
+List<Tool> tools = List.of(
+    ToolSearch.server(),
+    Function.builder()
+        .name("convert_currency")
+        .description("Convert an amount between currencies using live mid-market rates.")
+        .shortDescription("Convert currency amounts.")
+        .deferLoading(true)
+        .parameters(Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "amount", Map.of("type", "number"),
+                "to", Map.of("type", "string")
+            ),
+            "required", List.of("amount", "to")
+        ))
+        .build(),
+    McpServer.builder()
+        .name("weather_service")
+        .url("https://gemini-api-demos.uc.r.appspot.com/mcp")
+        .deferLoading(true)
+        .build()
+);
+
+Interaction interaction = client.create(ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_4_HYDROGEN)
+    .input("Check the temperature in London and convert 100 USD to EUR.")
+    .tools(tools)
+    .build());
+
+for (Step step : interaction.steps()) {
+    if (step instanceof Step.ToolSearchCallStep searchCall) {
+        System.out.println("Loaded tools: " + searchCall.arguments().functionNames());
+    } else if (step instanceof Step.FunctionCallStep fnCall) {
+        System.out.println("Execute function: " + fnCall.name() + " " + fnCall.arguments());
+    }
+}
 ```
 
 ### Built-in Tools (Google Maps)

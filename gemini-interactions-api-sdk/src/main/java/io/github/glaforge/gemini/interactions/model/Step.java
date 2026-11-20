@@ -58,6 +58,8 @@ import java.util.Map;
     @JsonSubTypes.Type(value = Step.GoogleMapsResultStep.class, name = "google_maps_result"),
     @JsonSubTypes.Type(value = Step.ProcessingCallStep.class, name = "processing_call"),
     @JsonSubTypes.Type(value = Step.ProcessingResultStep.class, name = "processing_result"),
+    @JsonSubTypes.Type(value = Step.ToolSearchCallStep.class, name = "tool_search_call"),
+    @JsonSubTypes.Type(value = Step.ToolSearchResultStep.class, name = "tool_search_result"),
     @JsonSubTypes.Type(value = Step.RetrievalCallStep.class, name = "retrieval_call"),
     @JsonSubTypes.Type(value = Step.RetrievalResultStep.class, name = "retrieval_result")
 })
@@ -81,6 +83,8 @@ public sealed interface Step permits
     Step.GoogleMapsResultStep,
     Step.ProcessingCallStep,
     Step.ProcessingResultStep,
+    Step.ToolSearchCallStep,
+    Step.ToolSearchResultStep,
     Step.RetrievalCallStep,
     Step.RetrievalResultStep,
     Step.UnknownStep {
@@ -625,6 +629,73 @@ public sealed interface Step permits
         public ProcessingResultStep {
             if (type == null) {
                 type = "processing_result";
+            }
+        }
+    }
+
+    // --- Tool Search (Tool Retrieval) ---
+
+    /**
+     * Arguments for a server-side tool search call.
+     *
+     * @param functionNames List of deferred function names to load explicitly.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ToolSearchCallArguments(
+        @JsonProperty("function_names") List<String> functionNames
+    ) {}
+
+    /**
+     * Tool search call step emitted during server-side tool retrieval.
+     * <p>
+     * In stateless multi-turn conversations ({@code store=false}), pass this step back unchanged
+     * (including its {@code signature}) in the conversation history.
+     *
+     * @param type      The step type ({@code "tool_search_call"}).
+     * @param id        Unique ID for this specific tool search call.
+     * @param arguments Arguments specifying which deferred functions to load.
+     * @param signature Opaque signature hash for backend context validation.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ToolSearchCallStep(
+        String type,
+        String id,
+        ToolSearchCallArguments arguments,
+        String signature
+    ) implements Step {
+        /** Compact constructor defaulting {@code type} to {@code "tool_search_call"}. */
+        public ToolSearchCallStep {
+            if (type == null) {
+                type = "tool_search_call";
+            }
+        }
+    }
+
+    /**
+     * Tool search result step containing the resolved schemas for deferred tools.
+     * <p>
+     * In stateless multi-turn conversations ({@code store=false}), pass this step back unchanged
+     * (including its {@code signature}) in the conversation history.
+     *
+     * @param type      The step type ({@code "tool_search_result"}).
+     * @param callId    ID matching the {@link ToolSearchCallStep#id()}.
+     * @param result    The retrieved {@link Tool.Function} definitions.
+     * @param signature Opaque signature hash for backend context validation.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ToolSearchResultStep(
+        String type,
+        @JsonProperty("call_id") String callId,
+        List<Tool.Function> result,
+        String signature
+    ) implements Step {
+        /** Compact constructor defaulting {@code type} to {@code "tool_search_result"}. */
+        public ToolSearchResultStep {
+            if (type == null) {
+                type = "tool_search_result";
             }
         }
     }

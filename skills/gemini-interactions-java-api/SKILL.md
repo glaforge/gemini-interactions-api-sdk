@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.2.1</version>
+    <version>2.2.2</version>
 </dependency>
 ```
 
@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml`:
 Add the dependency to your `build.gradle` or `build.gradle.kts`:
 
 ```gradle
-implementation("io.github.glaforge:gemini-interactions-api-sdk:2.2.1")
+implementation("io.github.glaforge:gemini-interactions-api-sdk:2.2.2")
 ```
 
 > [!NOTE]
@@ -130,9 +130,9 @@ if (video != null) {
 }
 ```
 
-### Agentic Video Understanding
+### Agentic & Static Video Understanding
 
-Enable model-driven dynamic video navigation (`"processing": "agentic"`) to let Gemini models actively inspect video segments, jump timestamps, and zoom in on details with sub-second accuracy.
+Enable model-driven dynamic video navigation (`"processing": "agentic"`) to let Gemini models actively inspect video segments, jump timestamps, and zoom in on details with sub-second accuracy, or use `StaticMediaProcessing(startOffset, endOffset, fps, List.of(VideoContentLayer.FRAMES, VideoContentLayer.AUDIO, VideoContentLayer.TRANSCRIPT))` for static extraction:
 
 ```java
 import io.github.glaforge.gemini.interactions.GeminiInteractionsClient;
@@ -173,21 +173,44 @@ for (Step step : response.steps()) {
 }
 ```
 
-### Document Understanding (PDF, CSV, Office & OpenDocument)
+### Document & Audio Understanding (PDF, CSV, Office, OpenDocument & Processing Options)
 
-Pass documents in PDF, CSV, Microsoft Office (`DOCX`, `DOC`, `DOTX`, `XLSX`, `XLS`, `PPTX`, `PPT`), or OpenDocument (`ODT`, `ODS`, `ODP`) formats using `Content.DocumentContent` and its built-in MIME type constants:
+Pass documents in PDF, CSV, Microsoft Office (`DOCX`, `DOC`, `DOTX`, `XLSX`, `XLS`, `PPTX`, `PPT`), or OpenDocument (`ODT`, `ODS`, `ODP`) formats using `Content.DocumentContent` with optional `Content.Resolution` and `DocumentProcessingConfiguration` (`PageProcessingOptions` for paginated documents, `SpreadsheetProcessingOptions` for spreadsheets, or `"static"`). Similarly, `Content.AudioContent` accepts optional `AudioProcessingConfiguration` (`AudioStaticMediaProcessing(startOffset, endOffset)` or `"static"`):
 
 ```java
+import io.github.glaforge.gemini.interactions.model.Content.AudioContent;
+import io.github.glaforge.gemini.interactions.model.Content.AudioStaticMediaProcessing;
 import io.github.glaforge.gemini.interactions.model.Content.DocumentContent;
+import io.github.glaforge.gemini.interactions.model.Content.DocumentStaticMediaProcessing;
+import io.github.glaforge.gemini.interactions.model.Content.PageContentLayer;
+import io.github.glaforge.gemini.interactions.model.Content.PageProcessingOptions;
+import io.github.glaforge.gemini.interactions.model.Content.Resolution;
+import io.github.glaforge.gemini.interactions.model.Content.SpreadsheetContentLayer;
+import io.github.glaforge.gemini.interactions.model.Content.SpreadsheetProcessingOptions;
 import io.github.glaforge.gemini.interactions.model.Content.TextContent;
 import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
 
+DocumentStaticMediaProcessing pdfProcessing = DocumentStaticMediaProcessing.forPages(
+    PageProcessingOptions.builder()
+        .startPage(1).endPage(5)
+        .contentLayers(PageContentLayer.PAGE_IMAGE, PageContentLayer.PAGE_TEXT)
+        .build()
+);
+
+DocumentStaticMediaProcessing sheetProcessing = DocumentStaticMediaProcessing.forSpreadsheet(
+    SpreadsheetProcessingOptions.builder()
+        .sheetIndex(1).visibleCells("A1:D20")
+        .contentLayers(SpreadsheetContentLayer.DATA, SpreadsheetContentLayer.FORMULAS)
+        .build()
+);
+
 ModelInteractionParams docRequest = ModelInteractionParams.builder()
-    .model(ModelOption.GEMINI_3_8_FLASH)
+    .model(ModelOption.GEMINI_4_HYDROGEN)
     .input(
         new TextContent("Extract the action items and key figures from these files"),
-        new DocumentContent(docxBytes, DocumentContent.APPLICATION_DOCX),
-        new DocumentContent("https://example.com/budget.xlsx", DocumentContent.APPLICATION_XLSX)
+        new DocumentContent(docxBytes, DocumentContent.APPLICATION_DOCX, Resolution.HIGH, pdfProcessing),
+        new DocumentContent("https://example.com/budget.xlsx", DocumentContent.APPLICATION_XLSX, null, sheetProcessing),
+        new AudioContent(audioBytes, "audio/mp3", new AudioStaticMediaProcessing("0s", "60s"))
     )
     .build();
 ```
@@ -518,7 +541,7 @@ try {
 
 ### Antigravity Agent & Budget Controls
 
-The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent powered by Gemini 3.8 Flash (configurable with `ModelOption.GEMINI_4_CARBON`, `ModelOption.GEMINI_4_ARGON`, `ModelOption.GEMINI_3_8_FLASH`, or `ModelOption.GEMINI_3_5_FLASH_LITE`) that reasons, runs code, and manages files in a secure Linux sandbox.
+The **Antigravity agent** (`antigravity-preview-09-2026`) is a general-purpose managed agent powered by Gemini 3.8 Flash (configurable with `ModelOption.GEMINI_4_CARBON`, `ModelOption.GEMINI_4_ARGON`, `ModelOption.GEMINI_4_NEON`, `ModelOption.GEMINI_4_HYDROGEN`, `ModelOption.GEMINI_3_8_FLASH`, or `ModelOption.GEMINI_3_5_FLASH_LITE`) that reasons, runs code, and manages files in a secure Linux sandbox.
 
 Configure model, token budget caps, and handle continuation when `status: "incomplete"`:
 
@@ -660,8 +683,17 @@ Environment env = client.createEnvironment(
 Environment retrieved = client.getEnvironment(env.id());
 System.out.println("Environment status: " + retrieved.status() + ", files: " + retrieved.fileCount());
 
-// List environments
+// List environments (optionally filtered by EnvironmentMode.ON_DEMAND or EnvironmentMode.SELF_HOSTED)
 ListEnvironmentsResponse response = client.listEnvironments();
+ListEnvironmentsResponse selfHostedList = client.listEnvironments(EnvironmentMode.SELF_HOSTED);
+
+// Provision a self-hosted environment (returns a one-time environmentKey for the sandbox daemon)
+Environment selfHosted = client.createEnvironment(CreateEnvironmentRequest.builder()
+    .mode(EnvironmentMode.SELF_HOSTED)
+    .customConfig("runner", "k8s-pool-1")
+    .systemInstruction("Use the internal tooling under /opt/tools.")
+    .build());
+System.out.println("Daemon key: " + selfHosted.environmentKey());
 
 // Clone / fork an environment from an existing snapshot
 Environment cloned = client.createEnvironmentFrom(env.id());
@@ -792,8 +824,8 @@ ListTriggerExecutionsResponse executions = client.listTriggerExecutions(trigger.
 
 ### Thinking Levels, Long Decode, Checkpoints & Stream Resumption
 
-- **Thinking Levels (`Config.ThinkingLevel`)**: Supports `MINIMAL` (`"minimal"`, Flash/Flash-Lite), `LOW` (`"low"`), `MEDIUM` (`"medium"`), and `HIGH` (`"high"`).
-- **Long Decode (> 64K Output Tokens)**: Supported on Gemini 4 Carbon (`ModelOption.GEMINI_4_CARBON`), Gemini 4 Argon (`ModelOption.GEMINI_4_ARGON`), and Gemini 3.8 Flash (`ModelOption.GEMINI_3_8_FLASH`). Set `background(true)` on `ModelInteractionParams` and `maxOutputTokens` > `65536` (up to `1_048_576`) on `GenerationConfig`. Each 64K decode hop is recorded as a `ModelOutputStep` in `interaction.steps()` (with per-step `stepUsage()` and cumulative `usage()` on `Events.StepStop`), and `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep`s (skipping any interleaved `ThoughtStep`s).
+- **Thinking Levels (`Config.ThinkingLevel`)**: Supports `MINIMAL` (`"minimal"`, Flash/Flash-Lite), `LOW` (`"low"`), `MEDIUM` (`"medium"`), `HIGH` (`"high"`), and `XHIGH` (`"xhigh"`, extra-high thinking above `HIGH`).
+- **Long Decode (> 64K Output Tokens)**: Supported on Gemini 4 Carbon (`ModelOption.GEMINI_4_CARBON`), Gemini 4 Argon (`ModelOption.GEMINI_4_ARGON`), Gemini 4 Neon (`ModelOption.GEMINI_4_NEON`), Gemini 4 Hydrogen (`ModelOption.GEMINI_4_HYDROGEN`), and Gemini 3.8 Flash (`ModelOption.GEMINI_3_8_FLASH`). Set `background(true)` on `ModelInteractionParams` and `maxOutputTokens` > `65536` (up to `1_048_576`) on `GenerationConfig`. Each 64K decode hop is recorded as a `ModelOutputStep` in `interaction.steps()` (with per-step `stepUsage()` and cumulative `usage()` on `Events.StepStop`), and `interaction.outputText()` automatically concatenates all consecutive `ModelOutputStep`s (skipping any interleaved `ThoughtStep`s).
 - **Streaming & Resuming Background Interactions (`client.stream(id, lastEventId)`)**: Reconnect to an in-progress background interaction stream using `client.stream(interaction.id())` or resume without duplicates after a disconnect using `client.stream(interaction.id(), lastEventId)`.
 - **Resuming Checkpoints (`REQUIRES_CONTINUATION` / `INCOMPLETE` & `continuationToken`)**: When an interaction reaches `Interaction.Status.REQUIRES_CONTINUATION` or `Interaction.Status.INCOMPLETE`, or during streaming when `Events.InteractionStatusUpdate` is emitted, an opaque `continuationToken` is returned. Pass it back unchanged in `ModelInteractionParams` or `AgentInteractionParams` to resume decoding from the latest checkpoint. Interactions also support custom `labels` and per-interaction `webhookConfig`:
 
@@ -882,6 +914,51 @@ Answer.ChoiceAnswer dept = decision.choiceAnswer("department"); // .choice(), .p
 Answer.ScoreAnswer churn = decision.scoreAnswer("churn_risk");  // .score(), .topLevelKey(), .topLevelDescription(), .normalizedScore(), .confidence()
 ```
 
+### Tool Retrieval (`Tool.ToolSearch` & `deferLoading`)
+
+Enable on-demand tool schema loading for large libraries of custom `Tool.Function` or remote `Tool.McpServer` declarations (`v1beta` preview):
+
+- **Server-side retrieval**: Include `Tool.ToolSearch.server()` (`{"type": "tool_search"}`) and mark deferred tools with `deferLoading(true)` (and optional `shortDescription(...)` on `Tool.Function`). Inspect `Step.ToolSearchCallStep` / `Step.ToolSearchResultStep` (or `Events.ToolSearchCallDelta` / `Events.ToolSearchResultDelta` when streaming). Always resend the full `tools` list on every turn; in stateless mode (`store(false)`), replay all returned steps unchanged with their `signature` fields preserved.
+- **Client-side retrieval**: Include `Tool.ToolSearch.client(name, description, parameters)` (`execution: "client"`), handle the resulting `Step.FunctionCallStep`, and return matching `List<Tool.Function>` definitions as the `result` of `Step.FunctionResultStep`.
+
+```java
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
+import io.github.glaforge.gemini.interactions.model.Tool;
+import io.github.glaforge.gemini.interactions.model.Tool.Function;
+import io.github.glaforge.gemini.interactions.model.Tool.McpServer;
+import io.github.glaforge.gemini.interactions.model.Tool.ToolSearch;
+import java.util.List;
+import java.util.Map;
+
+List<Tool> tools = List.of(
+    ToolSearch.server(),
+    Function.builder()
+        .name("convert_currency")
+        .description("Convert an amount between currencies using live exchange rates.")
+        .shortDescription("Convert currency amounts.")
+        .deferLoading(true)
+        .parameters(Map.of(
+            "type", "object",
+            "properties", Map.of("amount", Map.of("type", "number"), "to", Map.of("type", "string")),
+            "required", List.of("amount", "to")
+        ))
+        .build(),
+    McpServer.builder()
+        .name("weather_service")
+        .url("https://gemini-api-demos.uc.r.appspot.com/mcp")
+        .deferLoading(true)
+        .build()
+);
+
+Interaction response = client.create(ModelInteractionParams.builder()
+    .model(ModelOption.GEMINI_4_HYDROGEN)
+    .input("Convert 100 USD to EUR.")
+    .tools(tools)
+    .build());
+```
+
 ### Built-in Tools (Google Maps & Computer Use)
 
 Configure `Tool.GoogleMaps` with optional user coordinates and widget context tokens, or `Tool.ComputerUse` with environment and disabled safety policies:
@@ -913,7 +990,9 @@ The SDK uses specialized union records instead of untyped `Object` fields to han
 - **`SpeechConfiguration`**: Wraps either single-speaker `List<SpeechConfig>` or multi-speaker `SpeakerConfig` (`isSingleSpeaker()`, `isMultiSpeaker()`).
 - **`NetworkConfiguration`**: Wraps either a preset network string (e.g. `"disabled"`, `"allow_all"`) or custom `EnvironmentNetworkEgressAllowlist` (`isPreset()`, `isCustom()`). `EnvironmentNetworkEgressAllowlist` also supports `EnvironmentNetworkEgressAllowlist.disabled()` (`{"allowlist": "disabled"}`) as well as `EnvironmentNetworkEgressAllowlist.of(AllowlistEntry...)`.
 - **`BaseEnvironment`**: Wraps either a preset base environment string (e.g. `"default"`, `"remote"`) or custom `EnvironmentConfig` (`isPreset()`, `isCustom()`).
-- **`MediaProcessingConfiguration`**: Wraps either a preset media mode string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`isPreset()`, `isCustom()`).
+- **`MediaProcessingConfiguration`**: Wraps either a preset media mode string (e.g. `"static"`, `"agentic"`) or custom `Content.MediaProcessing` (`StaticMediaProcessing`, including video `contentLayers`) (`isPreset()`, `isCustom()`).
+- **`AudioProcessingConfiguration`**: Wraps either a preset audio processing string (e.g. `"static"`) or custom `Content.AudioMediaProcessing` (`AudioStaticMediaProcessing` with `startOffset` / `endOffset`) (`isPreset()`, `isCustom()`).
+- **`DocumentProcessingConfiguration`**: Wraps either a preset document processing string (e.g. `"static"`) or custom `Content.DocumentMediaProcessing` (`DocumentStaticMediaProcessing` with `PageProcessingOptions` / `SpreadsheetProcessingOptions`) (`isPreset()`, `isCustom()`).
 - **`TranscriptionModeConfiguration`**: Wraps either a preset transcription mode string (e.g. `"verbatim"`, `"smart"`) or custom `SmartTranscriptionMode` (including `SmartTranscriptionMode.withSourceText(...)`) / `VerbatimTranscriptionMode` (`isPreset()`, `isCustom()`).
 - **`TurnContent`**: Wraps either a plain text string or multimodal `List<Content>` parts for conversation turns (`isText()`, `isParts()`, `text()`, `parts()`).
 - **`InteractionInput`**: Wraps polymorphic input to an interaction: plain text string, `List<Content>` contents, `List<Turn>` turns, or `List<Step>` steps (`isText()`, `isContents()`, `isTurns()`, `isSteps()`).

@@ -32,6 +32,8 @@ import java.util.Map;
  * @param network       Network configuration.
  * @param sources       Sources to be mounted into the environment.
  * @param env           Environment variables to inject into the environment sandbox (literal strings or credential references).
+ * @param mode          Optional. The compute lifecycle mode for this environment ({@code on_demand} or {@code self_hosted}).
+ * @param customConfig  Optional. Arbitrary customer-defined JSON configuration passed through to the self-hosted environment poller.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -40,10 +42,25 @@ public record EnvironmentConfig(
     @JsonProperty("environment_id") String environmentId,
     NetworkConfiguration network,
     List<Source> sources,
-    Map<String, Object> env
+    Map<String, Object> env,
+    EnvironmentMode mode,
+    @JsonProperty("custom_config") Map<String, Object> customConfig
 ) {
     /**
-     * Backward-compatible constructor without env.
+     * Backward-compatible constructor without mode and customConfig.
+     *
+     * @param type          The type.
+     * @param environmentId Optional environment ID.
+     * @param network       Network configuration.
+     * @param sources       Mounted sources list.
+     * @param env           Environment variables map.
+     */
+    public EnvironmentConfig(String type, String environmentId, NetworkConfiguration network, List<Source> sources, Map<String, Object> env) {
+        this(type, environmentId, network, sources, env, null, null);
+    }
+
+    /**
+     * Backward-compatible constructor without env, mode, and customConfig.
      *
      * @param type          The type.
      * @param environmentId Optional environment ID.
@@ -51,7 +68,7 @@ public record EnvironmentConfig(
      * @param sources       Mounted sources list.
      */
     public EnvironmentConfig(String type, String environmentId, NetworkConfiguration network, List<Source> sources) {
-        this(type, environmentId, network, sources, null);
+        this(type, environmentId, network, sources, null, null, null);
     }
     /**
      * Creates a custom remote EnvironmentConfig without an existing environment ID.
@@ -143,6 +160,8 @@ public record EnvironmentConfig(
         private NetworkConfiguration network;
         private List<Source> sources;
         private Map<String, Object> env;
+        private EnvironmentMode mode;
+        private Map<String, Object> customConfig;
 
         /** Creates a new Builder. */
         public Builder() {}
@@ -255,12 +274,46 @@ public record EnvironmentConfig(
         }
 
         /**
+         * Sets the compute lifecycle mode for this environment.
+         *
+         * @param mode The environment mode ({@link EnvironmentMode#ON_DEMAND} or {@link EnvironmentMode#SELF_HOSTED}).
+         * @return This builder.
+         */
+        public Builder mode(EnvironmentMode mode) { this.mode = mode; return this; }
+
+        /**
+         * Sets the arbitrary customer-defined JSON configuration passed through to the self-hosted environment poller.
+         *
+         * @param customConfig The custom configuration map.
+         * @return This builder.
+         */
+        public Builder customConfig(Map<String, ?> customConfig) {
+            this.customConfig = customConfig != null ? new HashMap<>(customConfig) : null;
+            return this;
+        }
+
+        /**
+         * Adds a single entry to the customer-defined custom configuration map.
+         *
+         * @param key   Configuration property name.
+         * @param value Configuration property value.
+         * @return This builder.
+         */
+        public Builder customConfig(String key, Object value) {
+            if (this.customConfig == null) {
+                this.customConfig = new HashMap<>();
+            }
+            this.customConfig.put(key, value);
+            return this;
+        }
+
+        /**
          * Builds the EnvironmentConfig.
          *
          * @return The EnvironmentConfig.
          */
         public EnvironmentConfig build() {
-            return new EnvironmentConfig(type, environmentId, network, sources, env);
+            return new EnvironmentConfig(type, environmentId, network, sources, env, mode, customConfig);
         }
     }
 }

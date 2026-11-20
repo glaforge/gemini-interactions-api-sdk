@@ -423,6 +423,10 @@ public sealed interface Events permits
         @JsonProperty("processing_call") PROCESSING_CALL("processing_call"),
         /** Processing result delta. */
         @JsonProperty("processing_result") PROCESSING_RESULT("processing_result"),
+        /** Tool search call delta. */
+        @JsonProperty("tool_search_call") TOOL_SEARCH_CALL("tool_search_call"),
+        /** Tool search result delta. */
+        @JsonProperty("tool_search_result") TOOL_SEARCH_RESULT("tool_search_result"),
         /** Retrieval call delta. */
         @JsonProperty("retrieval_call") RETRIEVAL_CALL("retrieval_call"),
         /** Retrieval result delta. */
@@ -484,6 +488,8 @@ public sealed interface Events permits
         @JsonSubTypes.Type(value = TextAnnotationDelta.class, name = "text_annotation_delta"),
         @JsonSubTypes.Type(value = ProcessingCallDelta.class, name = "processing_call"),
         @JsonSubTypes.Type(value = ProcessingResultDelta.class, name = "processing_result"),
+        @JsonSubTypes.Type(value = ToolSearchCallDelta.class, name = "tool_search_call"),
+        @JsonSubTypes.Type(value = ToolSearchResultDelta.class, name = "tool_search_result"),
         @JsonSubTypes.Type(value = RetrievalCallDelta.class, name = "retrieval_call"),
         @JsonSubTypes.Type(value = RetrievalResultDelta.class, name = "retrieval_result")
     })
@@ -498,6 +504,7 @@ public sealed interface Events permits
         FileSearchCallDelta, FileSearchResultDelta,
         GoogleMapsCallDelta, GoogleMapsResultDelta,
         TextAnnotationDelta, ProcessingCallDelta, ProcessingResultDelta,
+        ToolSearchCallDelta, ToolSearchResultDelta,
         RetrievalCallDelta, RetrievalResultDelta, UnknownDelta {
         /**
          * Returns the type of the delta.
@@ -839,6 +846,54 @@ public sealed interface Events permits
         public ProcessingResultDelta {
             if (type == null) {
                 type = DeltaType.PROCESSING_RESULT;
+            }
+        }
+    }
+
+    /**
+     * Delta for a server-side tool search call ({@code "tool_search_call"}).
+     *
+     * @param type      The type of delta ({@link DeltaType#TOOL_SEARCH_CALL}).
+     * @param id        Optional call ID.
+     * @param arguments Arguments specifying which deferred functions to load.
+     * @param signature Opaque signature hash for backend context validation.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ToolSearchCallDelta(
+        DeltaType type,
+        String id,
+        Step.ToolSearchCallArguments arguments,
+        String signature
+    ) implements Delta {
+        /** Compact constructor defaulting {@code type} to {@link DeltaType#TOOL_SEARCH_CALL}. */
+        public ToolSearchCallDelta {
+            if (type == null) {
+                type = DeltaType.TOOL_SEARCH_CALL;
+            }
+        }
+    }
+
+    /**
+     * Delta for a server-side tool search result ({@code "tool_search_result"}).
+     *
+     * @param type      The type of delta ({@link DeltaType#TOOL_SEARCH_RESULT}).
+     * @param callId    Optional call ID matching the tool search call.
+     * @param result    The retrieved {@link Tool.Function} definitions.
+     * @param signature Opaque signature hash for backend context validation.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ToolSearchResultDelta(
+        DeltaType type,
+        @JsonProperty("call_id") String callId,
+        List<Tool.Function> result,
+        String signature
+    ) implements Delta {
+        /** Compact constructor defaulting {@code type} to {@link DeltaType#TOOL_SEARCH_RESULT}. */
+        public ToolSearchResultDelta {
+            if (type == null) {
+                type = DeltaType.TOOL_SEARCH_RESULT;
             }
         }
     }

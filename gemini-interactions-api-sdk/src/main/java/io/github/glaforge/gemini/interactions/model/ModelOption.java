@@ -31,6 +31,8 @@ public final class ModelOption {
     public static final String ANTIGRAVITY_PREVIEW_05_2026 = "antigravity-preview-05-2026";
     /** Model option constant for Antigravity Agent (Preview 09-2026). */
     public static final String ANTIGRAVITY_PREVIEW_09_2026 = "antigravity-preview-09-2026";
+    /** Model option constant for Antigravity Agent Preview Latest. */
+    public static final String ANTIGRAVITY_PREVIEW_LATEST = "antigravity-preview-latest";
     /** Model option constant. */
     public static final String AQA = "aqa";
     /** Model option constant for Gemini Deep Research Max (Preview 04-2026). */
@@ -187,6 +189,10 @@ public final class ModelOption {
     public static final String GEMINI_4_ARGON = "gemini-4-argon";
     /** Model option constant for Gemini 4 Carbon. */
     public static final String GEMINI_4_CARBON = "gemini-4-carbon";
+    /** Model option constant for Gemini 4 Hydrogen. */
+    public static final String GEMINI_4_HYDROGEN = "gemini-4-hydrogen";
+    /** Model option constant for Gemini 4 Neon. */
+    public static final String GEMINI_4_NEON = "gemini-4-neon";
     /** Model option constant for Gemini Decision 1 (used with the Gemini Decisions API). */
     public static final String GEMINI_DECISION_1 = "gemini-decision-1";
     /** Model option constant for Gemini Embedding 001. */
