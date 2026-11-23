@@ -26,7 +26,7 @@ To use the core client SDK, add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.2.2</version>
+    <version>2.3.0</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ If you are implementing the server-side webhook handler (`InteractionsHandler`),
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-server</artifactId>
-    <version>2.2.2</version>
+    <version>2.3.0</version>
 </dependency>
 ```
 
@@ -371,6 +371,65 @@ ModelInteractionParams request = ModelInteractionParams.builder()
 
 Interaction response = client.create(request);
 ```
+
+### Gemini Files API (Upload Once, Slice Across Turns)
+Upload large PDFs, Microsoft Office / OpenDocument files, images, audio, or video once via the Gemini Files API (`POST /upload/v1beta/files`) and reuse the resulting `GeminiFile` URI across multiple turns and file-slicing requests without re-uploading bytes:
+```java
+import io.github.glaforge.gemini.interactions.model.Content.DocumentStaticMediaProcessing;
+import io.github.glaforge.gemini.interactions.model.Content.PageContentLayer;
+import io.github.glaforge.gemini.interactions.model.Content.PageProcessingOptions;
+import io.github.glaforge.gemini.interactions.model.Content.Resolution;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+import io.github.glaforge.gemini.interactions.model.GeminiFile;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.ListFilesResponse;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
+import java.nio.file.Path;
+
+// 1. Upload once (MIME type auto-detected from file extension; retained for 48 hours)
+GeminiFile doc = client.uploadFile(Path.of("quarterly_report.docx"));
+doc = client.waitForFileActive(doc.name()); // polls until ACTIVE (useful for videos / large files)
+
+try {
+    // 2. Skim the whole document cheaply as extracted text
+    Interaction skim = client.create(ModelInteractionParams.builder()
+        .model(ModelOption.GEMINI_4_HYDROGEN)
+        .input(
+            doc.toDocumentContent(null, DocumentStaticMediaProcessing.forPages(
+                PageProcessingOptions.builder().contentLayers(PageContentLayer.PAGE_TEXT).build()
+            )),
+            new TextContent("Which page has the revenue bridge chart?")
+        )
+        .build());
+    System.out.println(skim.outputText());
+
+    // 3. Zoom into the target page at high resolution (reusing the same uploaded file URI)
+    Interaction detail = client.create(ModelInteractionParams.builder()
+        .model(ModelOption.GEMINI_4_NEON)
+        .input(
+            doc.toDocumentContent(Resolution.HIGH, DocumentStaticMediaProcessing.forPages(
+                PageProcessingOptions.builder()
+                    .startPage(3)
+                    .endPage(3)
+                    .contentLayers(PageContentLayer.PAGE_IMAGE)
+                    .build()
+            )),
+            new TextContent("Read the revenue bridge chart and footnotes on page 3.")
+        )
+        .build());
+    System.out.println(detail.outputText());
+
+    // Manage files: getFile, listFiles, registerFiles (GCS), downloadFile (model-generated files)
+    ListFilesResponse page = client.listFiles(20, null);
+    System.out.println("Uploaded files: " + page.files().size());
+} finally {
+    // 4. Clean up when done
+    client.deleteFile(doc.name());
+}
+```
+> [!NOTE]
+> The Gemini Files API (`/v1beta/files`) is supported when initialized with a Gemini Developer API key. On Vertex AI, pass Google Cloud Storage (`gs://...`) URIs directly in content blocks.
 
 ### Speech Recognition, Transcription & Voice-Driven Editing (ASR)
 Dedicated transcription (`ModelOption.GEMINI_3_5_TRANSCRIBE`) and multimodal (`ModelOption.GEMINI_3_8_FLASH`) models support verbatim ASR with speaker diarization, word timestamps, and voice-driven text editing:

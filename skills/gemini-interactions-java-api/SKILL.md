@@ -16,7 +16,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.glaforge</groupId>
     <artifactId>gemini-interactions-api-sdk</artifactId>
-    <version>2.2.2</version>
+    <version>2.3.0</version>
 </dependency>
 ```
 
@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml`:
 Add the dependency to your `build.gradle` or `build.gradle.kts`:
 
 ```gradle
-implementation("io.github.glaforge:gemini-interactions-api-sdk:2.2.2")
+implementation("io.github.glaforge:gemini-interactions-api-sdk:2.3.0")
 ```
 
 > [!NOTE]
@@ -213,6 +213,58 @@ ModelInteractionParams docRequest = ModelInteractionParams.builder()
         new AudioContent(audioBytes, "audio/mp3", new AudioStaticMediaProcessing("0s", "60s"))
     )
     .build();
+```
+
+### Gemini Files API (Upload Once, Reuse & Slice Across Turns)
+
+Use the built-in Gemini Files API methods on `GeminiInteractionsClient` (`uploadFile` from `Path`, `byte[]`, or `InputStream`; `getFile`; `listFiles`; `deleteFile`; `waitForFileActive`; `registerFiles`; `downloadFile`) to upload files once and reuse their URIs across turns, tool responses, and file-slicing requests. `GeminiFile` provides `toDocumentContent(...)`, `toImageContent(...)`, `toAudioContent(...)`, and `toVideoContent(...)` convenience converters. (Gemini Developer API / API key only; on Vertex AI, pass `gs://` URIs directly.)
+
+```java
+import io.github.glaforge.gemini.interactions.model.Content.DocumentStaticMediaProcessing;
+import io.github.glaforge.gemini.interactions.model.Content.PageContentLayer;
+import io.github.glaforge.gemini.interactions.model.Content.PageProcessingOptions;
+import io.github.glaforge.gemini.interactions.model.Content.Resolution;
+import io.github.glaforge.gemini.interactions.model.Content.TextContent;
+import io.github.glaforge.gemini.interactions.model.GeminiFile;
+import io.github.glaforge.gemini.interactions.model.Interaction;
+import io.github.glaforge.gemini.interactions.model.InteractionParams.ModelInteractionParams;
+import io.github.glaforge.gemini.interactions.model.ModelOption;
+import io.github.glaforge.gemini.interactions.model.UploadFileConfig;
+import java.nio.file.Path;
+
+GeminiFile doc = client.uploadFile(
+    Path.of("quarterly_report.docx"),
+    UploadFileConfig.builder().displayName("Quarterly Report").build()
+);
+doc = client.waitForFileActive(doc.name());
+
+try {
+    // Skim cheaply as extracted text, then zoom into a specific page at high resolution
+    Interaction skim = client.create(ModelInteractionParams.builder()
+        .model(ModelOption.GEMINI_4_HYDROGEN)
+        .input(
+            doc.toDocumentContent(null, DocumentStaticMediaProcessing.forPages(
+                PageProcessingOptions.builder().contentLayers(PageContentLayer.PAGE_TEXT).build()
+            )),
+            new TextContent("Which page has the revenue bridge chart?")
+        )
+        .build());
+
+    Interaction zoom = client.create(ModelInteractionParams.builder()
+        .model(ModelOption.GEMINI_4_NEON)
+        .input(
+            doc.toDocumentContent(Resolution.HIGH, DocumentStaticMediaProcessing.forPages(
+                PageProcessingOptions.builder()
+                    .startPage(3).endPage(3)
+                    .contentLayers(PageContentLayer.PAGE_IMAGE)
+                    .build()
+            )),
+            new TextContent("Extract the figures from the chart on page 3.")
+        )
+        .build());
+} finally {
+    client.deleteFile(doc.name());
+}
 ```
 
 ### Speech Recognition, Transcription & Voice-Driven Editing (ASR)

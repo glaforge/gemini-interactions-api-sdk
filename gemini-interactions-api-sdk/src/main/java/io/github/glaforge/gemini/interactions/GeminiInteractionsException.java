@@ -39,6 +39,16 @@ public class GeminiInteractionsException extends RuntimeException {
     }
 
     /**
+     * Constructs a new exception with the specified message.
+     * @param message The error message.
+     */
+    public GeminiInteractionsException(String message) {
+        super(message);
+        this.statusCode = 0;
+        this.body = null;
+    }
+
+    /**
      * Constructs a new exception with the specified message and cause.
      * @param message The error message.
      * @param cause The cause of the exception.

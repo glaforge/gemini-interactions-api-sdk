@@ -19,11 +19,14 @@ package io.github.glaforge.gemini.interactions;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.auth.oauth2.GoogleCredentials;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import io.github.glaforge.gemini.interactions.model.Events;
+import io.github.glaforge.gemini.interactions.model.GeminiFile;
 import io.github.glaforge.gemini.interactions.model.Interaction;
 import io.github.glaforge.gemini.interactions.model.InteractionParams;
+import io.github.glaforge.gemini.interactions.model.ListFilesResponse;
 import io.github.glaforge.gemini.interactions.model.ListWebhooksResponse;
 import io.github.glaforge.gemini.interactions.model.PingWebhookRequest;
 import io.github.glaforge.gemini.interactions.model.PingWebhookResponse;
@@ -56,6 +59,7 @@ import io.github.glaforge.gemini.interactions.model.DecisionParams;
 import io.github.glaforge.gemini.interactions.model.DeleteVoiceResponse;
 import io.github.glaforge.gemini.interactions.model.ListVoicesResponse;
 import io.github.glaforge.gemini.interactions.model.ModelOption;
+import io.github.glaforge.gemini.interactions.model.UploadFileConfig;
 import io.github.glaforge.gemini.interactions.model.Voice;
 import io.github.glaforge.gemini.interactions.model.VoiceListFilter;
 
@@ -72,7 +76,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -103,6 +111,53 @@ public class GeminiInteractionsClient {
     private static final String DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
     private static final String DEFAULT_VERSION = "v1beta";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(20);
+    private static final int FILES_UPLOAD_CHUNK_SIZE = 8 * 1024 * 1024;
+    private static final Duration DEFAULT_FILE_POLL_INTERVAL = Duration.ofSeconds(2);
+    private static final Duration DEFAULT_FILE_POLL_TIMEOUT = Duration.ofMinutes(5);
+    private static final Map<String, String> EXTENSION_MIME_TYPES = Map.ofEntries(
+        Map.entry("pdf", "application/pdf"),
+        Map.entry("csv", "text/csv"),
+        Map.entry("txt", "text/plain"),
+        Map.entry("md", "text/markdown"),
+        Map.entry("html", "text/html"),
+        Map.entry("htm", "text/html"),
+        Map.entry("xml", "text/xml"),
+        Map.entry("json", "application/json"),
+        Map.entry("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+        Map.entry("doc", "application/msword"),
+        Map.entry("dotx", "application/vnd.openxmlformats-officedocument.wordprocessingml.template"),
+        Map.entry("odt", "application/vnd.oasis.opendocument.text"),
+        Map.entry("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+        Map.entry("ppt", "application/vnd.ms-powerpoint"),
+        Map.entry("odp", "application/vnd.oasis.opendocument.presentation"),
+        Map.entry("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        Map.entry("xls", "application/vnd.ms-excel"),
+        Map.entry("ods", "application/vnd.oasis.opendocument.spreadsheet"),
+        Map.entry("png", "image/png"),
+        Map.entry("jpg", "image/jpeg"),
+        Map.entry("jpeg", "image/jpeg"),
+        Map.entry("webp", "image/webp"),
+        Map.entry("gif", "image/gif"),
+        Map.entry("heic", "image/heic"),
+        Map.entry("heif", "image/heif"),
+        Map.entry("mp3", "audio/mpeg"),
+        Map.entry("wav", "audio/wav"),
+        Map.entry("aiff", "audio/aiff"),
+        Map.entry("aac", "audio/aac"),
+        Map.entry("ogg", "audio/ogg"),
+        Map.entry("flac", "audio/flac"),
+        Map.entry("m4a", "audio/m4a"),
+        Map.entry("opus", "audio/opus"),
+        Map.entry("mp4", "video/mp4"),
+        Map.entry("mpeg", "video/mpeg"),
+        Map.entry("mpg", "video/mpg"),
+        Map.entry("mov", "video/mov"),
+        Map.entry("avi", "video/avi"),
+        Map.entry("flv", "video/x-flv"),
+        Map.entry("webm", "video/webm"),
+        Map.entry("wmv", "video/wmv"),
+        Map.entry("3gp", "video/3gpp")
+    );
 
     private final String baseUrl;
     private final String version;
@@ -2097,6 +2152,583 @@ public class GeminiInteractionsClient {
         }
     }
 
+    // --- Gemini Files API Operations ---
+
+    /**
+     * Uploads a local file to the Gemini Files API ({@code POST /upload/v1beta/files}) using the resumable upload protocol.
+     * <p>
+     * The MIME type is automatically detected from the file extension or OS content probe.
+     * Uploaded files are retained for up to 48 hours and can be referenced across multiple turns and file-slicing
+     * requests via {@link GeminiFile#uri()} or helper methods like {@link GeminiFile#toDocumentContent()}.
+     * </p>
+     * <p>
+     * Note: The Gemini Files API is only available on the Gemini Developer API (API key). On Vertex AI, pass
+     * Google Cloud Storage ({@code gs://}) URIs directly in content blocks.
+     * </p>
+     *
+     * @param file Path to the local file to upload.
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an I/O error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(Path file) {
+        return uploadFile(file, (UploadFileConfig) null);
+    }
+
+    /**
+     * Uploads a local file to the Gemini Files API with an explicit MIME type.
+     *
+     * @param file     Path to the local file to upload.
+     * @param mimeType MIME type of the file (e.g. {@code "application/pdf"}, {@code "video/mp4"}).
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an I/O error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(Path file, String mimeType) {
+        return uploadFile(file, UploadFileConfig.builder().mimeType(mimeType).build());
+    }
+
+    /**
+     * Uploads a local file to the Gemini Files API with an explicit MIME type and display name.
+     *
+     * @param file        Path to the local file to upload.
+     * @param mimeType    MIME type of the file (may be null to auto-detect).
+     * @param displayName Optional human-readable display name.
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an I/O error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(Path file, String mimeType, String displayName) {
+        return uploadFile(file, UploadFileConfig.builder().mimeType(mimeType).displayName(displayName).build());
+    }
+
+    /**
+     * Uploads a local file to the Gemini Files API using the resumable upload protocol.
+     *
+     * @param file   Path to the local file to upload.
+     * @param config Optional upload metadata (MIME type, display name, custom resource name).
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an I/O error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(Path file, UploadFileConfig config) {
+        ensureFilesApiSupported();
+        if (file == null) {
+            throw new IllegalArgumentException("File path must not be null");
+        }
+        if (!Files.exists(file) || !Files.isRegularFile(file)) {
+            throw new IllegalArgumentException("File does not exist or is not a regular file: " + file);
+        }
+        try {
+            long contentLength = Files.size(file);
+            String mimeType = (config != null && config.mimeType() != null && !config.mimeType().isBlank())
+                ? config.mimeType()
+                : detectMimeType(file);
+
+            String uploadUrl = startFileUploadSession(contentLength, mimeType, config);
+
+            HttpRequest uploadRequest = HttpRequest.newBuilder()
+                .uri(URI.create(uploadUrl))
+                .timeout(timeout)
+                .header("X-Goog-Upload-Offset", "0")
+                .header("X-Goog-Upload-Command", "upload, finalize")
+                .POST(HttpRequest.BodyPublishers.ofFile(file))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(uploadRequest, HttpResponse.BodyHandlers.ofString());
+            checkError(response);
+
+            return parseUploadedFile(response.body());
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    /**
+     * Uploads raw bytes to the Gemini Files API with a specified MIME type.
+     *
+     * @param data     The raw file bytes.
+     * @param mimeType The MIME type of the file (required, e.g. {@code "application/pdf"}).
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(byte[] data, String mimeType) {
+        return uploadFile(data, UploadFileConfig.builder().mimeType(mimeType).build());
+    }
+
+    /**
+     * Uploads raw bytes to the Gemini Files API with a specified MIME type and display name.
+     *
+     * @param data        The raw file bytes.
+     * @param mimeType    The MIME type of the file (required).
+     * @param displayName Optional human-readable display name.
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(byte[] data, String mimeType, String displayName) {
+        return uploadFile(data, UploadFileConfig.builder().mimeType(mimeType).displayName(displayName).build());
+    }
+
+    /**
+     * Uploads raw bytes to the Gemini Files API using the resumable upload protocol.
+     *
+     * @param data   The raw file bytes.
+     * @param config Upload configuration (must include a non-blank {@code mimeType}).
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(byte[] data, UploadFileConfig config) {
+        ensureFilesApiSupported();
+        if (data == null) {
+            throw new IllegalArgumentException("File data must not be null");
+        }
+        if (config == null || config.mimeType() == null || config.mimeType().isBlank()) {
+            throw new IllegalArgumentException("MIME type must be specified when uploading raw bytes");
+        }
+        try {
+            String uploadUrl = startFileUploadSession(data.length, config.mimeType(), config);
+
+            HttpRequest uploadRequest = HttpRequest.newBuilder()
+                .uri(URI.create(uploadUrl))
+                .timeout(timeout)
+                .header("X-Goog-Upload-Offset", "0")
+                .header("X-Goog-Upload-Command", "upload, finalize")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(data))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(uploadRequest, HttpResponse.BodyHandlers.ofString());
+            checkError(response);
+
+            return parseUploadedFile(response.body());
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    /**
+     * Uploads content from an {@link InputStream} to the Gemini Files API using chunked resumable uploads.
+     *
+     * @param inputStream   The stream supplying the file bytes.
+     * @param contentLength Exact total number of bytes to upload from the stream.
+     * @param mimeType      The MIME type of the file (required).
+     * @param displayName   Optional human-readable display name.
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an I/O error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(InputStream inputStream, long contentLength, String mimeType, String displayName) {
+        return uploadFile(inputStream, contentLength, UploadFileConfig.builder().mimeType(mimeType).displayName(displayName).build());
+    }
+
+    /**
+     * Uploads content from an {@link InputStream} to the Gemini Files API using chunked resumable uploads
+     * (8 MiB chunks) to keep memory usage bounded for large files.
+     *
+     * @param inputStream   The stream supplying the file bytes.
+     * @param contentLength Exact total number of bytes to upload from the stream.
+     * @param config        Upload configuration (must include a non-blank {@code mimeType}).
+     * @return The created {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an I/O error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile uploadFile(InputStream inputStream, long contentLength, UploadFileConfig config) {
+        ensureFilesApiSupported();
+        if (inputStream == null) {
+            throw new IllegalArgumentException("InputStream must not be null");
+        }
+        if (contentLength < 0) {
+            throw new IllegalArgumentException("contentLength must be non-negative");
+        }
+        if (config == null || config.mimeType() == null || config.mimeType().isBlank()) {
+            throw new IllegalArgumentException("MIME type must be specified when uploading from an InputStream");
+        }
+        try {
+            String uploadUrl = startFileUploadSession(contentLength, config.mimeType(), config);
+
+            if (contentLength == 0) {
+                HttpRequest uploadRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(uploadUrl))
+                    .timeout(timeout)
+                    .header("X-Goog-Upload-Offset", "0")
+                    .header("X-Goog-Upload-Command", "upload, finalize")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(new byte[0]))
+                    .build();
+                HttpResponse<String> response = httpClient.send(uploadRequest, HttpResponse.BodyHandlers.ofString());
+                checkError(response);
+                return parseUploadedFile(response.body());
+            }
+
+            long offset = 0;
+            while (offset < contentLength) {
+                int toRead = (int) Math.min(FILES_UPLOAD_CHUNK_SIZE, contentLength - offset);
+                byte[] chunk = inputStream.readNBytes(toRead);
+                if (chunk.length == 0) {
+                    throw new GeminiInteractionsException(
+                        "Unexpected end of input stream at offset " + offset + " (expected " + contentLength + " bytes)"
+                    );
+                }
+
+                boolean isFinal = (offset + chunk.length >= contentLength);
+                String command = isFinal ? "upload, finalize" : "upload";
+
+                HttpRequest chunkRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(uploadUrl))
+                    .timeout(timeout)
+                    .header("X-Goog-Upload-Offset", String.valueOf(offset))
+                    .header("X-Goog-Upload-Command", command)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(chunk))
+                    .build();
+
+                HttpResponse<String> response = httpClient.send(chunkRequest, HttpResponse.BodyHandlers.ofString());
+                checkError(response);
+
+                offset += chunk.length;
+                if (isFinal) {
+                    return parseUploadedFile(response.body());
+                }
+            }
+            throw new GeminiInteractionsException("File upload ended without receiving a finalized response");
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    /**
+     * Retrieves metadata for a file managed by the Gemini Files API ({@code GET /v1beta/files/{id}}).
+     *
+     * @param name The file resource name (e.g. {@code "files/abc-123"}) or bare file ID ({@code "abc-123"}).
+     * @return The {@link GeminiFile} metadata.
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile getFile(String name) {
+        try {
+            String normalizedName = normalizeFileName(name);
+            String url = buildUrl(normalizedName);
+
+            HttpRequest httpRequest = newFilesRequestBuilder(url)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), GeminiFile.class);
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    /**
+     * Lists files owned by the requesting project ({@code GET /v1beta/files}).
+     *
+     * @return A {@link ListFilesResponse} containing the first page of files.
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public ListFilesResponse listFiles() {
+        return listFiles(null, null);
+    }
+
+    /**
+     * Lists files owned by the requesting project with pagination ({@code GET /v1beta/files}).
+     *
+     * @param pageSize  Optional maximum number of files to return (defaults to 10; maximum 100).
+     * @param pageToken Optional page token from a previous {@link ListFilesResponse#nextPageToken()}.
+     * @return A {@link ListFilesResponse}.
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public ListFilesResponse listFiles(Integer pageSize, String pageToken) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(buildUrl("files"));
+            boolean hasParam = false;
+            if (pageSize != null) {
+                urlBuilder.append("?pageSize=").append(pageSize);
+                hasParam = true;
+            }
+            if (pageToken != null && !pageToken.isBlank()) {
+                urlBuilder.append(hasParam ? "&" : "?")
+                    .append("pageToken=")
+                    .append(URLEncoder.encode(pageToken, StandardCharsets.UTF_8));
+            }
+
+            HttpRequest httpRequest = newFilesRequestBuilder(urlBuilder.toString())
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            checkError(response);
+
+            return objectMapper.readValue(response.body(), ListFilesResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    /**
+     * Deletes a file from the Gemini Files API ({@code DELETE /v1beta/files/{id}}).
+     *
+     * @param name The file resource name (e.g. {@code "files/abc-123"}) or bare file ID ({@code "abc-123"}).
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public void deleteFile(String name) {
+        try {
+            String normalizedName = normalizeFileName(name);
+            String url = buildUrl(normalizedName);
+
+            HttpRequest httpRequest = newFilesRequestBuilder(url)
+                .DELETE()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            checkError(response);
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    /**
+     * Polls {@link #getFile(String)} until the file reaches {@link GeminiFile.State#ACTIVE}, using a
+     * default 2-second poll interval and 5-minute timeout.
+     * <p>
+     * Useful after uploading videos or large files that initially return {@link GeminiFile.State#PROCESSING}.
+     * </p>
+     *
+     * @param name The file resource name (e.g. {@code "files/abc-123"}) or bare file ID.
+     * @return The active {@link GeminiFile}.
+     * @throws GeminiInteractionsException   If the file transitions to {@link GeminiFile.State#FAILED},
+     *                                       the timeout expires, or an API error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile waitForFileActive(String name) {
+        return waitForFileActive(name, DEFAULT_FILE_POLL_INTERVAL, DEFAULT_FILE_POLL_TIMEOUT);
+    }
+
+    /**
+     * Polls {@link #getFile(String)} until the file reaches {@link GeminiFile.State#ACTIVE}.
+     *
+     * @param name         The file resource name (e.g. {@code "files/abc-123"}) or bare file ID.
+     * @param pollInterval Interval between polling requests (must be positive).
+     * @param timeout      Maximum time to wait before throwing a {@link GeminiInteractionsException}.
+     * @return The active {@link GeminiFile}.
+     * @throws GeminiInteractionsException   If the file transitions to {@link GeminiFile.State#FAILED},
+     *                                       the timeout expires, or an API error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public GeminiFile waitForFileActive(String name, Duration pollInterval, Duration timeout) {
+        ensureFilesApiSupported();
+        if (pollInterval == null || pollInterval.isNegative() || pollInterval.isZero()) {
+            throw new IllegalArgumentException("pollInterval must be positive");
+        }
+        if (timeout == null || timeout.isNegative()) {
+            throw new IllegalArgumentException("timeout must be non-negative");
+        }
+
+        Instant deadline = Instant.now().plus(timeout);
+        while (true) {
+            GeminiFile file = getFile(name);
+            if (file.isActive()) {
+                return file;
+            }
+            if (file.isFailed()) {
+                String reason = file.error() != null && file.error().message() != null
+                    ? file.error().message()
+                    : "unknown error";
+                throw new GeminiInteractionsException("File processing failed for " + file.name() + ": " + reason);
+            }
+            if (Instant.now().isAfter(deadline)) {
+                throw new GeminiInteractionsException(
+                    "Timed out waiting for file " + name + " to become ACTIVE (last state: " + file.state() + ")"
+                );
+            }
+            try {
+                Thread.sleep(pollInterval.toMillis());
+            } catch (InterruptedException e) {
+                throw wrapException(e);
+            }
+        }
+    }
+
+    /**
+     * Registers Google Cloud Storage URIs with the Gemini Files API ({@code POST /v1beta/files:register})
+     * without copying the underlying bytes.
+     *
+     * @param gcsUris List of Google Cloud Storage URIs (e.g. {@code "gs://bucket/object"}).
+     * @return The list of registered {@link GeminiFile} resources.
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public List<GeminiFile> registerFiles(List<String> gcsUris) {
+        if (gcsUris == null || gcsUris.isEmpty()) {
+            throw new IllegalArgumentException("gcsUris must not be null or empty");
+        }
+        try {
+            String requestBody = objectMapper.writeValueAsString(Map.of("uris", gcsUris));
+            String url = buildUrl("files:register");
+
+            HttpRequest httpRequest = newFilesRequestBuilder(url)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            checkError(response);
+
+            ListFilesResponse parsed = objectMapper.readValue(response.body(), ListFilesResponse.class);
+            return parsed.files();
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    /**
+     * Downloads a model-generated file from the Gemini Files API as an {@link InputStream}
+     * ({@code GET /v1beta/files/{id}:download?alt=media}).
+     * <p>
+     * Note: Per the Gemini Files API, only model-generated files (such as generated videos) can be downloaded;
+     * user-uploaded files cannot be downloaded.
+     * </p>
+     *
+     * @param name The file resource name (e.g. {@code "files/abc-123"}) or bare file ID.
+     * @return An {@link InputStream} of the file bytes (caller is responsible for closing it).
+     * @throws GeminiInteractionsException   If the API request fails or an error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public InputStream downloadFile(String name) {
+        try {
+            String normalizedName = normalizeFileName(name);
+            String url = buildUrl(normalizedName + ":download?alt=media");
+
+            HttpRequest httpRequest = newFilesRequestBuilder(url)
+                .GET()
+                .build();
+
+            HttpResponse<InputStream> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofInputStream());
+            if (response.statusCode() >= 300) {
+                try (InputStream errorStream = response.body()) {
+                    String errorBody = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
+                    throw new GeminiInteractionsException("API Request failed to download file", response.statusCode(), errorBody);
+                }
+            }
+            return response.body();
+        } catch (IOException | InterruptedException e) {
+            throw wrapException(e);
+        }
+    }
+
+    /**
+     * Downloads a model-generated file from the Gemini Files API directly to a local file path.
+     *
+     * @param name       The file resource name (e.g. {@code "files/abc-123"}) or bare file ID.
+     * @param targetFile Local destination path (parent directories are created if needed).
+     * @throws GeminiInteractionsException   If the API request fails or an I/O error occurs.
+     * @throws UnsupportedOperationException If the client is configured for Vertex AI.
+     */
+    public void downloadFile(String name, Path targetFile) {
+        try (InputStream in = downloadFile(name)) {
+            if (targetFile.getParent() != null) {
+                Files.createDirectories(targetFile.getParent());
+            }
+            Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new GeminiInteractionsException("Failed to write downloaded file to: " + targetFile, e);
+        }
+    }
+
+    private void ensureFilesApiSupported() {
+        if (project != null) {
+            throw new UnsupportedOperationException(
+                "The Gemini Files API (/v1beta/files) is only supported on the Gemini Developer API (API key). "
+                + "On Vertex AI, pass Google Cloud Storage (gs://) URIs directly in content blocks."
+            );
+        }
+    }
+
+    private HttpRequest.Builder newFilesRequestBuilder(String url) {
+        ensureFilesApiSupported();
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .timeout(timeout);
+        if (apiKey != null) {
+            builder.header("x-goog-api-key", apiKey);
+        }
+        return builder;
+    }
+
+    private String normalizeFileName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("File name must not be null or blank");
+        }
+        String trimmed = name.startsWith("/") ? name.substring(1) : name;
+        return trimmed.startsWith("files/") ? trimmed : "files/" + trimmed;
+    }
+
+    private String startFileUploadSession(long contentLength, String mimeType, UploadFileConfig config) throws IOException, InterruptedException {
+        Map<String, Object> fileMeta = new LinkedHashMap<>();
+        if (config != null && config.displayName() != null && !config.displayName().isBlank()) {
+            fileMeta.put("displayName", config.displayName());
+        }
+        if (config != null && config.name() != null && !config.name().isBlank()) {
+            fileMeta.put("name", normalizeFileName(config.name()));
+        }
+
+        String metadataJson = fileMeta.isEmpty()
+            ? "{}"
+            : objectMapper.writeValueAsString(Map.of("file", fileMeta));
+
+        String startUrl = buildUploadUrl("files");
+        HttpRequest startRequest = newFilesRequestBuilder(startUrl)
+            .header("X-Goog-Upload-Protocol", "resumable")
+            .header("X-Goog-Upload-Command", "start")
+            .header("X-Goog-Upload-Header-Content-Length", String.valueOf(contentLength))
+            .header("X-Goog-Upload-Header-Content-Type", mimeType)
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(metadataJson))
+            .build();
+
+        HttpResponse<String> startResponse = httpClient.send(startRequest, HttpResponse.BodyHandlers.ofString());
+        checkError(startResponse);
+
+        return startResponse.headers()
+            .firstValue("x-goog-upload-url")
+            .orElseThrow(() -> new GeminiInteractionsException(
+                "Missing X-Goog-Upload-URL header in resumable upload start response",
+                startResponse.statusCode(),
+                startResponse.body()
+            ));
+    }
+
+    private GeminiFile parseUploadedFile(String responseBody) {
+        JsonNode root = objectMapper.readTree(responseBody);
+        JsonNode fileNode = root.has("file") ? root.get("file") : root;
+        return objectMapper.treeToValue(fileNode, GeminiFile.class);
+    }
+
+    private static String detectMimeType(Path file) {
+        String fileName = file.getFileName() != null ? file.getFileName().toString() : "";
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex >= 0 && dotIndex < fileName.length() - 1) {
+            String ext = fileName.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
+            String mapped = EXTENSION_MIME_TYPES.get(ext);
+            if (mapped != null) {
+                return mapped;
+            }
+        }
+        try {
+            String probed = Files.probeContentType(file);
+            if (probed != null && !probed.isBlank()) {
+                return probed;
+            }
+        } catch (IOException ignored) {
+            // Fall through to default MIME type
+        }
+        return "application/octet-stream";
+    }
 
     private void checkError(HttpResponse<String> response) {
          if (response.statusCode() >= 400) {
